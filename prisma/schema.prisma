@@ -1,0 +1,441 @@
+// Capacity Connect — Prisma schema
+// Comprehensive Domain Model for PostgreSQL Database Foundation
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  EMPLOYEE
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum CourseStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum EnrollmentStatus {
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum ReassessmentStatus {
+  PENDING_REASSESSMENT
+  APPROVED
+  REJECTED
+}
+
+// ---------------------------------------------------------------------------
+// Organization & Multi-Tenancy
+// ---------------------------------------------------------------------------
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  code        String?  @unique
+  description String?
+  logo        String?
+  industry    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users                User[]
+  employees            Employee[]
+  designations         Designation[]
+  competencies         Competency[]
+  courses              Course[]
+  reassessments        Reassessment[]
+  skillAssessments     SkillAssessment[]
+  skillRecommendations SkillRecommendation[]
+
+  @@map("organizations")
+}
+
+// ---------------------------------------------------------------------------
+// Users & Authentication Identities
+// ---------------------------------------------------------------------------
+
+model User {
+  id             String   @id @default(cuid())
+  name           String
+  email          String
+  passwordHash   String
+  role           UserRole @default(EMPLOYEE)
+  organizationId String
+  employeeId     String?  @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  employee     Employee?    @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+
+  @@unique([organizationId, email])
+  @@index([organizationId])
+  @@map("users")
+}
+
+// ---------------------------------------------------------------------------
+// Employees & Workforce Profiles
+// ---------------------------------------------------------------------------
+
+model Employee {
+  id             String         @id @default(cuid())
+  organizationId String
+  employeeCode   String
+  name           String
+  email          String
+  department     String?
+  designationId  String?
+  joiningDate    DateTime?
+  status         EmployeeStatus @default(ACTIVE)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  organization      Organization                   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  designation          Designation?                   @relation(fields: [designationId], references: [id], onDelete: SetNull)
+  user                 User?
+  competencies         EmployeeCompetency[]
+  assessmentHistory    CompetencyAssessmentHistory[]
+  enrollments          CourseEnrollment[]
+  reassessments        Reassessment[]
+  skillAssessments     SkillAssessment[]
+  skillRecommendations SkillRecommendation[]
+
+  @@unique([organizationId, employeeCode])
+  @@unique([organizationId, email])
+  @@index([organizationId])
+  @@index([designationId])
+  @@map("employees")
+}
+
+// ---------------------------------------------------------------------------
+// Designations & Role Competency Baselines
+// ---------------------------------------------------------------------------
+
+model Designation {
+  id             String   @id @default(cuid())
+  organizationId String
+  title          String
+  code           String
+  department     String?
+  description    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  employees    Employee[]
+  requirements DesignationCompetency[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+  @@map("designations")
+}
+
+// ---------------------------------------------------------------------------
+// Competency Framework Catalog & Levels
+// ---------------------------------------------------------------------------
+
+model Competency {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  code           String
+  category       String   // e.g. "Technical / Programming", "Data & AI", "Soft Skills", "Management"
+  description    String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization            Organization                  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  levels                  CompetencyLevel[]
+  designationRequirements DesignationCompetency[]
+  employeeAssessments     EmployeeCompetency[]
+  assessmentHistory       CompetencyAssessmentHistory[]
+  courses                 Course[]
+  reassessments           Reassessment[]
+  skillAssessments        SkillAssessment[]
+  skillRecommendations    SkillRecommendation[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+  @@map("competencies")
+}
+
+model CompetencyLevel {
+  id                   String   @id @default(cuid())
+  competencyId         String
+  level                Int      // 1 to 5
+  label                String   // e.g. "Novice", "Advanced Beginner", "Competent", "Proficient", "Expert"
+  description          String
+  behavioralIndicators String[]
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  competency Competency @relation(fields: [competencyId], references: [id], onDelete: Cascade)
+
+  @@unique([competencyId, level])
+  @@index([competencyId])
+  @@map("competency_levels")
+}
+
+model DesignationCompetency {
+  id             String   @id @default(cuid())
+  organizationId String
+  designationId  String
+  competencyId   String
+  requiredLevel  Int      // 1 to 5
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  designation Designation @relation(fields: [designationId], references: [id], onDelete: Cascade)
+  competency  Competency  @relation(fields: [competencyId], references: [id], onDelete: Restrict)
+
+  @@unique([designationId, competencyId])
+  @@index([organizationId])
+  @@index([designationId])
+  @@index([competencyId])
+  @@map("designation_competencies")
+}
+
+model EmployeeCompetency {
+  id             String   @id @default(cuid())
+  organizationId String
+  employeeId     String
+  competencyId   String
+  currentLevel   Int      // 1 to 5
+  assessedAt     DateTime @default(now())
+  assessedBy     String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  employee   Employee   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  competency Competency @relation(fields: [competencyId], references: [id], onDelete: Restrict)
+
+  @@unique([employeeId, competencyId])
+  @@index([organizationId])
+  @@index([employeeId])
+  @@index([competencyId])
+  @@map("employee_competencies")
+}
+
+model CompetencyAssessmentHistory {
+  id            String   @id @default(cuid())
+  employeeId    String
+  competencyId  String
+  previousLevel Int?
+  newLevel      Int
+  assessedAt    DateTime @default(now())
+  assessedBy    String?
+  reason        String?
+
+  employee   Employee   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  competency Competency @relation(fields: [competencyId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+  @@index([competencyId])
+  @@map("competency_assessment_history")
+}
+
+// ---------------------------------------------------------------------------
+// Capacity Building Courses & Learning Modules
+// ---------------------------------------------------------------------------
+
+model Course {
+  id             String       @id @default(cuid())
+  organizationId String
+  title          String
+  code           String
+  description    String
+  category       String
+  competencyId   String
+  targetLevel    Int          // 1 to 5
+  durationHours  Int
+  rating         Float        @default(4.8)
+  status         CourseStatus @default(PUBLISHED)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization         Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  competency           Competency            @relation(fields: [competencyId], references: [id], onDelete: Restrict)
+  modules              CourseModule[]
+  enrollments          CourseEnrollment[]
+  reassessments        Reassessment[]
+  skillRecommendations SkillRecommendation[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+  @@index([competencyId])
+  @@map("courses")
+}
+
+model CourseModule {
+  id                     String   @id @default(cuid())
+  courseId               String
+  order                  Int
+  title                  String
+  summary                String
+  durationMinutes        Int
+  learningObjectives     String[]
+  overview               String
+  keyConcepts            Json     // Array of { title, description, codeSnippet? }
+  practicalExercise      String
+  competencyVerification String
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  course   Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  progress ModuleProgress[]
+
+  @@unique([courseId, order])
+  @@index([courseId])
+  @@map("course_modules")
+}
+
+// ---------------------------------------------------------------------------
+// Enrollments, Progress & Reassessments
+// ---------------------------------------------------------------------------
+
+model CourseEnrollment {
+  id               String           @id @default(cuid())
+  employeeId       String
+  courseId         String
+  enrolledAt       DateTime         @default(now())
+  progressPercent  Int              @default(0)
+  completedLessons Int              @default(0)
+  totalLessons     Int              @default(0)
+  status           EnrollmentStatus @default(IN_PROGRESS)
+  completedAt      DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  employee       Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  course         Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  moduleProgress ModuleProgress[]
+
+  @@unique([employeeId, courseId])
+  @@index([employeeId])
+  @@index([courseId])
+  @@map("course_enrollments")
+}
+
+model ModuleProgress {
+  id           String   @id @default(cuid())
+  enrollmentId String
+  moduleId     String
+  completed    Boolean  @default(true)
+  completedAt  DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  enrollment CourseEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  module     CourseModule     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([enrollmentId, moduleId])
+  @@index([enrollmentId])
+  @@index([moduleId])
+  @@map("module_progress")
+}
+
+model Reassessment {
+  id               String             @id @default(cuid())
+  organizationId   String
+  employeeId       String
+  courseId         String
+  competencyId     String
+  previousLevel    Int
+  requestedLevel   Int
+  status           ReassessmentStatus @default(PENDING_REASSESSMENT)
+  submittedAt      DateTime           @default(now())
+  reviewedAt       DateTime?
+  reviewedBy       String?
+  reviewerComments String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  employee     Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  course       Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  competency   Competency   @relation(fields: [competencyId], references: [id], onDelete: Restrict)
+
+  @@index([organizationId])
+  @@index([employeeId])
+  @@index([courseId])
+  @@index([competencyId])
+  @@map("reassessments")
+}
+
+// ---------------------------------------------------------------------------
+// AI/ML Skill Assessments & Recommendations
+// ---------------------------------------------------------------------------
+
+model SkillAssessment {
+  id                 String   @id @default(cuid())
+  organizationId     String
+  employeeId         String
+  competencyId       String
+  title              String
+  score              Float    // Percentage score (0 - 100)
+  totalQuestions     Int      @default(10)
+  correctQuestions   Int      @default(0)
+  topicBreakdown     Json     // Array of { topic: string, score: number, totalQuestions: number, correctQuestions: number }
+  timeTakenMinutes   Int?     @default(15)
+  completedAt        DateTime @default(now())
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  employee     Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  competency   Competency   @relation(fields: [competencyId], references: [id], onDelete: Restrict)
+
+  @@index([organizationId])
+  @@index([employeeId])
+  @@index([competencyId])
+  @@map("skill_assessments")
+}
+
+model SkillRecommendation {
+  id              String   @id @default(cuid())
+  organizationId  String
+  employeeId      String
+  competencyId    String
+  courseId        String?
+  priority        String   // "HIGH" | "MEDIUM" | "LOW"
+  weakTopics      String[]
+  scorePercentage Float?
+  currentLevel    Int?
+  requiredLevel   Int?
+  gap             Int?
+  reason          String
+  status          String   @default("ACTIVE") // "ACTIVE" | "IN_PROGRESS" | "COMPLETED" | "DISMISSED"
+  engineType      String   @default("RULE_BASED") // "RULE_BASED" | "ML_GRADIENT_BOOSTED"
+  confidenceScore Float    @default(0.85)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  employee     Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  competency   Competency   @relation(fields: [competencyId], references: [id], onDelete: Restrict)
+  course       Course?      @relation(fields: [courseId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([employeeId])
+  @@index([competencyId])
+  @@index([courseId])
+  @@map("skill_recommendations")
+}

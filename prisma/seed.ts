@@ -1,0 +1,445 @@
+import { PrismaClient, UserRole, EmployeeStatus, CourseStatus, EnrollmentStatus, ReassessmentStatus } from "@prisma/client";
+import bcrypt from "bcryptjs";
+import {
+  DEMO_ORGANIZATION,
+  DEMO_COMPETENCIES,
+  DEMO_DESIGNATIONS,
+  DEMO_EMPLOYEES,
+  DEMO_COURSES,
+  DEFAULT_COMPETENCY_LEVELS,
+} from "../lib/demo/data";
+import { COURSE_CURRICULA, getCourseCurriculum } from "../lib/demo/learning-curriculum";
+
+const prisma = new PrismaClient();
+
+async function main() {
+  console.log("🌱 Starting Capacity Connect Database Seeding...");
+
+  // 1. Seed Organization
+  console.log("🏢 Seeding Organization...");
+  const org = await prisma.organization.upsert({
+    where: { id: DEMO_ORGANIZATION.id },
+    update: {
+      name: DEMO_ORGANIZATION.name,
+      code: DEMO_ORGANIZATION.code,
+      description: DEMO_ORGANIZATION.description,
+      industry: DEMO_ORGANIZATION.industry,
+    },
+    create: {
+      id: DEMO_ORGANIZATION.id,
+      name: DEMO_ORGANIZATION.name,
+      code: DEMO_ORGANIZATION.code,
+      description: DEMO_ORGANIZATION.description,
+      industry: DEMO_ORGANIZATION.industry,
+    },
+  });
+  console.log(`  ✓ Organization seeded: ${org.name} (${org.code})`);
+
+  // 2. Seed Competencies & 5-Level Rubrics
+  console.log("🎯 Seeding Competencies & Level Rubrics...");
+  for (const comp of DEMO_COMPETENCIES) {
+    const createdComp = await prisma.competency.upsert({
+      where: { id: comp.id },
+      update: {
+        name: comp.name,
+        code: comp.code,
+        category: comp.category,
+        description: comp.description,
+        organizationId: org.id,
+      },
+      create: {
+        id: comp.id,
+        name: comp.name,
+        code: comp.code,
+        category: comp.category,
+        description: comp.description,
+        organizationId: org.id,
+      },
+    });
+
+    // Seed 1-5 levels for each competency
+    for (let lvl = 1; lvl <= 5; lvl++) {
+      const defaultInfo = DEFAULT_COMPETENCY_LEVELS[lvl] || {
+        label: `Level ${lvl}`,
+        description: `Proficiency level ${lvl} standard.`,
+        behavioralIndicators: [`Demonstrates proficiency at Level ${lvl}`],
+      };
+
+      await prisma.competencyLevel.upsert({
+        where: {
+          competencyId_level: {
+            competencyId: createdComp.id,
+            level: lvl,
+          },
+        },
+        update: {
+          label: defaultInfo.label,
+          description: defaultInfo.description,
+          behavioralIndicators: defaultInfo.behavioralIndicators,
+        },
+        create: {
+          competencyId: createdComp.id,
+          level: lvl,
+          label: defaultInfo.label,
+          description: defaultInfo.description,
+          behavioralIndicators: defaultInfo.behavioralIndicators,
+        },
+      });
+    }
+  }
+  console.log(`  ✓ Seeded ${DEMO_COMPETENCIES.length} competencies with 5-level rubrics.`);
+
+  // 3. Seed Designations & Competency Requirements
+  console.log("💼 Seeding Designations & Competency Requirements...");
+  for (const desig of DEMO_DESIGNATIONS) {
+    const createdDesig = await prisma.designation.upsert({
+      where: { id: desig.id },
+      update: {
+        title: desig.title,
+        code: desig.code,
+        department: desig.department,
+        description: desig.description,
+        organizationId: org.id,
+      },
+      create: {
+        id: desig.id,
+        title: desig.title,
+        code: desig.code,
+        department: desig.department,
+        description: desig.description,
+        organizationId: org.id,
+      },
+    });
+
+    // Requirements
+    for (const req of desig.requirements) {
+      await prisma.designationCompetency.upsert({
+        where: {
+          designationId_competencyId: {
+            designationId: createdDesig.id,
+            competencyId: req.competencyId,
+          },
+        },
+        update: {
+          requiredLevel: req.requiredLevel,
+          organizationId: org.id,
+        },
+        create: {
+          designationId: createdDesig.id,
+          competencyId: req.competencyId,
+          requiredLevel: req.requiredLevel,
+          organizationId: org.id,
+        },
+      });
+    }
+  }
+  console.log(`  ✓ Seeded ${DEMO_DESIGNATIONS.length} designations with role requirement baselines.`);
+
+  // 4. Seed Employees & Initial Competency Assessments
+  console.log("👥 Seeding Employees & Baseline Assessments...");
+  for (const emp of DEMO_EMPLOYEES) {
+    const createdEmp = await prisma.employee.upsert({
+      where: { id: emp.id },
+      update: {
+        employeeCode: emp.employeeCode,
+        name: emp.name,
+        email: emp.email,
+        department: emp.department,
+        designationId: emp.designationId,
+        joiningDate: emp.joiningDate ? new Date(emp.joiningDate) : null,
+        status: (emp.status as EmployeeStatus) || EmployeeStatus.ACTIVE,
+        organizationId: org.id,
+      },
+      create: {
+        id: emp.id,
+        employeeCode: emp.employeeCode,
+        name: emp.name,
+        email: emp.email,
+        department: emp.department,
+        designationId: emp.designationId,
+        joiningDate: emp.joiningDate ? new Date(emp.joiningDate) : null,
+        status: (emp.status as EmployeeStatus) || EmployeeStatus.ACTIVE,
+        organizationId: org.id,
+      },
+    });
+
+    // Seed Competencies assessed for this employee
+    for (const compAssessment of emp.competencies) {
+      if (compAssessment.currentLevel === null || compAssessment.currentLevel === undefined) continue;
+      const currentLevel = compAssessment.currentLevel;
+
+      await prisma.employeeCompetency.upsert({
+        where: {
+          employeeId_competencyId: {
+            employeeId: createdEmp.id,
+            competencyId: compAssessment.competencyId,
+          },
+        },
+        update: {
+          currentLevel,
+          assessedAt: compAssessment.assessedAt ? new Date(compAssessment.assessedAt) : new Date(),
+          assessedBy: compAssessment.assessedBy || "Manager Baseline Assessment",
+          organizationId: org.id,
+        },
+        create: {
+          employeeId: createdEmp.id,
+          competencyId: compAssessment.competencyId,
+          currentLevel,
+          assessedAt: compAssessment.assessedAt ? new Date(compAssessment.assessedAt) : new Date(),
+          assessedBy: compAssessment.assessedBy || "Manager Baseline Assessment",
+          organizationId: org.id,
+        },
+      });
+
+      // Assessment history entry
+      await prisma.competencyAssessmentHistory.create({
+        data: {
+          employeeId: createdEmp.id,
+          competencyId: compAssessment.competencyId,
+          previousLevel: null,
+          newLevel: currentLevel,
+          assessedAt: compAssessment.assessedAt ? new Date(compAssessment.assessedAt) : new Date(),
+          assessedBy: compAssessment.assessedBy || "Initial Calibration",
+          reason: "Baseline onboarding evaluation",
+        },
+      });
+    }
+  }
+  console.log(`  ✓ Seeded ${DEMO_EMPLOYEES.length} employees with competency profiles.`);
+
+  // 5. Seed Users with Secure Hashed Passwords
+  console.log("🔐 Seeding Users & Passwords...");
+  const adminPasswordHash = await bcrypt.hash("Admin@123", 10);
+  const managerPasswordHash = await bcrypt.hash("Manager@123", 10);
+  const employeePasswordHash = await bcrypt.hash("Employee@123", 10);
+
+  // Admin User
+  await prisma.user.upsert({
+    where: { organizationId_email: { organizationId: org.id, email: "admin@klu.edu" } },
+    update: {
+      name: "Admin User",
+      passwordHash: adminPasswordHash,
+      role: UserRole.ADMIN,
+    },
+    create: {
+      name: "Admin User",
+      email: "admin@klu.edu",
+      passwordHash: adminPasswordHash,
+      role: UserRole.ADMIN,
+      organizationId: org.id,
+    },
+  });
+
+  // Manager User
+  await prisma.user.upsert({
+    where: { organizationId_email: { organizationId: org.id, email: "sarah.jenkins@capacityconnect.demo" } },
+    update: {
+      name: "Sarah Jenkins",
+      passwordHash: managerPasswordHash,
+      role: UserRole.MANAGER,
+    },
+    create: {
+      name: "Sarah Jenkins",
+      email: "sarah.jenkins@capacityconnect.demo",
+      passwordHash: managerPasswordHash,
+      role: UserRole.MANAGER,
+      organizationId: org.id,
+    },
+  });
+
+  // Employee User (Ravi Kumar)
+  await prisma.user.upsert({
+    where: { organizationId_email: { organizationId: org.id, email: "ravi.kumar@capacityconnect.demo" } },
+    update: {
+      name: "Ravi Kumar",
+      passwordHash: employeePasswordHash,
+      role: UserRole.EMPLOYEE,
+      employeeId: "emp-1",
+    },
+    create: {
+      name: "Ravi Kumar",
+      email: "ravi.kumar@capacityconnect.demo",
+      passwordHash: employeePasswordHash,
+      role: UserRole.EMPLOYEE,
+      organizationId: org.id,
+      employeeId: "emp-1",
+    },
+  });
+  console.log("  ✓ Seeded Admin, Manager, and Employee users with bcrypt hashing.");
+
+  // 6. Seed Courses & Modules
+  console.log("📚 Seeding Courses & Modules...");
+  let totalModulesSeeded = 0;
+  for (const course of DEMO_COURSES) {
+    const createdCourse = await prisma.course.upsert({
+      where: { id: course.id },
+      update: {
+        title: course.title,
+        code: course.code,
+        description: course.description,
+        category: course.category,
+        competencyId: course.competencyId,
+        targetLevel: course.targetLevel,
+        durationHours: course.durationHours,
+        rating: course.rating,
+        status: (course.status as CourseStatus) || CourseStatus.PUBLISHED,
+        organizationId: org.id,
+      },
+      create: {
+        id: course.id,
+        title: course.title,
+        code: course.code,
+        description: course.description,
+        category: course.category,
+        competencyId: course.competencyId,
+        targetLevel: course.targetLevel,
+        durationHours: course.durationHours,
+        rating: course.rating,
+        status: (course.status as CourseStatus) || CourseStatus.PUBLISHED,
+        organizationId: org.id,
+      },
+    });
+
+    const curriculum = getCourseCurriculum(course.id);
+    for (const mod of curriculum.modules) {
+      await prisma.courseModule.upsert({
+        where: { id: mod.id },
+        update: {
+          courseId: createdCourse.id,
+          order: mod.order,
+          title: mod.title,
+          summary: mod.summary,
+          durationMinutes: mod.durationMinutes,
+          learningObjectives: mod.learningObjectives,
+          overview: mod.content.overview,
+          keyConcepts: mod.content.keyConcepts as any,
+          practicalExercise: mod.content.practicalExercise,
+          competencyVerification: mod.content.competencyVerification,
+        },
+        create: {
+          id: mod.id,
+          courseId: createdCourse.id,
+          order: mod.order,
+          title: mod.title,
+          summary: mod.summary,
+          durationMinutes: mod.durationMinutes,
+          learningObjectives: mod.learningObjectives,
+          overview: mod.content.overview,
+          keyConcepts: mod.content.keyConcepts as any,
+          practicalExercise: mod.content.practicalExercise,
+          competencyVerification: mod.content.competencyVerification,
+        },
+      });
+      totalModulesSeeded++;
+    }
+  }
+  console.log(`  ✓ Seeded ${DEMO_COURSES.length} courses with ${totalModulesSeeded} detailed modules.`);
+
+  // 7. Seed Initial Course Enrollments & Progress
+  console.log("📝 Seeding Enrollments & Module Progress...");
+  // Ravi Kumar enrolled in Python (4 of 6 completed)
+  const pyEnrollment = await prisma.courseEnrollment.upsert({
+    where: { employeeId_courseId: { employeeId: "emp-1", courseId: "course-py-401" } },
+    update: {
+      progressPercent: 67,
+      completedLessons: 4,
+      totalLessons: 6,
+      status: EnrollmentStatus.IN_PROGRESS,
+    },
+    create: {
+      employeeId: "emp-1",
+      courseId: "course-py-401",
+      enrolledAt: new Date("2024-05-10"),
+      progressPercent: 67,
+      completedLessons: 4,
+      totalLessons: 6,
+      status: EnrollmentStatus.IN_PROGRESS,
+    },
+  });
+
+  const pyCompletedModules = ["py-mod-1", "py-mod-2", "py-mod-3", "py-mod-4"];
+  for (const modId of pyCompletedModules) {
+    await prisma.moduleProgress.upsert({
+      where: { enrollmentId_moduleId: { enrollmentId: pyEnrollment.id, moduleId: modId } },
+      update: { completed: true },
+      create: {
+        enrollmentId: pyEnrollment.id,
+        moduleId: modId,
+        completed: true,
+        completedAt: new Date("2024-05-20"),
+      },
+    });
+  }
+
+  // Ravi Kumar enrolled in Java (2 of 7 completed)
+  const jvEnrollment = await prisma.courseEnrollment.upsert({
+    where: { employeeId_courseId: { employeeId: "emp-1", courseId: "course-jv-401" } },
+    update: {
+      progressPercent: 29,
+      completedLessons: 2,
+      totalLessons: 7,
+      status: EnrollmentStatus.IN_PROGRESS,
+    },
+    create: {
+      employeeId: "emp-1",
+      courseId: "course-jv-401",
+      enrolledAt: new Date("2024-05-15"),
+      progressPercent: 29,
+      completedLessons: 2,
+      totalLessons: 7,
+      status: EnrollmentStatus.IN_PROGRESS,
+    },
+  });
+
+  const jvCompletedModules = ["jv-mod-1", "jv-mod-2"];
+  for (const modId of jvCompletedModules) {
+    await prisma.moduleProgress.upsert({
+      where: { enrollmentId_moduleId: { enrollmentId: jvEnrollment.id, moduleId: modId } },
+      update: { completed: true },
+      create: {
+        enrollmentId: jvEnrollment.id,
+        moduleId: modId,
+        completed: true,
+        completedAt: new Date("2024-05-25"),
+      },
+    });
+  }
+
+  // 8. Seed Reassessment Request
+  console.log("📋 Seeding Reassessment Requests...");
+  await prisma.reassessment.upsert({
+    where: { id: "reassess-1" },
+    update: {
+      status: ReassessmentStatus.PENDING_REASSESSMENT,
+    },
+    create: {
+      id: "reassess-1",
+      organizationId: org.id,
+      employeeId: "emp-5",
+      courseId: "course-sql-301",
+      competencyId: "comp-sql",
+      previousLevel: 2,
+      requestedLevel: 3,
+      status: ReassessmentStatus.PENDING_REASSESSMENT,
+      submittedAt: new Date("2024-06-18"),
+    },
+  });
+  console.log("  ✓ Seeded pending reassessment request for Sneha Reddy.");
+
+  console.log("\n✨ Database seeding completed successfully!");
+  console.log("------------------------------------------------------------------");
+  console.log("Login Credentials:");
+  console.log("  Admin:    admin@klu.edu / Admin@123");
+  console.log("  Manager:  sarah.jenkins@capacityconnect.demo / Manager@123");
+  console.log("  Employee: ravi.kumar@capacityconnect.demo / Employee@123");
+  console.log("------------------------------------------------------------------");
+}
+
+main()
+  .catch((e) => {
+    console.error("❌ Seeding Error:", e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
