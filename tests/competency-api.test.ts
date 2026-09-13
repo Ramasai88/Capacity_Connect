@@ -143,6 +143,7 @@ describe("Competency API & Service Layer", () => {
     expect(lvl5?.label).toBe("Principal Distributed Architect");
 
     // Clean up created competency
+    await prisma.designationCompetency.deleteMany({ where: { competencyId: created.id } });
     await prisma.competencyLevel.deleteMany({ where: { competencyId: created.id } });
     await prisma.competency.delete({ where: { id: created.id } });
   });

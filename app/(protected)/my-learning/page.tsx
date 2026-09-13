@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import {
   Card,
   CardContent,
@@ -14,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { useEnrollments } from "@/lib/demo/enrollment-store";
 import { isDemoMode } from "@/lib/demo/config";
 import { apiClient } from "@/lib/api/client";
+import { AccessDenied } from "@/components/auth/access-denied";
 import {
   BookOpen,
   PlayCircle,
@@ -26,12 +28,19 @@ import {
 } from "lucide-react";
 
 export default function MyLearningPage() {
+  const { data: session, status: sessionStatus } = useSession();
+  const userRole = (session?.user as any)?.role || "EMPLOYEE";
+
   const demoEnrollmentStore = useEnrollments();
   const [realEnrollments, setRealEnrollments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(!isDemoMode());
 
   const loadRealData = useCallback(async () => {
     if (isDemoMode()) return;
+    if (userRole !== "EMPLOYEE") {
+      setIsLoading(false);
+      return;
+    }
     try {
       setIsLoading(true);
       const res = await apiClient.learning.getEnrollments();
@@ -41,13 +50,31 @@ export default function MyLearningPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [userRole]);
 
   useEffect(() => {
-    if (!isDemoMode()) {
+    if (!isDemoMode() && userRole === "EMPLOYEE") {
       loadRealData();
     }
-  }, [loadRealData]);
+  }, [loadRealData, userRole]);
+
+  if (sessionStatus === "loading" || (isLoading && userRole === "EMPLOYEE")) {
+    return (
+      <div className="flex items-center justify-center py-20 text-xs text-muted-foreground gap-2">
+        <Loader2 className="h-5 w-5 animate-spin text-primary" /> Loading enrolled courses...
+      </div>
+    );
+  }
+
+  if (session && userRole !== "EMPLOYEE") {
+    return (
+      <AccessDenied
+        requiredRole="EMPLOYEE"
+        currentRole={userRole}
+        resourceName="the Employee My Learning workspace"
+      />
+    );
+  }
 
   const enrollments: any[] = isDemoMode()
     ? demoEnrollmentStore.enrollments
@@ -190,8 +217,8 @@ export default function MyLearningPage() {
                           </div>
                         </div>
                         <Link href={`/courses/${courseId}/learn`} className="block">
-                          <Button size="sm" className="w-full gap-1.5 text-xs font-semibold h-8.5 shadow-xs">
-                            <PlayCircle className="h-3.5 w-3.5" />
+                          <Button className="w-full h-10 gap-2 text-xs font-semibold shadow-xs">
+                            <PlayCircle className="h-4 w-4" />
                             Continue Learning
                           </Button>
                         </Link>

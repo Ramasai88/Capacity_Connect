@@ -33,6 +33,7 @@ import { useCourseProgress } from "@/lib/demo/enrollment-store";
 import { isDemoMode } from "@/lib/demo/config";
 import { apiClient } from "@/lib/api/client";
 import { CompletedModuleReviewDialog } from "@/components/learning/completed-module-review-dialog";
+import { ModuleLearningRunner } from "@/components/learning/module-learning-runner";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -92,7 +93,7 @@ export default function CourseLearningPage() {
     : realCourse;
 
   const [activeReviewModule, setActiveReviewModule] = useState<any | null>(null);
-  const [activeReadingModule, setActiveReadingModule] = useState<any | null>(null);
+  const [activeLearningModule, setActiveLearningModule] = useState<any | null>(null);
 
   if (!course && !isLoading) {
     notFound();
@@ -109,7 +110,31 @@ export default function CourseLearningPage() {
   // Modules & Progress calculation
   const modulesList: any[] = isDemoMode()
     ? demoCurriculum.modules
-    : course.modules || [];
+    : (course.modules || []).map((m: any) => {
+        const currMod = demoCurriculum.modules?.find(
+          (cm) => cm.id === m.id || cm.order === m.order
+        );
+        const resources = (m.resources && m.resources.length > 0)
+          ? m.resources
+          : (currMod?.resources || []);
+        const keyConcepts = (Array.isArray(m.keyConcepts) && m.keyConcepts.length > 0)
+          ? m.keyConcepts
+          : (currMod?.content?.keyConcepts || currMod?.keyConcepts || m.keyConcepts);
+
+        return {
+          ...m,
+          resources,
+          keyConcepts,
+          content: {
+            ...m.content,
+            overview: m.overview || currMod?.content?.overview || currMod?.overview,
+            keyConcepts,
+            resources,
+            practicalExercise: m.practicalExercise || currMod?.content?.practicalExercise,
+            competencyVerification: m.competencyVerification || currMod?.content?.competencyVerification,
+          },
+        };
+      });
 
   const completedModuleIds = new Set<string>(
     isDemoMode()
@@ -131,24 +156,12 @@ export default function CourseLearningPage() {
     ? demoStore.reassessments.find((r) => r.courseId === course.id)
     : realReassessment;
 
-  async function handleCompleteAndNext(module: any) {
+  async function handleCompleteModule(module: any) {
     if (isDemoMode()) {
       demoProgress.markComplete(module.id);
-      const sorted = [...modulesList].sort((a, b) => a.order - b.order);
-      const currentIndex = sorted.findIndex((m) => m.id === module.id);
-      const nextModule = sorted[currentIndex + 1];
-      setActiveReadingModule(nextModule || null);
     } else {
-      try {
-        await apiClient.learning.completeModule(course.id, module.id);
-        await loadRealData();
-        const sorted = [...modulesList].sort((a, b) => a.order - b.order);
-        const currentIndex = sorted.findIndex((m) => m.id === module.id);
-        const nextModule = sorted[currentIndex + 1];
-        setActiveReadingModule(nextModule || null);
-      } catch (err: any) {
-        alert(err.message || "Failed to complete module.");
-      }
+      await apiClient.learning.completeModule(course.id, module.id);
+      await loadRealData();
     }
   }
 
@@ -242,11 +255,18 @@ export default function CourseLearningPage() {
             const isCompleted = completedModuleIds.has(m.id);
             const isCurrent = m.id === currentModuleId && !isCompleted;
             const isLocked = !isCompleted && !isCurrent;
+            const isContinue = isCurrent && progressPercent > 0;
 
             return (
               <Card
                 key={m.id}
-                className={`transition-all shadow-2xs ${isCompleted ? "border-emerald-200 bg-emerald-50/20" : isCurrent ? "border-indigo-300 bg-indigo-50/10 shadow-xs" : "opacity-60 bg-slate-50/50"}`}
+                className={`transition-all shadow-2xs ${
+                  isCompleted
+                    ? "border-emerald-200 bg-emerald-50/20"
+                    : isCurrent
+                    ? "border-indigo-300 bg-indigo-50/10 shadow-xs"
+                    : "opacity-60 bg-slate-50/50"
+                }`}
               >
                 <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="flex items-start gap-3.5">
@@ -265,7 +285,11 @@ export default function CourseLearningPage() {
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-xs text-foreground">{m.title}</span>
                         {isCompleted && <Badge variant="success" className="text-[10px] font-semibold">Completed</Badge>}
-                        {isCurrent && <Badge variant="default" className="text-[10px] bg-indigo-600">In Progress</Badge>}
+                        {isCurrent && (
+                          <Badge variant="default" className="text-[10px] bg-indigo-600">
+                            {isContinue ? "In Progress" : "Up Next"}
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{m.summary || m.overview}</p>
                       <div className="flex items-center gap-3 text-[11px] text-muted-foreground mt-1">
@@ -278,18 +302,30 @@ export default function CourseLearningPage() {
 
                   <div className="flex items-center gap-2 sm:self-center self-end">
                     {isCompleted && (
-                      <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5 font-semibold" onClick={() => setActiveReviewModule(m)}>
-                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />Review Content
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 text-xs gap-1.5 font-semibold"
+                        onClick={() => setActiveReviewModule(m)}
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                        Review Content
                       </Button>
                     )}
                     {isCurrent && (
-                      <Button size="sm" className="h-8 text-xs gap-1.5 font-semibold shadow-xs" onClick={() => setActiveReadingModule(m)}>
-                        <PlayCircle className="h-3.5 w-3.5" />Start Module
+                      <Button
+                        size="sm"
+                        className="h-8 text-xs gap-1.5 font-semibold shadow-xs bg-indigo-600 hover:bg-indigo-700 text-white"
+                        onClick={() => setActiveLearningModule(m)}
+                      >
+                        <PlayCircle className="h-3.5 w-3.5" />
+                        {isContinue ? "Continue Module" : "Start Module"}
                       </Button>
                     )}
                     {isLocked && (
                       <Button size="sm" variant="ghost" disabled className="h-8 text-xs gap-1 opacity-50">
-                        <Lock className="h-3.5 w-3.5" />Locked
+                        <Lock className="h-3.5 w-3.5" />
+                        Locked
                       </Button>
                     )}
                   </div>
@@ -300,77 +336,19 @@ export default function CourseLearningPage() {
         </div>
       </div>
 
-      {/* ACTIVE MODULE READER DIALOG */}
-      <Dialog open={!!activeReadingModule} onOpenChange={(open) => !open && setActiveReadingModule(null)}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          {activeReadingModule && (
-            <div className="space-y-4">
-              <DialogHeader>
-                <div className="flex items-center justify-between pr-4">
-                  <Badge variant="secondary" className="text-xs font-mono">Module {activeReadingModule.order}</Badge>
-                  <span className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Clock className="h-3.5 w-3.5" />{activeReadingModule.durationMinutes || 30} mins
-                  </span>
-                </div>
-                <DialogTitle className="text-base font-bold mt-1 text-foreground">{activeReadingModule.title}</DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground">{activeReadingModule.summary}</DialogDescription>
-              </DialogHeader>
-
-              <div className="space-y-4 text-xs">
-                <div>
-                  <h4 className="font-bold text-foreground mb-1.5">Module Overview</h4>
-                  <p className="text-muted-foreground leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-border/80">
-                    {activeReadingModule.overview}
-                  </p>
-                </div>
-
-                {activeReadingModule.keyConcepts && activeReadingModule.keyConcepts.length > 0 && (
-                  <div>
-                    <h4 className="font-bold text-foreground mb-2">Key Concepts & Architectural Principles</h4>
-                    <div className="space-y-2">
-                      {activeReadingModule.keyConcepts.map((kc: any, i: number) => (
-                        <div key={i} className="p-3.5 rounded-xl border border-border/80 bg-card space-y-1.5 shadow-2xs">
-                          <span className="font-bold text-foreground block">{kc.title}</span>
-                          <p className="text-muted-foreground leading-relaxed">{kc.description}</p>
-                          {kc.codeSnippet && (
-                            <pre className="p-3 rounded-lg bg-slate-900 text-slate-100 font-mono text-[11px] overflow-x-auto shadow-inner">
-                              <code>{kc.codeSnippet}</code>
-                            </pre>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <h4 className="font-bold text-foreground mb-1.5">Practical Hands-On Exercise</h4>
-                  <p className="text-slate-800 bg-indigo-50/50 border border-indigo-200/80 p-3.5 rounded-xl leading-relaxed">
-                    {activeReadingModule.practicalExercise}
-                  </p>
-                </div>
-
-                <div>
-                  <h4 className="font-bold text-foreground mb-1.5">Competency Verification Standard</h4>
-                  <p className="text-emerald-900 dark:text-emerald-300 bg-emerald-50 border border-emerald-200 p-3.5 rounded-xl leading-relaxed">
-                    {activeReadingModule.competencyVerification}
-                  </p>
-                </div>
-              </div>
-
-              <DialogFooter className="border-t border-border/60 pt-3 flex sm:justify-between gap-2">
-                <Button variant="outline" size="sm" className="text-xs" onClick={() => setActiveReadingModule(null)}>
-                  Close
-                </Button>
-                <Button size="sm" className="text-xs gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold" onClick={() => handleCompleteAndNext(activeReadingModule)}>
-                  <CheckCircle2 className="h-4 w-4" />
-                  Mark Module Complete
-                </Button>
-              </DialogFooter>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* ACTIVE MODULE COURSERA-STYLE LEARNING RUNNER */}
+      <ModuleLearningRunner
+        module={activeLearningModule}
+        allModules={modulesList}
+        courseId={course.id}
+        courseTitle={course.title}
+        courseCategory={course.category}
+        courseTargetLevel={course.targetLevel}
+        isOpen={!!activeLearningModule}
+        onClose={() => setActiveLearningModule(null)}
+        onCompleteModule={handleCompleteModule}
+        onSelectModule={(mod) => setActiveLearningModule(mod)}
+      />
 
       {/* COMPLETED MODULE REVIEW DIALOG */}
       <CompletedModuleReviewDialog
@@ -390,6 +368,7 @@ export default function CourseLearningPage() {
         reassessmentStatus={matchingReassessment?.status || null}
         isOpen={!!activeReviewModule}
         onClose={() => setActiveReviewModule(null)}
+        onSelectModule={(mod) => setActiveReviewModule(mod)}
       />
     </div>
   );

@@ -174,11 +174,6 @@ export default function EmployeeProfilePage() {
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <Link href={`/my-development?employeeId=${employee.id}`}>
-                <Button size="sm" variant="outline" className="gap-1.5 text-xs font-semibold shadow-xs">
-                  <Compass className="h-3.5 w-3.5 text-indigo-600" />Skill Development Journey
-                </Button>
-              </Link>
               <Link href={`/skill-gaps/${employee.id}`}>
                 <Button size="sm" className="gap-1.5 text-xs font-semibold shadow-xs">
                   <TrendingUp className="h-3.5 w-3.5" />Full Skill Gap Breakdown

@@ -177,6 +177,9 @@ describe("Server-Side RBAC Authorization Matrix", () => {
     expect(hasPermission("ADMIN", "canAccessSettings")).toBe(true);
     expect(hasPermission("ADMIN", "canReviewReassessments")).toBe(true);
     expect(isRouteAllowed("ADMIN", "/settings")).toBe(true);
+    expect(isRouteAllowed("ADMIN", "/my-development")).toBe(false);
+    expect(isRouteAllowed("ADMIN", "/my-learning")).toBe(false);
+    expect(isRouteAllowed("ADMIN", "/courses")).toBe(true);
   });
 
   it("enforces MANAGER permissions correctly", () => {
@@ -189,6 +192,9 @@ describe("Server-Side RBAC Authorization Matrix", () => {
     expect(hasPermission("MANAGER", "canViewAllEmployees")).toBe(true);
     expect(isRouteAllowed("MANAGER", "/settings")).toBe(false);
     expect(isRouteAllowed("MANAGER", "/reassessments")).toBe(true);
+    expect(isRouteAllowed("MANAGER", "/my-development")).toBe(false);
+    expect(isRouteAllowed("MANAGER", "/my-learning")).toBe(false);
+    expect(isRouteAllowed("MANAGER", "/courses")).toBe(true);
   });
 
   it("enforces EMPLOYEE permissions strictly", () => {
@@ -202,6 +208,9 @@ describe("Server-Side RBAC Authorization Matrix", () => {
     expect(isRouteAllowed("EMPLOYEE", "/settings")).toBe(false);
     expect(isRouteAllowed("EMPLOYEE", "/reassessments")).toBe(false);
     expect(isRouteAllowed("EMPLOYEE", "/employees")).toBe(false);
+    expect(isRouteAllowed("EMPLOYEE", "/my-development")).toBe(true);
+    expect(isRouteAllowed("EMPLOYEE", "/my-learning")).toBe(true);
+    expect(isRouteAllowed("EMPLOYEE", "/courses")).toBe(true);
   });
 
   it("rejects unauthenticated API requests with 401 when no session is present", async () => {

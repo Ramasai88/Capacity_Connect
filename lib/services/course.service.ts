@@ -5,6 +5,7 @@ import {
   CourseQueryInput,
 } from "@/lib/validations/course";
 import { CourseStatus } from "@prisma/client";
+import { getCourseCurriculum, type LearningResource } from "@/lib/demo/learning-curriculum";
 
 export class CourseServiceError extends Error {
   statusCode: number;
@@ -34,8 +35,16 @@ export interface CourseModuleDetail {
   learningObjectives: string[];
   overview: string;
   keyConcepts: any;
+  resources?: LearningResource[];
   practicalExercise: string;
   competencyVerification: string;
+  content?: {
+    overview: string;
+    keyConcepts: any;
+    resources?: LearningResource[];
+    practicalExercise: string;
+    competencyVerification: string;
+  };
 }
 
 export interface CourseListItem {
@@ -221,18 +230,46 @@ export class CourseService {
       rating: course.rating,
       status: course.status,
       enrollmentsCount: course._count.enrollments,
-      modules: course.modules.map((m) => ({
-        id: m.id,
-        order: m.order,
-        title: m.title,
-        summary: m.summary,
-        durationMinutes: m.durationMinutes,
-        learningObjectives: m.learningObjectives,
-        overview: m.overview,
-        keyConcepts: m.keyConcepts,
-        practicalExercise: m.practicalExercise,
-        competencyVerification: m.competencyVerification,
-      })),
+      modules: (() => {
+        const curriculum = getCourseCurriculum(course.id);
+        const curriculumMap = new Map(
+          curriculum?.modules?.map((cm) => [cm.id, cm]) || []
+        );
+        const curriculumOrderMap = new Map(
+          curriculum?.modules?.map((cm) => [cm.order, cm]) || []
+        );
+
+        return course.modules.map((m) => {
+          const currMod = curriculumMap.get(m.id) || curriculumOrderMap.get(m.order);
+          const resources = (currMod?.resources && currMod.resources.length > 0)
+            ? currMod.resources
+            : [];
+          const keyConcepts = (Array.isArray(m.keyConcepts) && m.keyConcepts.length > 0)
+            ? m.keyConcepts
+            : (currMod?.content?.keyConcepts || currMod?.keyConcepts || m.keyConcepts);
+
+          return {
+            id: m.id,
+            order: m.order,
+            title: m.title,
+            summary: m.summary,
+            durationMinutes: m.durationMinutes,
+            learningObjectives: m.learningObjectives,
+            overview: m.overview,
+            keyConcepts,
+            resources,
+            practicalExercise: m.practicalExercise,
+            competencyVerification: m.competencyVerification,
+            content: {
+              overview: m.overview,
+              keyConcepts,
+              resources,
+              practicalExercise: m.practicalExercise,
+              competencyVerification: m.competencyVerification,
+            },
+          };
+        });
+      })(),
       createdAt: course.createdAt.toISOString(),
       updatedAt: course.updatedAt.toISOString(),
     };
@@ -404,28 +441,74 @@ export class CourseService {
       });
 
       if (data.modules !== undefined) {
-        await tx.courseModule.deleteMany({
+        // Fetch existing modules for this course
+        const existingModules = await tx.courseModule.findMany({
           where: { courseId },
+          include: {
+            _count: {
+              select: { progress: true },
+            },
+          },
         });
 
-        if (data.modules.length > 0) {
-          for (let i = 0; i < data.modules.length; i++) {
-            const mod = data.modules[i];
-            if (!mod) continue;
-            await tx.courseModule.create({
+        const existingModuleMap = new Map(existingModules.map((m) => [m.id, m]));
+        const keptModuleIds = new Set<string>();
+
+        // Pass 1: Temporarily shift orders of existing modules to avoid unique constraint collisions
+        for (let i = 0; i < existingModules.length; i++) {
+          const existingMod = existingModules[i];
+          if (!existingMod) continue;
+          await tx.courseModule.update({
+            where: { id: existingMod.id },
+            data: { order: 10000 + i },
+          });
+        }
+
+        // Pass 2: Upsert / update modules in-place to preserve IDs and learning history
+        for (let i = 0; i < data.modules.length; i++) {
+          const mod = data.modules[i];
+          if (!mod) continue;
+
+          const targetOrder = mod.order ?? i + 1;
+          const moduleData = {
+            order: targetOrder,
+            title: mod.title.trim(),
+            summary: mod.summary.trim(),
+            durationMinutes: mod.durationMinutes,
+            learningObjectives: mod.learningObjectives || [],
+            overview: mod.overview.trim(),
+            keyConcepts: (mod.keyConcepts as any) || [],
+            practicalExercise: mod.practicalExercise.trim(),
+            competencyVerification: mod.competencyVerification.trim(),
+          };
+
+          if (mod.id && existingModuleMap.has(mod.id)) {
+            // Update existing module in-place, preserving its ID and dependent records
+            await tx.courseModule.update({
+              where: { id: mod.id },
+              data: moduleData,
+            });
+            keptModuleIds.add(mod.id);
+          } else {
+            // Create new module
+            const created = await tx.courseModule.create({
               data: {
+                ...moduleData,
                 courseId,
-                order: mod.order ?? i + 1,
-                title: mod.title.trim(),
-                summary: mod.summary.trim(),
-                durationMinutes: mod.durationMinutes,
-                learningObjectives: mod.learningObjectives || [],
-                overview: mod.overview.trim(),
-                keyConcepts: (mod.keyConcepts as any) || [],
-                practicalExercise: mod.practicalExercise.trim(),
-                competencyVerification: mod.competencyVerification.trim(),
               },
             });
+            keptModuleIds.add(created.id);
+          }
+        }
+
+        // Pass 3: Safely delete only removed modules that have NO learning history
+        for (const oldMod of existingModules) {
+          if (!keptModuleIds.has(oldMod.id)) {
+            if (oldMod._count.progress === 0) {
+              await tx.courseModule.delete({
+                where: { id: oldMod.id },
+              });
+            }
           }
         }
       }

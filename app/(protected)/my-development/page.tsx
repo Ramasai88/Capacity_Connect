@@ -24,6 +24,7 @@ import {
 import { apiClient } from "@/lib/api/client";
 import { GapStatusBadge } from "@/components/skill-gaps/gap-status-badge";
 import { LevelIndicator } from "@/components/skill-gaps/level-indicator";
+import { AccessDenied } from "@/components/auth/access-denied";
 import {
   User,
   Sparkles,
@@ -52,19 +53,24 @@ import {
 export default function MyDevelopmentPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
   const userRole = (session?.user as any)?.role || "EMPLOYEE";
-  const requestedEmployeeId = searchParams.get("employeeId") || undefined;
 
   const [data, setData] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
+    if (sessionStatus === "loading") return;
+    if (userRole !== "EMPLOYEE") {
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
       setError(null);
-      const res = await apiClient.myDevelopment.get(requestedEmployeeId);
+      const res = await apiClient.myDevelopment.get();
       setData(res.data);
     } catch (err: any) {
       console.error("Failed to load development profile:", err);
@@ -72,18 +78,28 @@ export default function MyDevelopmentPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [requestedEmployeeId]);
+  }, [sessionStatus, userRole]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  if (isLoading) {
+  if (sessionStatus === "loading" || isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-xs text-muted-foreground gap-3">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
         <span>Loading employee skill development profile...</span>
       </div>
+    );
+  }
+
+  if (session && userRole !== "EMPLOYEE") {
+    return (
+      <AccessDenied
+        requiredRole="EMPLOYEE"
+        currentRole={userRole}
+        resourceName="the Employee Self-Service Skill Development page"
+      />
     );
   }
 
@@ -124,7 +140,6 @@ export default function MyDevelopmentPage() {
   } = data;
 
   const gaps = skillGapSummary?.gaps || [];
-  const isViewingOther = userRole !== "EMPLOYEE" && requestedEmployeeId && requestedEmployeeId !== (session?.user as any)?.employeeId;
 
   // Journey milestones definition
   const journeyMilestones = [
@@ -140,23 +155,6 @@ export default function MyDevelopmentPage() {
 
   return (
     <div className="space-y-6 animate-fade-in max-w-7xl mx-auto pb-12">
-      {/* Top Banner / Breadcrumb info for Admin/Manager */}
-      {isViewingOther && (
-        <div className="p-3 rounded-lg bg-indigo-50/70 border border-indigo-200/70 text-xs flex items-center justify-between text-indigo-900">
-          <div className="flex items-center gap-2 font-medium">
-            <ShieldCheck className="h-4 w-4 text-indigo-600 shrink-0" />
-            <span>
-              Authorized {userRole} View: Displaying development roadmap for <strong>{employee.name}</strong> ({employee.employeeCode})
-            </span>
-          </div>
-          <Link href={`/employees/${employee.id}`}>
-            <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-indigo-700 hover:text-indigo-900">
-              Employee Settings <ArrowRight className="h-3 w-3" />
-            </Button>
-          </Link>
-        </div>
-      )}
-
       {/* Hero Header & Profile Banner */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white p-6 sm:p-8 shadow-md">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -170,7 +168,7 @@ export default function MyDevelopmentPage() {
               </Badge>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-              {isViewingOther ? `${employee.name}'s Skill Development` : "My Skill Development"}
+              My Skill Development
             </h1>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-300">
               <span className="flex items-center gap-1.5 font-medium">

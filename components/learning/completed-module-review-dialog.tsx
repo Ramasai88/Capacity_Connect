@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React from "react";
 import {
@@ -26,6 +26,8 @@ import {
   Lock,
   ArrowRight,
   ListChecks,
+  ExternalLink,
+  BookMarked,
 } from "lucide-react";
 
 interface CompletedModuleReviewDialogProps {
@@ -61,7 +63,7 @@ export function CompletedModuleReviewDialog({
 }: CompletedModuleReviewDialogProps) {
   if (!module) return null;
 
-  const sortedModules = [...curriculum.modules].sort((a, b) => a.order - b.order);
+  const sortedModules = [...(curriculum?.modules || [])].sort((a, b) => a.order - b.order);
   const currentIndex = sortedModules.findIndex((m) => m.id === module.id);
   const prevModule = currentIndex > 0 ? sortedModules[currentIndex - 1] : null;
   const nextModule = currentIndex < sortedModules.length - 1 ? sortedModules[currentIndex + 1] : null;
@@ -69,8 +71,25 @@ export function CompletedModuleReviewDialog({
   const isPrevCompleted = prevModule ? completedModuleIds.includes(prevModule.id) : false;
   const isNextCompleted = nextModule ? completedModuleIds.includes(nextModule.id) : false;
 
-  const durationHours = Math.max(1, Math.round(module.durationMinutes / 60));
+  const durationHours = Math.max(1, Math.round((module.durationMinutes || 60) / 60));
   const remainingModulesCount = Math.max(0, totalCount - completedCount);
+
+  const learningObjectives = Array.isArray(module.learningObjectives)
+    ? module.learningObjectives
+    : [];
+
+  const overview = module.content?.overview || module.overview || null;
+
+  const rawConcepts = module.content?.keyConcepts ?? module.keyConcepts;
+  const keyConcepts = Array.isArray(rawConcepts) ? rawConcepts : [];
+
+  const practicalExercise = module.content?.practicalExercise || module.practicalExercise || null;
+
+  const competencyVerification =
+    module.content?.competencyVerification || module.competencyVerification || null;
+
+  const rawResources = module.resources ?? module.content?.resources;
+  const resources = Array.isArray(rawResources) ? rawResources : [];
 
   // Find first uncompleted module to show as "Current Module" in evidence
   const firstUncompleted = sortedModules.find((m) => !completedModuleIds.includes(m.id));
@@ -155,7 +174,7 @@ export function CompletedModuleReviewDialog({
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-xs">
               <div className="rounded-lg bg-background/80 border border-emerald-200 dark:border-emerald-900/40 p-2.5 text-center">
                 <div className="font-bold text-foreground text-sm">
-                  {module.learningObjectives.length} / {module.learningObjectives.length}
+                  {learningObjectives.length} / {learningObjectives.length}
                 </div>
                 <div className="text-[11px] text-muted-foreground mt-0.5">Objectives Met</div>
               </div>
@@ -186,26 +205,34 @@ export function CompletedModuleReviewDialog({
               </h3>
             </div>
 
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-              {module.learningObjectives.map((objective, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-start gap-2.5 rounded-lg border bg-card p-3 shadow-xs"
-                >
-                  <div className="mt-0.5 shrink-0 rounded-full bg-emerald-100 p-0.5 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
-                    <CheckCircle2 className="h-4 w-4" />
+            {learningObjectives.length > 0 ? (
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                {learningObjectives.map((objective, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-start gap-2.5 rounded-lg border bg-card p-3 shadow-xs"
+                  >
+                    <div className="mt-0.5 shrink-0 rounded-full bg-emerald-100 p-0.5 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                      <CheckCircle2 className="h-4 w-4" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="font-medium text-foreground text-xs leading-snug">
+                        {objective}
+                      </p>
+                      <Badge variant="outline" className="text-[10px] text-emerald-700 border-emerald-300 dark:text-emerald-300 py-0 px-1.5 font-normal">
+                        ✓ Completed
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <p className="font-medium text-foreground text-xs leading-snug">
-                      {objective}
-                    </p>
-                    <Badge variant="outline" className="text-[10px] text-emerald-700 border-emerald-300 dark:text-emerald-300 py-0 px-1.5 font-normal">
-                      ✓ Completed
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-lg border bg-muted/20 p-3 text-center">
+                <p className="text-muted-foreground text-xs italic">
+                  No specific learning objectives listed for this module.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* 3. Topics & Concepts Covered */}
@@ -223,40 +250,95 @@ export function CompletedModuleReviewDialog({
                 <BookOpen className="h-3.5 w-3.5 text-primary" />
                 Architecture &amp; Theoretical Overview
               </span>
-              <p className="text-muted-foreground leading-relaxed">
-                {module.content.overview}
-              </p>
+              {overview ? (
+                <p className="text-muted-foreground leading-relaxed">
+                  {overview}
+                </p>
+              ) : (
+                <p className="text-muted-foreground text-xs italic">
+                  No overview available for this module.
+                </p>
+              )}
             </div>
 
             {/* Key Concepts with Code Snippets */}
-            <div className="space-y-3">
-              {module.content.keyConcepts.map((concept, idx) => (
-                <div key={idx} className="rounded-lg border bg-card p-4 space-y-2 shadow-xs">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-semibold text-sm text-foreground flex items-center gap-1.5">
-                      <Code className="h-3.5 w-3.5 text-primary" />
-                      {concept.title}
-                    </h4>
-                    <Badge variant="secondary" className="text-[10px] font-normal">
-                      Reviewed
-                    </Badge>
-                  </div>
-
-                  <p className="text-muted-foreground text-xs leading-relaxed">
-                    {concept.description}
-                  </p>
-
-                  {concept.codeSnippet && (
-                    <div className="pt-1">
-                      <pre className="rounded-lg bg-slate-950 p-3 text-[11px] font-mono text-emerald-400 overflow-x-auto border border-slate-800">
-                        <code>{concept.codeSnippet}</code>
-                      </pre>
+            {keyConcepts.length > 0 ? (
+              <div className="space-y-3">
+                {keyConcepts.map((concept, idx) => (
+                  <div key={idx} className="rounded-lg border bg-card p-4 space-y-2 shadow-xs">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-semibold text-sm text-foreground flex items-center gap-1.5">
+                        <Code className="h-3.5 w-3.5 text-primary" />
+                        {concept.title}
+                      </h4>
+                      <Badge variant="secondary" className="text-[10px] font-normal">
+                        Reviewed
+                      </Badge>
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
+
+                    {concept.description && (
+                      <p className="text-muted-foreground text-xs leading-relaxed">
+                        {concept.description}
+                      </p>
+                    )}
+
+                    {concept.codeSnippet && (
+                      <div className="pt-1">
+                        <pre className="rounded-lg bg-slate-950 p-3 text-[11px] font-mono text-emerald-400 overflow-x-auto border border-slate-800">
+                          <code>{concept.codeSnippet}</code>
+                        </pre>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-lg border bg-card p-3 shadow-xs">
+                <p className="text-muted-foreground text-xs italic">
+                  No key concepts listed for this module.
+                </p>
+              </div>
+            )}
           </div>
+
+          {/* Learning Resources & References */}
+          {resources.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 border-b pb-2">
+                <BookMarked className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">
+                  Authoritative Learning Resources
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                {resources.map((res: any, idx: number) => (
+                  <a
+                    key={idx}
+                    href={res.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-start justify-between p-3 rounded-lg border bg-card hover:border-indigo-400 hover:shadow-xs transition-all gap-2"
+                  >
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-semibold text-xs text-foreground truncate">
+                          {res.title}
+                        </span>
+                        <Badge variant="outline" className="text-[9px] uppercase px-1 py-0 font-mono">
+                          {res.type}
+                        </Badge>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground line-clamp-2">
+                        {res.description}
+                      </p>
+                    </div>
+                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-1" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* 4. Practical Implementation Exercise */}
           <div className="space-y-3">
@@ -279,13 +361,19 @@ export function CompletedModuleReviewDialog({
                 </Badge>
               </div>
 
-              <p className="text-muted-foreground text-xs leading-relaxed">
-                {module.content.practicalExercise}
-              </p>
+              {practicalExercise ? (
+                <p className="text-muted-foreground text-xs leading-relaxed">
+                  {practicalExercise}
+                </p>
+              ) : (
+                <p className="text-muted-foreground text-xs italic">
+                  No practical exercise specified for this module.
+                </p>
+              )}
 
               <div className="rounded-md bg-background/80 border p-2.5 text-[11px] text-foreground font-medium flex items-center gap-2">
                 <span className="text-primary font-bold">🎯 Verification Standard:</span>
-                <span>{module.content.competencyVerification}</span>
+                <span>{competencyVerification || "Standard target level competency verification"}</span>
               </div>
             </div>
           </div>

@@ -7,13 +7,13 @@ import { TOPIC_CONCEPTS } from "@/lib/assessment/exam-bank";
 
 /**
  * GET /api/my-development
- * Secure, role-aware, comprehensive individual employee skill development profile.
+ * Secure employee self-service development profile.
  * - EMPLOYEE: Resolves strictly to authenticated session employeeId.
- * - ADMIN / MANAGER: Can query self or an authorized employee in their organization via ?employeeId=...
+ * - Non-EMPLOYEE: Access denied with 403 Forbidden.
  */
 export async function GET(request: NextRequest) {
   try {
-    const auth = await authenticateApi(["ADMIN", "MANAGER", "EMPLOYEE"]);
+    const auth = await authenticateApi(["EMPLOYEE"]);
     if (!auth.authorized) {
       return auth.response!;
     }
@@ -21,30 +21,43 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const requestedEmpId = searchParams.get("employeeId");
 
-    let targetEmployeeId: string | null = null;
+    let ownEmployeeId = auth.user?.employeeId;
+    if (!ownEmployeeId) {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: auth.user!.id },
+        select: { employeeId: true, email: true },
+      });
+      ownEmployeeId = dbUser?.employeeId ?? null;
 
-    if (auth.user?.role === "EMPLOYEE") {
-      let ownEmployeeId = auth.user.employeeId;
-      if (!ownEmployeeId) {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: auth.user.id },
-          select: { employeeId: true },
+      // Self-healing: Match employee profile by email within the authenticated organization
+      if (!ownEmployeeId && (auth.user?.email || dbUser?.email) && auth.organizationId) {
+        const userEmail = (auth.user?.email || dbUser?.email)!.toLowerCase().trim();
+        const matchedEmployee = await prisma.employee.findFirst({
+          where: {
+            organizationId: auth.organizationId,
+            email: { equals: userEmail, mode: "insensitive" },
+          },
+          select: { id: true },
         });
-        ownEmployeeId = dbUser?.employeeId ?? null;
-      }
 
-      if (requestedEmpId && requestedEmpId !== ownEmployeeId) {
-        return NextResponse.json(
-          { error: { code: "FORBIDDEN", message: "You can only view your own development profile." } },
-          { status: 403 }
-        );
+        if (matchedEmployee) {
+          ownEmployeeId = matchedEmployee.id;
+          await prisma.user.update({
+            where: { id: auth.user!.id },
+            data: { employeeId: ownEmployeeId },
+          }).catch((err) => console.warn("Failed to persist resolved employeeId on user:", err));
+        }
       }
-
-      targetEmployeeId = ownEmployeeId;
-    } else {
-      // ADMIN or MANAGER: Use requested employeeId or personal employeeId if linked
-      targetEmployeeId = requestedEmpId || auth.user?.employeeId || null;
     }
+
+    if (requestedEmpId && requestedEmpId !== ownEmployeeId) {
+      return NextResponse.json(
+        { error: { code: "FORBIDDEN", message: "You can only view your own development profile." } },
+        { status: 403 }
+      );
+    }
+
+    const targetEmployeeId = ownEmployeeId;
 
     if (!targetEmployeeId) {
       return NextResponse.json(
@@ -53,7 +66,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 1. Fetch Employee Profile
+    // 1. Fetch Employee Profile (Strictly Organization-Scoped)
     const employee = await prisma.employee.findFirst({
       where: {
         id: targetEmployeeId,
@@ -122,20 +135,33 @@ export async function GET(request: NextRequest) {
     }
 
     // 5. AI Recommendations
-    const rawRecommendations = await RecommendationService.getEmployeeRecommendations(
+    let rawRecommendations = await RecommendationService.getEmployeeRecommendations(
       auth.organizationId!,
       targetEmployeeId
     );
 
-    const recommendations = rawRecommendations.map((r) => ({
+    // If no recommendations generated yet, automatically generate them from skill gaps
+    if (rawRecommendations.length === 0) {
+      try {
+        rawRecommendations = await RecommendationService.generateRecommendationsForEmployee(
+          auth.organizationId!,
+          targetEmployeeId
+        );
+      } catch (recErr) {
+        console.warn("Auto-generation of recommendations deferred:", recErr);
+        rawRecommendations = [];
+      }
+    }
+
+    const recommendations = (rawRecommendations || []).map((r) => ({
       id: r.id,
       competencyId: r.competencyId,
-      competencyName: r.competency.name,
-      competencyCategory: r.competency.category,
+      competencyName: r.competency?.name || "Competency",
+      competencyCategory: r.competency?.category || "General",
       priority: r.priority,
       confidenceScore: r.confidenceScore,
       scorePercentage: r.scorePercentage,
-      weakTopics: r.weakTopics,
+      weakTopics: r.weakTopics || [],
       reason: r.reason,
       courseId: r.courseId,
       course: r.course
@@ -167,22 +193,22 @@ export async function GET(request: NextRequest) {
       orderBy: { enrolledAt: "desc" },
     });
 
-    const formattedEnrollments = enrollments.map((enr) => {
-      const totalModules = enr.course.modules.length;
-      const completedModules = enr.moduleProgress.filter((mp) => mp.completed).length;
+    const formattedEnrollments = (enrollments || []).map((enr) => {
+      const totalModules = enr.course?.modules?.length || 0;
+      const completedModules = (enr.moduleProgress || []).filter((mp) => mp.completed).length;
       return {
         id: enr.id,
         courseId: enr.courseId,
-        courseTitle: enr.course.title,
-        courseCode: enr.course.code,
-        category: enr.course.category,
-        targetLevel: enr.course.targetLevel,
+        courseTitle: enr.course?.title || "Untitled Course",
+        courseCode: enr.course?.code || "",
+        category: enr.course?.category || "General",
+        targetLevel: enr.course?.targetLevel || 1,
         status: enr.status,
         progressPercent: enr.progressPercent,
         totalModules,
         completedModules,
-        enrolledAt: enr.enrolledAt.toISOString(),
-        completedAt: enr.completedAt?.toISOString() || null,
+        enrolledAt: enr.enrolledAt instanceof Date ? enr.enrolledAt.toISOString() : (enr.enrolledAt ? String(enr.enrolledAt) : new Date().toISOString()),
+        completedAt: enr.completedAt instanceof Date ? enr.completedAt.toISOString() : (enr.completedAt ? String(enr.completedAt) : null),
       };
     });
 
@@ -199,15 +225,15 @@ export async function GET(request: NextRequest) {
       orderBy: { submittedAt: "desc" },
     });
 
-    const formattedReassessments = reassessments.map((r) => ({
+    const formattedReassessments = (reassessments || []).map((r) => ({
       id: r.id,
-      courseTitle: r.course.title,
-      competencyName: r.competency.name,
+      courseTitle: r.course?.title || "Course",
+      competencyName: r.competency?.name || "Competency",
       previousLevel: r.previousLevel,
       requestedLevel: r.requestedLevel,
       status: r.status,
-      submittedAt: r.submittedAt.toISOString(),
-      reviewedAt: r.reviewedAt?.toISOString() || null,
+      submittedAt: r.submittedAt instanceof Date ? r.submittedAt.toISOString() : (r.submittedAt ? String(r.submittedAt) : new Date().toISOString()),
+      reviewedAt: r.reviewedAt instanceof Date ? r.reviewedAt.toISOString() : (r.reviewedAt ? String(r.reviewedAt) : null),
       reviewerComments: r.reviewerComments,
     }));
 
@@ -219,7 +245,7 @@ export async function GET(request: NextRequest) {
       take: 10,
     });
 
-    // 9. Current Journey Stage
+    // 9. Current Journey Stage Calculation
     let currentStage = 1; // 1: Profile Created
     if (employee.designationId && (employee.designation?.requirements.length || 0) > 0) currentStage = 2; // Role Requirements Mapped
     if (assessments.length > 0) currentStage = 3; // Diagnostic Assessed
@@ -241,7 +267,7 @@ export async function GET(request: NextRequest) {
           department: employee.department || "General",
           designationTitle: employee.designation?.title || "Unassigned",
           status: employee.status,
-          joiningDate: employee.joiningDate?.toISOString() || null,
+          joiningDate: employee.joiningDate instanceof Date ? employee.joiningDate.toISOString() : (employee.joiningDate ? String(employee.joiningDate) : null),
         },
         skillGapSummary,
         latestAssessment,

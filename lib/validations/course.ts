@@ -14,6 +14,8 @@ export const courseModuleInputSchema = z.object({
         title: z.string().trim().min(1),
         description: z.string().trim().min(1),
         codeSnippet: z.string().optional(),
+        topic: z.string().optional(),
+        concepts: z.array(z.string()).optional(),
       })
     )
     .optional()

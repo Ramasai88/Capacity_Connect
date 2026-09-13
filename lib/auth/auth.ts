@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db/prisma";
 import { loginSchema } from "@/lib/validations/auth";
 import { isDemoMode } from "@/lib/demo/config";
 import { DEMO_USERS } from "@/lib/demo/data";
+import { AuditService } from "@/lib/services/audit.service";
 
 export interface AuthenticatedUserPayload {
   id: string;
@@ -96,13 +97,57 @@ export async function verifyUserCredentials(
     });
 
     if (!user) {
+      // Record failed authentication attempt without exposing sensitive details
+      const primaryOrg = await prisma.organization.findFirst({ select: { id: true } });
+      if (primaryOrg) {
+        await AuditService.log({
+          organizationId: primaryOrg.id,
+          actorName: normalizedEmail,
+          action: "AUTH_LOGIN_FAILURE",
+          category: "AUTHENTICATION",
+          status: "FAILURE",
+          description: `Failed login attempt for email: ${normalizedEmail} (Account not found).`,
+          metadata: { attemptedEmail: normalizedEmail },
+        });
+      }
       return null;
     }
 
     const passwordValid = await bcrypt.compare(password, user.passwordHash);
     if (!passwordValid) {
+      await AuditService.log({
+        organizationId: user.organizationId,
+        actorId: user.id,
+        actorName: user.name,
+        actorRole: user.role,
+        action: "AUTH_LOGIN_FAILURE",
+        category: "AUTHENTICATION",
+        status: "FAILURE",
+        description: `Failed login attempt for user: ${user.name} (${user.email}) - Invalid password.`,
+        metadata: { attemptedEmail: normalizedEmail },
+      });
       return null;
     }
+
+    // Update last login timestamp upon successful authentication
+    const now = new Date();
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: now },
+    });
+
+    // Record successful authentication audit event
+    await AuditService.log({
+      organizationId: user.organizationId,
+      actorId: user.id,
+      actorName: user.name,
+      actorRole: user.role,
+      action: "AUTH_LOGIN_SUCCESS",
+      category: "AUTHENTICATION",
+      status: "SUCCESS",
+      description: `User ${user.name} (${user.role}) successfully authenticated.`,
+      metadata: { role: user.role, email: user.email },
+    });
 
     let employeeId = user.employeeId ?? null;
 

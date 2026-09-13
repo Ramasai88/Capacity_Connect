@@ -824,6 +824,17 @@ export function updateCourseInStore(
     targetLevel?: number;
     durationHours?: number;
     status?: "PUBLISHED" | "DRAFT";
+    modules?: {
+      id?: string;
+      title: string;
+      summary?: string;
+      durationMinutes?: number;
+      learningObjectives?: string[];
+      overview?: string;
+      keyConcepts?: any;
+      practicalExercise?: string;
+      competencyVerification?: string;
+    }[];
   }
 ): { success: boolean; error?: string; course?: DemoCourse } {
   const courses = getStoredCourses();
@@ -843,7 +854,42 @@ export function updateCourseInStore(
     targetLevel: updates.targetLevel ?? existing.targetLevel,
     durationHours: updates.durationHours ?? existing.durationHours,
     status: updates.status ?? existing.status,
+    modulesCount: updates.modules ? updates.modules.length : existing.modulesCount,
   };
+
+  if (updates.modules && updates.modules.length > 0) {
+    const existingCurriculum = getCourseCurriculum(courseId);
+    const existingModules = existingCurriculum.modules || [];
+    const existingMap = new Map(existingModules.map((m) => [m.id, m]));
+
+    const courseModules: CourseModule[] = updates.modules.map((m, idx) => {
+      const existingMod = m.id ? existingMap.get(m.id) : undefined;
+      const modId = m.id && existingMap.has(m.id) ? m.id : existingMod ? existingMod.id : `${courseId}-mod-${idx + 1}`;
+
+      return {
+        id: modId,
+        order: idx + 1,
+        title: m.title.trim(),
+        summary: m.summary || m.title,
+        durationMinutes: m.durationMinutes || 60,
+        learningObjectives: m.learningObjectives || (existingMod?.learningObjectives ?? [`Master ${m.title}`]),
+        content: {
+          overview: m.overview || existingMod?.content?.overview || m.summary || m.title,
+          keyConcepts: m.keyConcepts || existingMod?.content?.keyConcepts || [],
+          practicalExercise: m.practicalExercise || existingMod?.content?.practicalExercise || "Complete practical exercise",
+          competencyVerification: m.competencyVerification || existingMod?.content?.competencyVerification || "Verify competency standard",
+        },
+      };
+    });
+
+    registerCourseCurriculum(courseId, {
+      courseId,
+      courseTitle: updated.title,
+      targetCompetency: updated.competencyName,
+      targetLevel: updated.targetLevel,
+      modules: courseModules,
+    });
+  }
 
   courses[index] = updated;
 

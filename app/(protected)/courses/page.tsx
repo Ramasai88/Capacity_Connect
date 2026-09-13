@@ -105,11 +105,13 @@ export default function CoursesPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Link href="/my-learning">
-            <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 shadow-2xs font-semibold">
-              <BookOpen className="h-3.5 w-3.5 text-indigo-600" />My Learning ({enrollments.length})
-            </Button>
-          </Link>
+          {role === "EMPLOYEE" && (
+            <Link href="/my-learning">
+              <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 shadow-2xs font-semibold">
+                <BookOpen className="h-3.5 w-3.5 text-indigo-600" />My Learning ({enrollments.length})
+              </Button>
+            </Link>
+          )}
           <Button variant="outline" size="sm" onClick={() => exportCoursesCSV(courses)} className="h-8 text-xs gap-1.5 shadow-2xs">
             <Download className="h-3.5 w-3.5" />Export CSV
           </Button>
@@ -188,7 +190,7 @@ export default function CoursesPage() {
                       </div>
                     </div>
                   ) : (
-                    <Button size="sm" className="w-full gap-1.5 text-xs font-semibold h-8.5" onClick={() => handleEnroll(course)}>
+                    <Button className="w-full h-10 gap-2 text-xs font-semibold shadow-xs" onClick={() => handleEnroll(course)}>
                       Enroll Now <ArrowRight className="h-3.5 w-3.5" />
                     </Button>
                   )}

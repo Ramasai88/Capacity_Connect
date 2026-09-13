@@ -72,6 +72,16 @@ export function hasPermission(role: UserRole | undefined | null, permission: key
 export function isRouteAllowed(role: UserRole | undefined | null, pathname: string): boolean {
   if (!role) return false;
 
+  // My Skill Development: Employee only (self-service profile)
+  if (pathname.startsWith("/my-development")) {
+    return role === "EMPLOYEE";
+  }
+
+  // My Learning: Employee only (personal learning workspace)
+  if (pathname.startsWith("/my-learning")) {
+    return role === "EMPLOYEE";
+  }
+
   // Settings: Admin only
   if (pathname.startsWith("/settings")) {
     return role === "ADMIN";

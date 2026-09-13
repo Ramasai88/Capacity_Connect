@@ -36,7 +36,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "My Skill Development", href: "/my-development", icon: Compass },
+  { label: "My Skill Development", href: "/my-development", icon: Compass, roles: ["EMPLOYEE"] },
   { label: "Employees", href: "/employees", icon: Users, roles: ["ADMIN", "MANAGER"] },
   { label: "Competencies", href: "/competencies", icon: BadgeCheck, roles: ["ADMIN", "MANAGER"] },
   { label: "Designations", href: "/designations", icon: Briefcase, roles: ["ADMIN", "MANAGER"] },
@@ -44,7 +44,7 @@ const navItems: NavItem[] = [
   { label: "AI Recommendations", href: "/recommendations", icon: Sparkles },
   { label: "AI Assistant", href: "/assistant", icon: Bot },
   { label: "Courses", href: "/courses", icon: GraduationCap },
-  { label: "My Learning", href: "/my-learning", icon: BookOpen },
+  { label: "My Learning", href: "/my-learning", icon: BookOpen, roles: ["EMPLOYEE"] },
   {
     label: "Reassessments",
     href: "/reassessments",

@@ -315,6 +315,10 @@ describe("AI Learning Assistant — Isolated, Read-Only & Secure", () => {
     });
     const comp = desigComp?.competency || (await prisma.competency.findFirst({ where: { organizationId: ORG_A } }));
 
+    await prisma.employee.deleteMany({
+      where: { organizationId: ORG_A, name: "Ananya Patel" },
+    });
+
     const ananya = await prisma.employee.create({
       data: {
         organizationId: ORG_A,
@@ -361,8 +365,9 @@ describe("AI Learning Assistant — Isolated, Read-Only & Secure", () => {
     expect(res.reply).toContain("Ananya Patel");
     expect(res.reply).toContain("Skill Gap & Performance Analysis");
     expect(res.reply).toContain("Competency Gaps");
-    expect(res.reply).toContain("Communication");
-    expect(res.reply).toContain("SQL");
+    expect(res.reply).toContain("Diagnostic Assessment Performance");
+    expect(res.reply).toContain("Python Diagnostic Exam");
+    expect(res.reply).toContain("55%");
   });
 
   it("EMPLOYEE querying another employee is rejected with authorization notice", async () => {

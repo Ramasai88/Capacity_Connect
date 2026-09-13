@@ -64,6 +64,7 @@ model Organization {
   reassessments        Reassessment[]
   skillAssessments     SkillAssessment[]
   skillRecommendations SkillRecommendation[]
+  auditLogs            AuditLog[]
 
   @@map("organizations")
 }
@@ -73,15 +74,16 @@ model Organization {
 // ---------------------------------------------------------------------------
 
 model User {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   name           String
   email          String
   passwordHash   String
-  role           UserRole @default(EMPLOYEE)
+  role           UserRole  @default(EMPLOYEE)
   organizationId String
-  employeeId     String?  @unique
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  employeeId     String?   @unique
+  lastLoginAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   employee     Employee?    @relation(fields: [employeeId], references: [id], onDelete: SetNull)
@@ -438,4 +440,34 @@ model SkillRecommendation {
   @@index([competencyId])
   @@index([courseId])
   @@map("skill_recommendations")
+}
+
+// ---------------------------------------------------------------------------
+// Security, Administrative Operations & Activity Audit Logs
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id             String    @id @default(cuid())
+  organizationId String
+  actorId        String?
+  actorName      String?
+  actorRole      UserRole?
+  action         String    // e.g. "AUTH_LOGIN_SUCCESS", "USER_CREATED", "MANAGER_VIEW_SKILL_GAP", etc.
+  category       String    // "AUTHENTICATION" | "USER_MANAGEMENT" | "MANAGER_OPERATION" | "LEARNING"
+  targetId       String?   // target employee, course, or user ID
+  targetName     String?   // human-readable target name
+  description    String    // human-readable activity description
+  status         String    @default("SUCCESS") // "SUCCESS" | "FAILURE"
+  ipAddress      String?
+  metadata       Json?     // safe additional context, NEVER passwords or tokens
+  createdAt      DateTime  @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([actorId])
+  @@index([category])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
 }

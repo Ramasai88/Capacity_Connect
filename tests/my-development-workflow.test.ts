@@ -177,4 +177,45 @@ describe("Individual Employee Skill Development Workflow", () => {
     expect(topRec.priority).toBe("HIGH");
     expect(topRec.scorePercentage).toBe(50);
   });
+
+  it("handles employee with no competencies or designation gracefully", async () => {
+    const emptyEmp = await prisma.employee.create({
+      data: {
+        organizationId: testOrgId,
+        employeeCode: `EMP-DEV-EMPTY-${Date.now().toString(36).toUpperCase()}`,
+        name: "Empty Dev Employee",
+        email: `dev.empty.${Date.now()}@example.com`,
+        status: "ACTIVE",
+      },
+    });
+
+    const summary = await SkillGapService.getEmployeeSkillGaps(testOrgId, emptyEmp.id);
+    expect(summary).not.toBeNull();
+    expect(summary!.totalRequired).toBe(0);
+    expect(summary!.gaps).toHaveLength(0);
+    expect(summary!.designationTitle).toBe("Unassigned");
+
+    const recs = await RecommendationService.getEmployeeRecommendations(testOrgId, emptyEmp.id);
+    expect(recs).toEqual([]);
+  });
+
+  it("strictly enforces organization isolation for employee skill gap retrieval", async () => {
+    const otherOrgId = `other-org-${Date.now()}`;
+    await prisma.organization.create({
+      data: {
+        id: otherOrgId,
+        name: "Other Org",
+        code: `OTHER-${Date.now().toString(36).toUpperCase()}`,
+        industry: "Tech",
+      },
+    });
+
+    try {
+      // Querying testEmployeeId with otherOrgId must return null
+      const isolatedSummary = await SkillGapService.getEmployeeSkillGaps(otherOrgId, testEmployeeId);
+      expect(isolatedSummary).toBeNull();
+    } finally {
+      await prisma.organization.delete({ where: { id: otherOrgId } }).catch(() => {});
+    }
+  });
 });

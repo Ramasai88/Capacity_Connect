@@ -213,7 +213,23 @@ async function main() {
   const managerPasswordHash = await bcrypt.hash("Manager@123", 10);
   const employeePasswordHash = await bcrypt.hash("Employee@123", 10);
 
-  // Admin User
+  // Admin Users
+  await prisma.user.upsert({
+    where: { organizationId_email: { organizationId: org.id, email: "admin@capacityconnect.demo" } },
+    update: {
+      name: "Dr. K. Srinivas",
+      passwordHash: adminPasswordHash,
+      role: UserRole.ADMIN,
+    },
+    create: {
+      name: "Dr. K. Srinivas",
+      email: "admin@capacityconnect.demo",
+      passwordHash: adminPasswordHash,
+      role: UserRole.ADMIN,
+      organizationId: org.id,
+    },
+  });
+
   await prisma.user.upsert({
     where: { organizationId_email: { organizationId: org.id, email: "admin@klu.edu" } },
     update: {
@@ -302,19 +318,30 @@ async function main() {
 
     const curriculum = getCourseCurriculum(course.id);
     for (const mod of curriculum.modules) {
+      const overview = mod.content?.overview || mod.overview || mod.summary;
+      const keyConcepts = (mod.content?.keyConcepts || mod.keyConcepts || []) as any;
+      const practicalExercise = mod.content?.practicalExercise || mod.practicalExercise || "Complete module practical exercise";
+      const competencyVerification = mod.content?.competencyVerification || mod.competencyVerification || "Verify target competency level";
+      const learningObjectives = mod.learningObjectives || [];
+
       await prisma.courseModule.upsert({
-        where: { id: mod.id },
+        where: {
+          courseId_order: {
+            courseId: createdCourse.id,
+            order: mod.order,
+          },
+        },
         update: {
           courseId: createdCourse.id,
           order: mod.order,
           title: mod.title,
           summary: mod.summary,
           durationMinutes: mod.durationMinutes,
-          learningObjectives: mod.learningObjectives,
-          overview: mod.content.overview,
-          keyConcepts: mod.content.keyConcepts as any,
-          practicalExercise: mod.content.practicalExercise,
-          competencyVerification: mod.content.competencyVerification,
+          learningObjectives,
+          overview,
+          keyConcepts,
+          practicalExercise,
+          competencyVerification,
         },
         create: {
           id: mod.id,
@@ -323,11 +350,11 @@ async function main() {
           title: mod.title,
           summary: mod.summary,
           durationMinutes: mod.durationMinutes,
-          learningObjectives: mod.learningObjectives,
-          overview: mod.content.overview,
-          keyConcepts: mod.content.keyConcepts as any,
-          practicalExercise: mod.content.practicalExercise,
-          competencyVerification: mod.content.competencyVerification,
+          learningObjectives,
+          overview,
+          keyConcepts,
+          practicalExercise,
+          competencyVerification,
         },
       });
       totalModulesSeeded++;

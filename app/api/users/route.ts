@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db/prisma";
 import { adminCreateUserSchema } from "@/lib/validations/auth";
 import { authenticateApi } from "@/lib/auth/session";
+import { AuditService } from "@/lib/services/audit.service";
 
 /**
  * POST /api/users
@@ -131,11 +132,25 @@ export async function POST(request: Request) {
           role: true,
           organizationId: true,
           employeeId: true,
+          lastLoginAt: true,
           createdAt: true,
         },
       });
 
       return newUser;
+    });
+
+    await AuditService.log({
+      organizationId: organizationId!,
+      actorId: auth.userId,
+      actorName: auth.user.name || auth.user.email,
+      actorRole: auth.user.role,
+      action: "USER_CREATED",
+      category: "USER_MANAGEMENT",
+      targetId: user.id,
+      targetName: `${user.name} (${user.email})`,
+      description: `Administrator ${auth.user.name || auth.user.email} provisioned new ${role} account for ${user.name} (${user.email}).`,
+      metadata: { role, email: user.email },
     });
 
     return NextResponse.json(
@@ -183,6 +198,7 @@ export async function GET() {
         role: true,
         organizationId: true,
         employeeId: true,
+        lastLoginAt: true,
         createdAt: true,
       },
       orderBy: { createdAt: "desc" },

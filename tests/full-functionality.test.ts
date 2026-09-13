@@ -33,6 +33,9 @@ describe("Part 1: Role-Based Access Control Matrix", () => {
     expect(hasPermission("ADMIN", "canAccessSettings")).toBe(true);
     expect(isRouteAllowed("ADMIN", "/settings")).toBe(true);
     expect(isRouteAllowed("ADMIN", "/employees")).toBe(true);
+    expect(isRouteAllowed("ADMIN", "/my-development")).toBe(false);
+    expect(isRouteAllowed("ADMIN", "/my-learning")).toBe(false);
+    expect(isRouteAllowed("ADMIN", "/courses")).toBe(true);
   });
 
   it("verifies MANAGER can review reassessments and view reports, but cannot edit org settings", () => {
@@ -44,6 +47,9 @@ describe("Part 1: Role-Based Access Control Matrix", () => {
     expect(hasPermission("MANAGER", "canAccessSettings")).toBe(false);
     expect(isRouteAllowed("MANAGER", "/reassessments")).toBe(true);
     expect(isRouteAllowed("MANAGER", "/settings")).toBe(false);
+    expect(isRouteAllowed("MANAGER", "/my-development")).toBe(false);
+    expect(isRouteAllowed("MANAGER", "/my-learning")).toBe(false);
+    expect(isRouteAllowed("MANAGER", "/courses")).toBe(true);
   });
 
   it("verifies EMPLOYEE is restricted to self learning and cannot perform administrative actions", () => {
@@ -54,6 +60,8 @@ describe("Part 1: Role-Based Access Control Matrix", () => {
     expect(hasPermission("EMPLOYEE", "canAccessSettings")).toBe(false);
     expect(isRouteAllowed("EMPLOYEE", "/settings")).toBe(false);
     expect(isRouteAllowed("EMPLOYEE", "/courses")).toBe(true);
+    expect(isRouteAllowed("EMPLOYEE", "/my-development")).toBe(true);
+    expect(isRouteAllowed("EMPLOYEE", "/my-learning")).toBe(true);
   });
 });
 

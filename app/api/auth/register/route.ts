@@ -2,8 +2,15 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db/prisma";
 import { signupSchema } from "@/lib/validations/auth";
+import { authenticateApi } from "@/lib/auth/session";
+import { AuditService } from "@/lib/services/audit.service";
 
 export async function POST(request: Request) {
+  // Enforce server-side ADMIN authentication: Public registration is strictly disabled
+  const auth = await authenticateApi(["ADMIN"]);
+  if (!auth.authorized) {
+    return auth.response!;
+  }
   try {
     const body = await request.json();
     const parsed = signupSchema.safeParse(body);
@@ -118,6 +125,19 @@ export async function POST(request: Request) {
       });
 
       return { user: newUser, employee };
+    });
+
+    await AuditService.log({
+      organizationId: auth.organizationId!,
+      actorId: auth.userId,
+      actorName: auth.user.name || auth.user.email,
+      actorRole: auth.user.role,
+      action: "USER_CREATED",
+      category: "USER_MANAGEMENT",
+      targetId: user.id,
+      targetName: `${user.name} (${user.email})`,
+      description: `Administrator ${auth.user.name || auth.user.email} provisioned new EMPLOYEE account for ${user.name} (${user.email}).`,
+      metadata: { role: "EMPLOYEE", email: user.email },
     });
 
     return NextResponse.json(

@@ -15,12 +15,21 @@ export interface AuthenticatedUser {
   employeeId: string | null;
 }
 
-export interface ApiAuthResult {
-  authorized: boolean;
-  user?: AuthenticatedUser;
-  organizationId?: string;
-  response?: NextResponse;
-}
+export type ApiAuthResult =
+  | {
+      authorized: true;
+      user: AuthenticatedUser;
+      userId: string;
+      organizationId: string;
+      response?: never;
+    }
+  | {
+      authorized: false;
+      user?: never;
+      userId?: never;
+      organizationId?: never;
+      response: NextResponse;
+    };
 
 /**
  * Reads the current session on the server. Returns null when unauthenticated.
@@ -60,16 +69,18 @@ export async function authenticateApi(
         ),
       };
     }
+    const user: AuthenticatedUser = {
+      id: session?.user?.id || "demo-user",
+      name: session?.user?.name || "Demo User",
+      email: session?.user?.email || "admin@capacityconnect.demo",
+      role,
+      organizationId: session?.user?.organizationId || DEMO_ORGANIZATION.id,
+      employeeId: (session?.user as any)?.employeeId || null,
+    };
     return {
       authorized: true,
-      user: {
-        id: session?.user?.id || "demo-user",
-        name: session?.user?.name || "Demo User",
-        email: session?.user?.email || "admin@capacityconnect.demo",
-        role,
-        organizationId: session?.user?.organizationId || DEMO_ORGANIZATION.id,
-        employeeId: (session?.user as any)?.employeeId || null,
-      },
+      user,
+      userId: user.id,
       organizationId: session?.user?.organizationId || DEMO_ORGANIZATION.id,
     };
   }
@@ -108,16 +119,19 @@ export async function authenticateApi(
     };
   }
 
+  const user: AuthenticatedUser = {
+    id: session.user.id,
+    name: session.user.name || "User",
+    email: session.user.email || "",
+    role,
+    organizationId: session.user.organizationId,
+    employeeId: (session.user as any).employeeId || null,
+  };
+
   return {
     authorized: true,
-    user: {
-      id: session.user.id,
-      name: session.user.name || "User",
-      email: session.user.email || "",
-      role,
-      organizationId: session.user.organizationId,
-      employeeId: (session.user as any).employeeId || null,
-    },
+    user,
+    userId: user.id,
     organizationId: session.user.organizationId,
   };
 }

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -15,7 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Layers, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Layers, Loader2, AlertCircle, CheckCircle2, ShieldCheck } from "lucide-react";
 
 function LoginForm() {
   const router = useRouter();
@@ -107,9 +108,8 @@ function LoginForm() {
               <Label htmlFor="password" className="text-xs font-bold text-foreground">
                 Password
               </Label>
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 autoComplete="current-password"
                 placeholder="••••••••"
                 value={password}
@@ -135,14 +135,9 @@ function LoginForm() {
               )}
             </Button>
 
-            <div className="text-center text-xs text-muted-foreground pt-1.5">
-              Don&apos;t have an account?{" "}
-              <Link
-                href="/signup"
-                className="font-semibold text-indigo-600 underline-offset-4 hover:underline"
-              >
-                Create an account
-              </Link>
+            <div className="flex items-center justify-center gap-1.5 text-center text-[11px] text-muted-foreground pt-2">
+              <ShieldCheck className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+              <span>Accounts are provisioned by your organization administrator.</span>
             </div>
           </form>
         </CardContent>

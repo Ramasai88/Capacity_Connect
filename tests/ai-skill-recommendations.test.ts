@@ -179,6 +179,7 @@ describe("AI/ML Skill Recommendation Engine", () => {
   it("provides multi-user isolation with distinct personalized recommendations", async () => {
     const comp = await prisma.competency.findFirst({
       where: { organizationId: TEST_ORG_ID },
+      orderBy: { createdAt: "asc" },
     });
     expect(comp).not.toBeNull();
 
