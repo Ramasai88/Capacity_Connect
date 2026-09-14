@@ -212,7 +212,7 @@ export class AuditService {
     });
 
     const totalEmployees = await prisma.employee.count({
-      where: { organizationId },
+      where: { organizationId, status: "ACTIVE" },
     });
 
     // 2. Aggregate metrics for each manager from audit logs

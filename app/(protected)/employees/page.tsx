@@ -90,9 +90,9 @@ export default function EmployeesPage() {
     } else {
       try {
         if (emp.status === "ACTIVE") {
-          await apiClient.employees.delete(emp.id);
+          await apiClient.employees.remove(emp.id);
         } else {
-          await apiClient.employees.update(emp.id, { status: "ACTIVE" });
+          await apiClient.employees.restore(emp.id);
         }
         await loadRealData();
       } catch (err) {
@@ -130,32 +130,32 @@ export default function EmployeesPage() {
               <CardTitle className="text-base">Employee Directory</CardTitle>
               <CardDescription className="text-xs">{filteredEmployees.length} of {employees.length} registered employees</CardDescription>
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="relative">
+            <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+              <div className="relative flex-1 sm:flex-none">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <Input placeholder="Search employees..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-8 pl-8 text-xs w-48 shadow-2xs" />
+                <Input placeholder="Search employees..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-8 pl-8 text-xs w-full sm:w-48 shadow-2xs" />
               </div>
               <Select value={statusFilter} onValueChange={(val: "ALL" | "ACTIVE" | "INACTIVE") => setStatusFilter(val)}>
-                <SelectTrigger className="h-8 w-32 text-xs shadow-2xs"><SelectValue placeholder="Status" /></SelectTrigger>
+                <SelectTrigger className="h-8 w-28 sm:w-32 text-xs shadow-2xs"><SelectValue placeholder="Status" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ALL">All Status</SelectItem>
                   <SelectItem value="ACTIVE">Active</SelectItem>
                   <SelectItem value="INACTIVE">Inactive</SelectItem>
                 </SelectContent>
               </Select>
-              <Badge variant="outline" className="text-xs h-8 px-2.5 font-mono shadow-2xs">
+              <Badge variant="outline" className="text-xs h-8 px-2.5 font-mono shadow-2xs shrink-0">
                 <Users className="h-3 w-3 mr-1" />{employees.length} Total
               </Badge>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="p-0 overflow-x-auto">
           {isLoading ? (
             <div className="flex items-center justify-center py-16 text-xs text-muted-foreground gap-2">
               <Loader2 className="h-5 w-5 animate-spin text-primary" /> Loading workforce records...
             </div>
           ) : (
-            <Table>
+            <Table className="min-w-[700px]">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[100px]">Code</TableHead>
@@ -206,8 +206,8 @@ export default function EmployeesPage() {
                             <Link href={`/skill-gaps/${emp.id}`}><Button size="sm" variant="secondary" className="h-7 gap-1 text-xs px-2.5"><TrendingUp className="h-3 w-3 text-indigo-600" />Gaps</Button></Link>
                             {isAdmin && (
                               <>
-                                <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => handleEdit(emp)} title="Edit"><Pencil className="h-3 w-3" /></Button>
-                                <Button size="sm" variant="outline" className={`h-7 px-2 text-xs ${emp.status === "ACTIVE" ? "text-amber-600 border-amber-300 hover:bg-amber-50" : "text-emerald-600"}`} onClick={() => handleToggleStatus(emp)} title={emp.status === "ACTIVE" ? "Deactivate" : "Reactivate"}>
+                                <Button size="sm" variant="outline" className="h-7 gap-1 text-xs px-2.5 font-medium" onClick={() => handleEdit(emp)} title="Update employee"><Pencil className="h-3 w-3" />Update</Button>
+                                <Button size="sm" variant="outline" className={`h-7 px-2 text-xs ${emp.status === "ACTIVE" ? "text-amber-600 border-amber-300 hover:bg-amber-50" : "text-emerald-600"}`} onClick={() => handleToggleStatus(emp)} title={emp.status === "ACTIVE" ? "Remove Employee (Soft-delete & move to Removed Employees)" : "Restore Employee"}>
                                   {emp.status === "ACTIVE" ? <UserMinus className="h-3 w-3" /> : <UserCheck className="h-3 w-3" />}
                                 </Button>
                               </>

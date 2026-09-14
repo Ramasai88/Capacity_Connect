@@ -57,12 +57,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 /**
  * PATCH /api/employees/:id
- * Update employee profile or competency assessments.
- * RBAC: ADMIN and MANAGER (calibrating levels) permitted.
+ * Update employee profile (Name and/or Email).
+ * RBAC: ADMIN only.
  */
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
-    const auth = await authenticateApi(["ADMIN", "MANAGER"]);
+    const auth = await authenticateApi(["ADMIN"]);
     if (!auth.authorized) {
       return auth.response!;
     }
@@ -88,7 +88,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       auth.organizationId!,
       params.id,
       parsed.data,
-      updaterName
+      updaterName,
+      auth.userId,
+      auth.user?.role
     );
 
     return NextResponse.json({
@@ -114,7 +116,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
 /**
  * DELETE /api/employees/:id
- * Deactivate employee (soft-delete).
+ * Two-Step Employee Deletion:
+ * - Step 1 (Default): Soft-delete / deactivate employee (`status = INACTIVE`). Preserves all historical records.
+ * - Step 2 (?permanent=true): Irreversible permanent deletion of employee and employee-owned records in a transaction.
  * RBAC: ADMIN only.
  */
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
@@ -124,11 +128,36 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return auth.response!;
     }
 
-    const employee = await EmployeeService.deactivateEmployee(auth.organizationId!, params.id);
+    const { searchParams } = new URL(request.url);
+    const isPermanent = searchParams.get("permanent") === "true";
+
+    if (isPermanent) {
+      const result = await EmployeeService.permanentlyDeleteEmployee(
+        auth.organizationId!,
+        params.id,
+        auth.userId,
+        auth.user?.name,
+        auth.user?.role
+      );
+
+      return NextResponse.json({
+        success: true,
+        message: "Employee permanently deleted successfully.",
+        data: result.deletedEmployee,
+      });
+    }
+
+    const employee = await EmployeeService.deactivateEmployee(
+      auth.organizationId!,
+      params.id,
+      auth.userId,
+      auth.user?.name,
+      auth.user?.role
+    );
 
     return NextResponse.json({
       success: true,
-      message: "Employee deactivated successfully.",
+      message: "Employee removed successfully and moved to Removed Employees.",
       data: employee,
     });
   } catch (error: any) {
@@ -141,7 +170,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     console.error(`DELETE /api/employees/${params.id} error:`, error);
     return NextResponse.json(
-      { error: { code: "INTERNAL_ERROR", message: "Failed to deactivate employee." } },
+      { error: { code: "INTERNAL_ERROR", message: "Failed to process employee deletion request." } },
       { status: 500 }
     );
   }

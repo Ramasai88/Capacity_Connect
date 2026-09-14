@@ -75,7 +75,9 @@ export default function SkillGapsPage() {
     ? demoStore.organizationSummary
     : realOrgSummary || {
         totalEmployees: employeeSummaries.length,
-        totalCompetencies: 4,
+        totalCompetencies: new Set(
+          employeeSummaries.flatMap((e) => (e.gaps || []).map((g: any) => g.competencyId))
+        ).size,
         totalGapsIdentified: employeeSummaries.reduce((acc, e) => acc + (e.needsImprovementCount || 0), 0),
         meetsRequirementTotal: employeeSummaries.reduce((acc, e) => acc + (e.meetsRequirementCount || 0), 0),
         needsImprovementTotal: employeeSummaries.reduce((acc, e) => acc + (e.needsImprovementCount || 0), 0),
@@ -268,51 +270,59 @@ export default function SkillGapsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {allGapRows.map((row, idx) => (
-                    <TableRow key={`${row.employeeId}-${row.competencyId}-${idx}`}>
-                      <TableCell className="font-semibold text-xs text-foreground">
-                        {row.employeeName}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {row.designation}
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-semibold text-xs text-indigo-700 dark:text-indigo-400">
-                          {row.competencyName}
-                        </div>
-                        {row.category && (
-                          <div className="text-[10px] text-muted-foreground">{row.category}</div>
-                        )}
-                      </TableCell>
-                      <TableCell className="w-40">
-                        <LevelIndicator currentLevel={row.requiredLevel} requiredLevel={row.requiredLevel} showLabels={false} />
-                      </TableCell>
-                      <TableCell className="w-40">
-                        <LevelIndicator currentLevel={row.currentLevel} requiredLevel={row.requiredLevel} showLabels={false} />
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          className={`font-mono text-xs font-bold ${
-                            row.gap > 0
-                              ? "text-amber-700 dark:text-amber-400"
-                              : "text-emerald-700 dark:text-emerald-400"
-                          }`}
-                        >
-                          {row.gap > 0 ? `-${row.gap}` : "0"}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <GapStatusBadge status={row.status} />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Link href={`/skill-gaps/${row.employeeId}`}>
-                          <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 font-semibold hover:text-indigo-600">
-                            Breakdown <ArrowRight className="h-3 w-3" />
-                          </Button>
-                        </Link>
+                  {allGapRows.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-8 text-xs text-muted-foreground">
+                        No skill gap data available yet.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    allGapRows.map((row, idx) => (
+                      <TableRow key={`${row.employeeId}-${row.competencyId}-${idx}`}>
+                        <TableCell className="font-semibold text-xs text-foreground">
+                          {row.employeeName}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {row.designation}
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-semibold text-xs text-indigo-700 dark:text-indigo-400">
+                            {row.competencyName}
+                          </div>
+                          {row.category && (
+                            <div className="text-[10px] text-muted-foreground">{row.category}</div>
+                          )}
+                        </TableCell>
+                        <TableCell className="w-40">
+                          <LevelIndicator currentLevel={row.requiredLevel} requiredLevel={row.requiredLevel} showLabels={false} />
+                        </TableCell>
+                        <TableCell className="w-40">
+                          <LevelIndicator currentLevel={row.currentLevel} requiredLevel={row.requiredLevel} showLabels={false} />
+                        </TableCell>
+                        <TableCell>
+                          <span
+                            className={`font-mono text-xs font-bold ${
+                              row.gap > 0
+                                ? "text-amber-700 dark:text-amber-400"
+                                : "text-emerald-700 dark:text-emerald-400"
+                            }`}
+                          >
+                            {row.gap > 0 ? `-${row.gap}` : "0"}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <GapStatusBadge status={row.status} />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Link href={`/skill-gaps/${row.employeeId}`}>
+                            <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 font-semibold hover:text-indigo-600">
+                              Breakdown <ArrowRight className="h-3 w-3" />
+                            </Button>
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>

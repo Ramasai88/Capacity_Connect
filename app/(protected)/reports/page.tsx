@@ -81,11 +81,11 @@ export default function ReportsPage() {
   const organizationSummary = isDemoMode()
     ? demoStore.organizationSummary
     : realReport?.skillGapsSummary || {
-        totalRequired: 20,
-        meetsRequirementTotal: 10,
-        needsImprovementTotal: 10,
+        totalRequired: 0,
+        meetsRequirementTotal: 0,
+        needsImprovementTotal: 0,
         notAssessedTotal: 0,
-        totalGapsIdentified: 10,
+        totalGapsIdentified: 0,
       };
 
   // Calculate department breakdowns
@@ -94,20 +94,30 @@ export default function ReportsPage() {
     { total: number; meets: number; gaps: number }
   >();
 
-  for (const emp of employees) {
-    const summary = employeeSummaries.find((s) => s.employeeId === emp.id);
-    const dept = emp.department || "Engineering";
-    const existing = departmentStats.get(dept) ?? {
-      total: 0,
-      meets: 0,
-      gaps: 0,
-    };
+  if (realReport?.departmentMetrics && realReport.departmentMetrics.length > 0) {
+    for (const dm of realReport.departmentMetrics) {
+      departmentStats.set(dm.department, {
+        total: dm.totalRequired,
+        meets: dm.meetsRequirementTotal,
+        gaps: dm.needsImprovementTotal,
+      });
+    }
+  } else {
+    for (const emp of employees) {
+      const summary = employeeSummaries.find((s) => s.employeeId === emp.id);
+      const dept = emp.department || "General";
+      const existing = departmentStats.get(dept) ?? {
+        total: 0,
+        meets: 0,
+        gaps: 0,
+      };
 
-    existing.total += summary?.totalRequired ?? 0;
-    existing.meets += summary?.meetsRequirementCount ?? 0;
-    existing.gaps += summary?.needsImprovementCount ?? 0;
+      existing.total += summary?.totalRequired ?? 0;
+      existing.meets += summary?.meetsRequirementCount ?? 0;
+      existing.gaps += summary?.needsImprovementCount ?? 0;
 
-    departmentStats.set(dept, existing);
+      departmentStats.set(dept, existing);
+    }
   }
 
   const totalAssessed =
@@ -118,7 +128,7 @@ export default function ReportsPage() {
   const overallReadinessPercent =
     totalAssessed > 0
       ? Math.round((organizationSummary.meetsRequirementTotal / totalAssessed) * 100)
-      : 100;
+      : employees.length > 0 ? 0 : 100;
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -241,37 +251,45 @@ export default function ReportsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {Array.from(departmentStats.entries()).map(([dept, stats]) => {
-                    const deptReadiness =
-                      stats.total > 0
-                        ? Math.round((stats.meets / stats.total) * 100)
-                        : 100;
-                    return (
-                      <TableRow key={dept}>
-                        <TableCell className="font-bold text-xs text-foreground">
-                          {dept}
-                        </TableCell>
-                        <TableCell className="text-xs font-mono">{stats.total}</TableCell>
-                        <TableCell className="text-xs text-emerald-700 font-bold font-mono">
-                          {stats.meets}
-                        </TableCell>
-                        <TableCell className="text-xs text-amber-700 font-bold font-mono">
-                          {stats.gaps}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <div className="h-2 w-28 bg-slate-100 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-emerald-500 rounded-full transition-all duration-300"
-                                style={{ width: `${deptReadiness}%` }}
-                              />
+                  {departmentStats.size === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-xs text-muted-foreground">
+                        No departmental capacity data available yet.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    Array.from(departmentStats.entries()).map(([dept, stats]) => {
+                      const deptReadiness =
+                        stats.total > 0
+                          ? Math.round((stats.meets / stats.total) * 100)
+                          : 100;
+                      return (
+                        <TableRow key={dept}>
+                          <TableCell className="font-bold text-xs text-foreground">
+                            {dept}
+                          </TableCell>
+                          <TableCell className="text-xs font-mono">{stats.total}</TableCell>
+                          <TableCell className="text-xs text-emerald-700 font-bold font-mono">
+                            {stats.meets}
+                          </TableCell>
+                          <TableCell className="text-xs text-amber-700 font-bold font-mono">
+                            {stats.gaps}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <div className="h-2 w-28 bg-slate-100 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-emerald-500 rounded-full transition-all duration-300"
+                                  style={{ width: `${deptReadiness}%` }}
+                                />
+                              </div>
+                              <span className="text-xs font-bold font-mono text-slate-700">{deptReadiness}%</span>
                             </div>
-                            <span className="text-xs font-bold font-mono text-slate-700">{deptReadiness}%</span>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
                 </TableBody>
               </Table>
             </CardContent>

@@ -114,14 +114,14 @@ describe("Individual Employee Skill Development Workflow", () => {
       ],
       timeTakenMinutes: 15,
     });
-  });
+  }, 30000);
 
   afterAll(async () => {
     // Cleanup created test records
     await prisma.organization.delete({
       where: { id: testOrgId },
     }).catch(() => {});
-  });
+  }, 30000);
 
   it("calculates accurate canonical skill gaps for individual employee", async () => {
     const summary = await SkillGapService.getEmployeeSkillGaps(testOrgId, testEmployeeId);

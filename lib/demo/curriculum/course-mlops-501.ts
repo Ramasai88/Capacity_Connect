@@ -1,2703 +1,826 @@
 import { CourseCurriculum } from "./types";
 
 export const courseMlops501: CourseCurriculum = {
-  "courseId": "course-mlops-501",
-  "totalDurationMinutes": 2160,
-  "modules": [
+  courseId: "course-mlops-501",
+  totalDurationMinutes: 1980,
+  modules: [
     {
-      "id": "mlops-mod-1",
-      "order": 1,
-      "title": "Module 1 — The Production ML Lifecycle & MLOps Maturity Levels",
-      "durationMinutes": 190,
-      "summary": "Understanding MLOps foundations: the Machine Learning lifecycle (Data Engineering, Model Engineering, Deployment, Monitoring), Google MLOps Maturity Levels (Level 0 Manual to Level 2 Automated CI/CD/CT), and technical debt in ML systems.",
-      "learningObjectives": [
-        "Assess organizational MLOps maturity across Level 0, 1, and 2 frameworks.",
-        "Identify hidden technical debt in machine learning architectures (data dependencies, configuration debt, pipeline jungles).",
-        "Design end-to-end MLOps architecture blueprints connecting data pipelines to model serving."
+      id: "mlops-mod-1",
+      order: 1,
+      title: "Module 1 — The Production ML Lifecycle, Technical Debt in ML & MLOps Maturity Levels",
+      durationMinutes: 180,
+      summary: "Hidden technical debt in ML systems (Sculley et al.), Google MLOps 3-level maturity model (Manual, Automated Pipelines, CI/CD-CT), and architecture of end-to-end production ML platforms.",
+      learningObjectives: [
+        "Audit ML systems for hidden technical debt (glue code, pipeline jungles, dead experimental paths).",
+        "Evaluate organizational capabilities against Google MLOps Maturity Levels 0, 1, and 2.",
+        "Architect decoupled production ML systems separating data, training, registry, and serving layers."
       ],
-      "resources": [
+      resources: [
         {
-                "title": "Google Cloud Architecture: MLOps Maturity Levels",
-                "url": "https://cloud.google.com/architecture/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning",
-                "description": "MLOps Level 0 (Manual), Level 1 (Pipeline Automation), and Level 2 (CI/CD Automated Retraining).",
-                "type": "guide",
-                "provider": "Google Cloud Architecture"
+          title: "Hidden Technical Debt in Machine Learning Systems (Sculley et al., NeurIPS 2015)",
+          url: "https://proceedings.neurips.cc/paper/2015/file/86df7dcfd896fcaf2674f757a2463eed-Paper.pdf",
+          description: "Seminal paper outlining boundary erosion, data dependencies, feedback loops, and configuration debt in ML.",
+          type: "specification",
+          provider: "Google"
         },
         {
-                "title": "Martin Fowler: Continuous Delivery for Machine Learning (CD4ML)",
-                "url": "https://martinfowler.com/articles/cd4ml.html",
-                "description": "Managing code, data, and model versioning across continuous integration lifecycles.",
-                "type": "article",
-                "provider": "Martin Fowler"
+          title: "Google Cloud Architecture Center: MLOps Maturity Levels & Architecture Guide",
+          url: "https://cloud.google.com/architecture/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning",
+          description: "Level 0 (Manual), Level 1 (ML pipeline automation), and Level 2 (CI/CD pipeline automation).",
+          type: "guide",
+          provider: "Google Cloud"
         }
-],
-      "content": {
-        "overview": "MLOps unifies machine learning system development (Dev) and system operations (Ops) to standardize and automate continuous delivery of high-performing AI models to production.",
-        "keyConcepts": [
+      ],
+      content: {
+        overview: "Only a small fraction of a real-world ML system consists of ML code. Surrounding infrastructure—data collection, feature extraction, verification, monitoring, serving, and configuration—dominates complexity. MLOps establishes automated practices to ensure reproducible, production-grade AI.",
+        keyConcepts: [
           {
-            "section": "Section 1 — Foundations & Core Mechanics",
-            "topic": "The Production ML Lifecycle & MLOps Maturity Levels Architecture",
-            "title": "Lesson 1 — Architectural Foundations & Core Principles of The Production ML Lifecycle & MLOps Maturity Levels",
-            "prerequisites": "Prerequisites for The Production ML Lifecycle & MLOps Maturity Levels: foundational domain concepts and system design.",
-            "description": "Comprehensive architectural deep dive into The Production ML Lifecycle & MLOps Maturity Levels, detailing foundational execution models, data structures, and core operating invariants.",
-            "whyItMatters": "Establishes structural competency, preventing common architectural anti-patterns and runtime failures in enterprise environments.",
-            "howItWorks": "Operates through modular components with strict interface contracts, managing lifecycle transitions and data flow state transformations.",
-            "stepByStep": [
-              "Step 1: Initialize the core The Production ML Lifecycle & MLOps Maturity Levels execution context and configure runtime invariants.",
-              "Step 2: Establish boundary contracts and schema validation rules.",
-              "Step 3: Execute core processing loop and state synchronization.",
-              "Step 4: Verify downstream integration guarantees and error containment boundaries."
+            section: "Section 1 — ML Architecture & Technical Debt",
+            topic: "MLOps Maturity & Anti-Patterns",
+            title: "Lesson 1 — Hidden Technical Debt, Anti-Patterns & MLOps Maturity Level 2 Architecture",
+            prerequisites: "Machine Learning Fundamentals and software engineering lifecycles.",
+            description: "How 'glue code' and 'pipeline jungles' accumulate in machine learning codebases, how feedback loops cause silent degradation, and how Level 2 MLOps automates Continuous Integration (CI), Continuous Delivery (CD), and Continuous Training (CT).",
+            whyItMatters: "Deploying raw Jupyter notebooks directly to production creates untestable, unversioned systems that fail unpredictably when underlying data distributions shift.",
+            howItWorks: "Level 2 MLOps decouples model code from data. Git pushes trigger CI testing (data validation, unit tests), which triggers CD to deploy automated training pipelines (Kubeflow/Airflow), which deploy verified models to serving registries.",
+            stepByStep: [
+              "Step 1: Audit ML codebase to isolate pure modeling logic from data connectors and infrastructure.",
+              "Step 2: Version code, data, and models in synchronized artifact registries.",
+              "Step 3: Implement automated data validation (Great Expectations) prior to training.",
+              "Step 4: Establish automated model evaluation gates before production deployment."
             ],
-            "workedExample": "Concrete Execution Scenario:\nInput Request: Validated domain entity with configured operational parameters.\nProcessing: Component evaluates constraints, applies domain logic, and emits state update.\nOutput: Guaranteed deterministic result adhering to enterprise service level objectives.",
-            "realWorldUsage": "Used in high-availability enterprise services, automated data pipelines, and mission-critical cloud infrastructure.",
-            "codeSnippet": "# Core Implementation Pattern: The Production ML Lifecycle & MLOps Maturity Levels\nclass ProductionComponent:\n    def __init__(self, config: dict):\n        self.config = config\n        self._is_active = True\n\n    def process_workload(self, payload: dict) -> dict:\n        if not self._is_active:\n            raise RuntimeError('Component inactive')\n        return {'status': 'SUCCESS', 'processed': payload, 'verified': True}\n\ncomponent = ProductionComponent(config={'env': 'production'})\nprint(component.process_workload({'task': 'The Production ML Lifecycle & MLOps Maturity Levels'}))",
-            "codeExplanation": "1. Initializes component with strict configuration encapsulation.\n2. Validates operational state before executing workload.\n3. Returns structured execution payload.",
-            "expectedOutput": "{'status': 'SUCCESS', 'processed': {'task': 'The Production ML Lifecycle & MLOps Maturity Levels'}, 'verified': True}",
-            "commonMistakes": "Violating separation of concerns by coupling The Production ML Lifecycle & MLOps Maturity Levels logic directly to transport layers.",
-            "bestPractices": "Always encapsulate domain logic behind strict interface contracts and validate boundary inputs defensively.",
-            "practiceTask": "Implement a minimal working prototype of The Production ML Lifecycle & MLOps Maturity Levels with automated input validation.",
-            "keyTakeaway": "Understanding the core architectural principles of The Production ML Lifecycle & MLOps Maturity Levels is essential for designing resilient, production-grade systems."
-          },
-          {
-            "section": "Section 1 — Foundations & Core Mechanics",
-            "topic": "The Production ML Lifecycle & MLOps Maturity Levels Implementation",
-            "title": "Lesson 2 — Step-by-Step Implementation & Algorithm Mechanics",
-            "prerequisites": "Lesson 1 (Architectural Foundations).",
-            "description": "Detailed step-by-step implementation mechanics, algorithmic flows, and data transformations for The Production ML Lifecycle & MLOps Maturity Levels.",
-            "whyItMatters": "Translates high-level theoretical concepts into concrete, maintainable, and high-performance production implementations.",
-            "howItWorks": "Processes data via structured transformation pipelines, managing memory efficiency, concurrency safety, and execution state.",
-            "stepByStep": [
-              "Step 1: Ingest input payloads and normalize data representations.",
-              "Step 2: Apply primary domain transformations and state mutations.",
-              "Step 3: Handle edge cases, null boundaries, and invalid parameter transitions.",
-              "Step 4: Emit validated output and persist operational state."
-            ],
-            "workedExample": "Input Data Transformation:\nRaw Payload: `{'id': 101, 'metric': 42.5, 'flag': True}`\nProcessing: Normalizes types -> validates bounds -> calculates derived metrics.\nTransformed Result: `{'id': 101, 'score': 0.85, 'status': 'OPTIMAL'}`.",
-            "realWorldUsage": "Production runtime execution across scalable distributed systems and analytics engines.",
-            "codeSnippet": "# Implementation Execution Loop\ndef execute_pipeline_step(data: list) -> list:\n    results = []\n    for item in data:\n        transformed = {'key': item, 'value': item * 2, 'valid': True}\n        results.append(transformed)\n    return results\n\nprint('Processed Steps:', execute_pipeline_step([10, 20, 30]))",
-            "codeExplanation": "1. Iterates over input stream with $O(N)$ linear time complexity.\n2. Emits structured transformed output records.",
-            "expectedOutput": "Processed Steps: [{'key': 10, 'value': 20, 'valid': True}, {'key': 20, 'value': 40, 'valid': True}, {'key': 30, 'value': 60, 'valid': True}]",
-            "commonMistakes": "Failing to handle empty sequences or null pointers during pipeline transformations.",
-            "bestPractices": "Profile algorithmic time complexity and memory allocations before scaling to production volumes.",
-            "practiceTask": "Construct a unit-tested implementation of the The Production ML Lifecycle & MLOps Maturity Levels data transformation function.",
-            "keyTakeaway": "Methodical step-by-step implementation ensures deterministic behavior and simplifies debugging in production."
-          },
-          {
-            "section": "Section 2 — Production Engineering & Best Practices",
-            "topic": "Production Optimization",
-            "title": "Lesson 3 — Performance Tuning, Error Handling & Production Best Practices",
-            "prerequisites": "Lesson 2 (Implementation Mechanics).",
-            "description": "Production engineering strategies: latency optimization, error containment, monitoring observability, and defensive design for The Production ML Lifecycle & MLOps Maturity Levels.",
-            "whyItMatters": "Prevents cascading system outages, resource exhaustion, and silent data corruption under high-load enterprise conditions.",
-            "howItWorks": "Combines proactive health checks, structured logging, automated retry policies with exponential backoff, and circuit breaker patterns.",
-            "stepByStep": [
-              "Step 1: Implement structured telemetry and metric tracking (P50, P95, P99 latencies).",
-              "Step 2: Configure bounded timeouts and circuit breaking thresholds.",
-              "Step 3: Handle transient faults with exponential backoff and jitter.",
-              "Step 4: Validate graceful degradation paths under resource starvation."
-            ],
-            "workedExample": "Fault Injection Scenario:\nDownstream dependency experiences 500ms latency spike.\nCircuit breaker detects threshold violation -> trips to Open state -> serves cached fallback response in 2ms without cascading failure.",
-            "realWorldUsage": "Enterprise cloud services, mission-critical API gateways, and distributed microservices.",
-            "codeSnippet": "# Defensive Error Handling Pattern\nimport time\n\ndef execute_with_retry(operation_fn, max_retries=3, backoff_base=0.1):\n    for attempt in range(max_retries):\n        try:\n            return operation_fn()\n        except Exception as e:\n            if attempt == max_retries - 1:\n                raise\n            time.sleep(backoff_base * (2 ** attempt))\n\nresult = execute_with_retry(lambda: 'SUCCESSFUL_EXECUTION')\nprint(f'Execution Status: {result}')",
-            "codeExplanation": "1. Catches transient exceptions and applies exponential backoff delay.\n2. Prevents thundering herd problems during system recovery.",
-            "expectedOutput": "Execution Status: SUCCESSFUL_EXECUTION",
-            "commonMistakes": "Catching generic exceptions silently without logging or alerting, hiding critical production failures.",
-            "bestPractices": "Always configure explicit request timeouts, health probes, and structured JSON logs.",
-            "practiceTask": "Implement a retry decorator with configurable backoff and max attempt parameters.",
-            "keyTakeaway": "Robust production engineering for The Production ML Lifecycle & MLOps Maturity Levels requires proactive error containment, latency budgets, and structured observability."
-          },
-          {
-            "section": "Section 2 — Production Engineering & Best Practices",
-            "topic": "Review & Competency",
-            "title": "Lesson 4 — Module Review, Practice Challenge & Key Takeaways",
-            "prerequisites": "Lessons 1 through 3.",
-            "description": "Comprehensive synthesis of architectural principles, algorithmic patterns, and production guidelines for The Production ML Lifecycle & MLOps Maturity Levels.",
-            "whyItMatters": "Consolidates theoretical knowledge into practical skills required for Level 4/5 competency qualification.",
-            "howItWorks": "Integrates core theorems, code patterns, and diagnostic checklists into an actionable practitioner reference.",
-            "stepByStep": [
-              "1. Architectural baseline: understand core system components and invariants.",
-              "2. Implementation standard: build modular, leak-free transformation pipelines.",
-              "3. Production readiness: enforce timeouts, circuit breakers, and telemetry monitoring.",
-              "4. Hands-on verification: complete the practical lab exercise to qualify for competency elevation."
-            ],
-            "workedExample": "Competency Qualification Checklist:\n[OK] Core architecture and lifecycle understood.\n[OK] Production error containment verified.\n[OK] Practical lab implementation completed satisfying target benchmarks.",
-            "realWorldUsage": "Practitioner competency baseline across enterprise engineering teams.",
-            "codeSnippet": "# Quick Competency Verification Checklist\nchecklist = [\n    '1. Architecture contracts and data flow verified',\n    '2. Input schema validation and error containment implemented',\n    '3. Performance benchmarks and latency targets satisfied'\n]\nfor item in checklist:\n    print(f'[READY] {item}')",
-            "codeExplanation": "1. Verifies complete module mastery before proceeding to the practical hands-on lab.",
-            "expectedOutput": "[READY] 1. Architecture contracts and data flow verified\n[READY] 2. Input schema validation and error containment implemented\n[READY] 3. Performance benchmarks and latency targets satisfied",
-            "commonMistakes": "Attempting competency assessment before completing the practical hands-on lab exercise.",
-            "bestPractices": "Review key takeaways and test edge cases thoroughly in your practical lab implementation.",
-            "practiceTask": "Complete the practical hands-on lab exercise below to verify your mastery of The Production ML Lifecycle & MLOps Maturity Levels.",
-            "keyTakeaway": "You have mastered the architectural foundations, implementation patterns, and production best practices for The Production ML Lifecycle & MLOps Maturity Levels."
+            workedExample: "MLOps Platform Blueprint:\n- Code Repository: GitHub (CI/CD actions)\n- Data & Feature Registry: DVC + Feast\n- Experiment Tracking: MLflow / Weights & Biases\n- Orchestrator: Kubeflow / Airflow\n- Serving Layer: Triton / BentoML on Kubernetes.",
+            realWorldUsage: "Enterprise ML engineering platforms at Uber (Michelangelo), Netflix (Metaflow), and Airbnb (Bighead).",
+            codeSnippet: "# Production MLOps Model Evaluation Gate (Python)\nfrom typing import Dict, Any\n\nclass ModelDeploymentGate:\n    def __init__(self, min_accuracy: float = 0.85, max_p99_latency_ms: float = 50.0):\n        self.min_accuracy = min_accuracy\n        self.max_p99_latency_ms = max_p99_latency_ms\n\n    def evaluate_candidate_model(self, candidate_metrics: Dict[str, float], baseline_metrics: Dict[str, float]) -> Dict[str, Any]:\n        checks = {\n            'accuracy_threshold_passed': candidate_metrics['accuracy'] >= self.min_accuracy,\n            'outperforms_baseline': candidate_metrics['accuracy'] >= baseline_metrics['accuracy'],\n            'latency_budget_satisfied': candidate_metrics['p99_latency_ms'] <= self.max_p99_latency_ms\n        }\n        \n        can_promote = all(checks.values())\n        return {\n            'can_promote_to_production': can_promote,\n            'validation_checks': checks,\n            'accuracy_delta': candidate_metrics['accuracy'] - baseline_metrics['accuracy']\n        }\n\n# Verification test\ngate = ModelDeploymentGate(min_accuracy=0.85, max_p99_latency_ms=40.0)\ncandidate = {'accuracy': 0.91, 'p99_latency_ms': 32.5}\nbaseline = {'accuracy': 0.88, 'p99_latency_ms': 35.0}\n\ndecision = gate.evaluate_candidate_model(candidate, baseline)\nprint(f'Model Promotion Decision: {decision}')",
+            codeExplanation: "1. Encapsulates automated production readiness criteria.\n2. Validates candidate accuracy against absolute thresholds and current baseline.\n3. Enforces strict P99 latency budgets before allowing registry promotion.",
+            expectedOutput: "Model Promotion Decision: {'can_promote_to_production': True, 'validation_checks': {...}, 'accuracy_delta': 0.03}",
+            commonMistakes: "Deploying new models solely based on offline test accuracy without benchmarking online inference latency or memory consumption.",
+            bestPractices: "Always implement automated deployment gates verifying both accuracy metrics and operational latency budgets.",
+            practiceTask: "Design an MLOps platform architecture diagram incorporating Feast feature store, MLflow registry, and automated deployment gates.",
+            keyTakeaway: "MLOps Level 2 maturity automates the entire loop from data ingestion and training to automated evaluation and zero-downtime serving."
           }
         ],
-        "practicalExercise": "Audit an enterprise ML repository and author an MLOps Level 2 modernization architecture roadmap.",
-        "competencyVerification": "Demonstrates MLOps lifecycle understanding, technical debt analysis, and system architecture design at Level 5.",
-        "resources": [
-        {
-                "title": "Google Cloud Architecture: MLOps Maturity Levels",
-                "url": "https://cloud.google.com/architecture/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning",
-                "description": "MLOps Level 0 (Manual), Level 1 (Pipeline Automation), and Level 2 (CI/CD Automated Retraining).",
-                "type": "guide",
-                "provider": "Google Cloud Architecture"
-        },
-        {
-                "title": "Martin Fowler: Continuous Delivery for Machine Learning (CD4ML)",
-                "url": "https://martinfowler.com/articles/cd4ml.html",
-                "description": "Managing code, data, and model versioning across continuous integration lifecycles.",
-                "type": "article",
-                "provider": "Martin Fowler"
-        }
-]
-      },
-      "keyConcepts": [
-        {
-          "section": "Section 1 — Foundations & Core Mechanics",
-          "topic": "The Production ML Lifecycle & MLOps Maturity Levels Architecture",
-          "title": "Lesson 1 — Architectural Foundations & Core Principles of The Production ML Lifecycle & MLOps Maturity Levels",
-          "prerequisites": "Prerequisites for The Production ML Lifecycle & MLOps Maturity Levels: foundational domain concepts and system design.",
-          "description": "Comprehensive architectural deep dive into The Production ML Lifecycle & MLOps Maturity Levels, detailing foundational execution models, data structures, and core operating invariants.",
-          "whyItMatters": "Establishes structural competency, preventing common architectural anti-patterns and runtime failures in enterprise environments.",
-          "howItWorks": "Operates through modular components with strict interface contracts, managing lifecycle transitions and data flow state transformations.",
-          "stepByStep": [
-            "Step 1: Initialize the core The Production ML Lifecycle & MLOps Maturity Levels execution context and configure runtime invariants.",
-            "Step 2: Establish boundary contracts and schema validation rules.",
-            "Step 3: Execute core processing loop and state synchronization.",
-            "Step 4: Verify downstream integration guarantees and error containment boundaries."
-          ],
-          "workedExample": "Concrete Execution Scenario:\nInput Request: Validated domain entity with configured operational parameters.\nProcessing: Component evaluates constraints, applies domain logic, and emits state update.\nOutput: Guaranteed deterministic result adhering to enterprise service level objectives.",
-          "realWorldUsage": "Used in high-availability enterprise services, automated data pipelines, and mission-critical cloud infrastructure.",
-          "codeSnippet": "# Core Implementation Pattern: The Production ML Lifecycle & MLOps Maturity Levels\nclass ProductionComponent:\n    def __init__(self, config: dict):\n        self.config = config\n        self._is_active = True\n\n    def process_workload(self, payload: dict) -> dict:\n        if not self._is_active:\n            raise RuntimeError('Component inactive')\n        return {'status': 'SUCCESS', 'processed': payload, 'verified': True}\n\ncomponent = ProductionComponent(config={'env': 'production'})\nprint(component.process_workload({'task': 'The Production ML Lifecycle & MLOps Maturity Levels'}))",
-          "codeExplanation": "1. Initializes component with strict configuration encapsulation.\n2. Validates operational state before executing workload.\n3. Returns structured execution payload.",
-          "expectedOutput": "{'status': 'SUCCESS', 'processed': {'task': 'The Production ML Lifecycle & MLOps Maturity Levels'}, 'verified': True}",
-          "commonMistakes": "Violating separation of concerns by coupling The Production ML Lifecycle & MLOps Maturity Levels logic directly to transport layers.",
-          "bestPractices": "Always encapsulate domain logic behind strict interface contracts and validate boundary inputs defensively.",
-          "practiceTask": "Implement a minimal working prototype of The Production ML Lifecycle & MLOps Maturity Levels with automated input validation.",
-          "keyTakeaway": "Understanding the core architectural principles of The Production ML Lifecycle & MLOps Maturity Levels is essential for designing resilient, production-grade systems."
-        },
-        {
-          "section": "Section 1 — Foundations & Core Mechanics",
-          "topic": "The Production ML Lifecycle & MLOps Maturity Levels Implementation",
-          "title": "Lesson 2 — Step-by-Step Implementation & Algorithm Mechanics",
-          "prerequisites": "Lesson 1 (Architectural Foundations).",
-          "description": "Detailed step-by-step implementation mechanics, algorithmic flows, and data transformations for The Production ML Lifecycle & MLOps Maturity Levels.",
-          "whyItMatters": "Translates high-level theoretical concepts into concrete, maintainable, and high-performance production implementations.",
-          "howItWorks": "Processes data via structured transformation pipelines, managing memory efficiency, concurrency safety, and execution state.",
-          "stepByStep": [
-            "Step 1: Ingest input payloads and normalize data representations.",
-            "Step 2: Apply primary domain transformations and state mutations.",
-            "Step 3: Handle edge cases, null boundaries, and invalid parameter transitions.",
-            "Step 4: Emit validated output and persist operational state."
-          ],
-          "workedExample": "Input Data Transformation:\nRaw Payload: `{'id': 101, 'metric': 42.5, 'flag': True}`\nProcessing: Normalizes types -> validates bounds -> calculates derived metrics.\nTransformed Result: `{'id': 101, 'score': 0.85, 'status': 'OPTIMAL'}`.",
-          "realWorldUsage": "Production runtime execution across scalable distributed systems and analytics engines.",
-          "codeSnippet": "# Implementation Execution Loop\ndef execute_pipeline_step(data: list) -> list:\n    results = []\n    for item in data:\n        transformed = {'key': item, 'value': item * 2, 'valid': True}\n        results.append(transformed)\n    return results\n\nprint('Processed Steps:', execute_pipeline_step([10, 20, 30]))",
-          "codeExplanation": "1. Iterates over input stream with $O(N)$ linear time complexity.\n2. Emits structured transformed output records.",
-          "expectedOutput": "Processed Steps: [{'key': 10, 'value': 20, 'valid': True}, {'key': 20, 'value': 40, 'valid': True}, {'key': 30, 'value': 60, 'valid': True}]",
-          "commonMistakes": "Failing to handle empty sequences or null pointers during pipeline transformations.",
-          "bestPractices": "Profile algorithmic time complexity and memory allocations before scaling to production volumes.",
-          "practiceTask": "Construct a unit-tested implementation of the The Production ML Lifecycle & MLOps Maturity Levels data transformation function.",
-          "keyTakeaway": "Methodical step-by-step implementation ensures deterministic behavior and simplifies debugging in production."
-        },
-        {
-          "section": "Section 2 — Production Engineering & Best Practices",
-          "topic": "Production Optimization",
-          "title": "Lesson 3 — Performance Tuning, Error Handling & Production Best Practices",
-          "prerequisites": "Lesson 2 (Implementation Mechanics).",
-          "description": "Production engineering strategies: latency optimization, error containment, monitoring observability, and defensive design for The Production ML Lifecycle & MLOps Maturity Levels.",
-          "whyItMatters": "Prevents cascading system outages, resource exhaustion, and silent data corruption under high-load enterprise conditions.",
-          "howItWorks": "Combines proactive health checks, structured logging, automated retry policies with exponential backoff, and circuit breaker patterns.",
-          "stepByStep": [
-            "Step 1: Implement structured telemetry and metric tracking (P50, P95, P99 latencies).",
-            "Step 2: Configure bounded timeouts and circuit breaking thresholds.",
-            "Step 3: Handle transient faults with exponential backoff and jitter.",
-            "Step 4: Validate graceful degradation paths under resource starvation."
-          ],
-          "workedExample": "Fault Injection Scenario:\nDownstream dependency experiences 500ms latency spike.\nCircuit breaker detects threshold violation -> trips to Open state -> serves cached fallback response in 2ms without cascading failure.",
-          "realWorldUsage": "Enterprise cloud services, mission-critical API gateways, and distributed microservices.",
-          "codeSnippet": "# Defensive Error Handling Pattern\nimport time\n\ndef execute_with_retry(operation_fn, max_retries=3, backoff_base=0.1):\n    for attempt in range(max_retries):\n        try:\n            return operation_fn()\n        except Exception as e:\n            if attempt == max_retries - 1:\n                raise\n            time.sleep(backoff_base * (2 ** attempt))\n\nresult = execute_with_retry(lambda: 'SUCCESSFUL_EXECUTION')\nprint(f'Execution Status: {result}')",
-          "codeExplanation": "1. Catches transient exceptions and applies exponential backoff delay.\n2. Prevents thundering herd problems during system recovery.",
-          "expectedOutput": "Execution Status: SUCCESSFUL_EXECUTION",
-          "commonMistakes": "Catching generic exceptions silently without logging or alerting, hiding critical production failures.",
-          "bestPractices": "Always configure explicit request timeouts, health probes, and structured JSON logs.",
-          "practiceTask": "Implement a retry decorator with configurable backoff and max attempt parameters.",
-          "keyTakeaway": "Robust production engineering for The Production ML Lifecycle & MLOps Maturity Levels requires proactive error containment, latency budgets, and structured observability."
-        },
-        {
-          "section": "Section 2 — Production Engineering & Best Practices",
-          "topic": "Review & Competency",
-          "title": "Lesson 4 — Module Review, Practice Challenge & Key Takeaways",
-          "prerequisites": "Lessons 1 through 3.",
-          "description": "Comprehensive synthesis of architectural principles, algorithmic patterns, and production guidelines for The Production ML Lifecycle & MLOps Maturity Levels.",
-          "whyItMatters": "Consolidates theoretical knowledge into practical skills required for Level 4/5 competency qualification.",
-          "howItWorks": "Integrates core theorems, code patterns, and diagnostic checklists into an actionable practitioner reference.",
-          "stepByStep": [
-            "1. Architectural baseline: understand core system components and invariants.",
-            "2. Implementation standard: build modular, leak-free transformation pipelines.",
-            "3. Production readiness: enforce timeouts, circuit breakers, and telemetry monitoring.",
-            "4. Hands-on verification: complete the practical lab exercise to qualify for competency elevation."
-          ],
-          "workedExample": "Competency Qualification Checklist:\n[OK] Core architecture and lifecycle understood.\n[OK] Production error containment verified.\n[OK] Practical lab implementation completed satisfying target benchmarks.",
-          "realWorldUsage": "Practitioner competency baseline across enterprise engineering teams.",
-          "codeSnippet": "# Quick Competency Verification Checklist\nchecklist = [\n    '1. Architecture contracts and data flow verified',\n    '2. Input schema validation and error containment implemented',\n    '3. Performance benchmarks and latency targets satisfied'\n]\nfor item in checklist:\n    print(f'[READY] {item}')",
-          "codeExplanation": "1. Verifies complete module mastery before proceeding to the practical hands-on lab.",
-          "expectedOutput": "[READY] 1. Architecture contracts and data flow verified\n[READY] 2. Input schema validation and error containment implemented\n[READY] 3. Performance benchmarks and latency targets satisfied",
-          "commonMistakes": "Attempting competency assessment before completing the practical hands-on lab exercise.",
-          "bestPractices": "Review key takeaways and test edge cases thoroughly in your practical lab implementation.",
-          "practiceTask": "Complete the practical hands-on lab exercise below to verify your mastery of The Production ML Lifecycle & MLOps Maturity Levels.",
-          "keyTakeaway": "You have mastered the architectural foundations, implementation patterns, and production best practices for The Production ML Lifecycle & MLOps Maturity Levels."
-        }
-      ]
+        practicalExercise: "Design an enterprise MLOps platform specification with automated evaluation gates, technical debt containment policies, and Level 2 CI/CD/CT architecture.",
+        competencyVerification: "Demonstrates production ML lifecycle engineering, technical debt auditing, and MLOps maturity architecture at Level 4.",
+        resources: [
+          {
+            title: "Hidden Technical Debt in Machine Learning Systems (Sculley et al., NeurIPS 2015)",
+            url: "https://proceedings.neurips.cc/paper/2015/file/86df7dcfd896fcaf2674f757a2463eed-Paper.pdf",
+            description: "Seminal paper outlining boundary erosion, data dependencies, feedback loops, and configuration debt in ML.",
+            type: "specification",
+            provider: "Google"
+          },
+          {
+            title: "Google Cloud Architecture Center: MLOps Maturity Levels & Architecture Guide",
+            url: "https://cloud.google.com/architecture/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning",
+            description: "Level 0 (Manual), Level 1 (ML pipeline automation), and Level 2 (CI/CD pipeline automation).",
+            type: "guide",
+            provider: "Google Cloud"
+          }
+        ]
+      }
     },
     {
-      "id": "mlops-mod-2",
-      "order": 2,
-      "title": "Module 2 — Data Versioning & Reproducibility with DVC (Data Version Control)",
-      "durationMinutes": 190,
-      "summary": "Data reproducibility with DVC: Versioning multi-gigabyte datasets alongside Git code, remote storage backends (S3/GCS/MinIO), DVC pipelines (`dvc.yaml`), and data dependency graphs.",
-      "learningObjectives": [
-        "Configure DVC with remote S3/GCS object storage backends for dataset tracking.",
-        "Construct reproducible multi-stage DAG pipelines using `dvc.yaml` and `dvc repro`.",
-        "Switch between historical data and model versions seamlessly using Git branches."
+      id: "mlops-mod-2",
+      order: 2,
+      title: "Module 2 — Data Versioning, Pipeline Lineage & Reproducibility with DVC",
+      durationMinutes: 180,
+      summary: "Data Version Control (DVC), tracking multi-gigabyte datasets with Git pointers, remote storage backends (S3, GCS), and reproducible DAG pipeline definitions (dvc.yaml).",
+      learningObjectives: [
+        "Track and version large training datasets without bloating Git repositories using DVC.",
+        "Define multi-stage reproducible data pipelines with explicit dependencies and outputs using dvc.yaml.",
+        "Reproduce exact historical model training runs across teams using `dvc repro`."
       ],
-      "resources": [
+      resources: [
         {
-                "title": "DVC (Data Version Control) Official Documentation",
-                "url": "https://dvc.org/doc/start",
-                "description": "Git-based data artifact tracking, remote S3/GCS caching, and reproducible pipeline stages.",
-                "type": "documentation",
-                "provider": "DVC Documentation"
+          title: "DVC (Data Version Control) Official Documentation: Core Concepts",
+          url: "https://dvc.org/doc",
+          description: "Data tracking (.dvc files), remote storage, pipeline DAGs, and reproduction.",
+          type: "documentation",
+          provider: "Iterative.ai"
         },
         {
-                "title": "DVC Guide: Data Pipelines & Dependency Graphs",
-                "url": "https://dvc.org/doc/start/data-pipelines",
-                "description": "Defining dvc.yaml pipelines with input hashes, code dependencies, and output caching.",
-                "type": "guide",
-                "provider": "DVC Documentation"
+          title: "DVC Guide: Data Pipelines and dvc.yaml Specifications",
+          url: "https://dvc.org/doc/user-guide/pipelines/defining-pipelines",
+          description: "Defining stages, dependencies, outputs, parameters, and metrics in dvc.yaml.",
+          type: "guide",
+          provider: "Iterative.ai"
         }
-],
-      "content": {
-        "overview": "Data Version Control (DVC) bridges the gap between massive data files and Git repositories, storing lightweight cryptographic pointer files in Git while syncing large data arrays to cloud object storage.",
-        "keyConcepts": [
+      ],
+      content: {
+        overview: "Code versioning alone cannot guarantee ML reproducibility because model weights depend on the exact dataset state at training time. Data Version Control (DVC) creates lightweight pointer files (.dvc) committed to Git while pushing multi-gigabyte datasets to object storage (S3/GCS).",
+        keyConcepts: [
           {
-            "section": "Section 1 — Foundations & Core Mechanics",
-            "topic": "Data Versioning & Reproducibility with DVC (Data Version Control) Architecture",
-            "title": "Lesson 1 — Architectural Foundations & Core Principles of Data Versioning & Reproducibility with DVC (Data Version Control)",
-            "prerequisites": "Prerequisites for Data Versioning & Reproducibility with DVC (Data Version Control): foundational domain concepts and system design.",
-            "description": "Comprehensive architectural deep dive into Data Versioning & Reproducibility with DVC (Data Version Control), detailing foundational execution models, data structures, and core operating invariants.",
-            "whyItMatters": "Establishes structural competency, preventing common architectural anti-patterns and runtime failures in enterprise environments.",
-            "howItWorks": "Operates through modular components with strict interface contracts, managing lifecycle transitions and data flow state transformations.",
-            "stepByStep": [
-              "Step 1: Initialize the core Data Versioning & Reproducibility with DVC (Data Version Control) execution context and configure runtime invariants.",
-              "Step 2: Establish boundary contracts and schema validation rules.",
-              "Step 3: Execute core processing loop and state synchronization.",
-              "Step 4: Verify downstream integration guarantees and error containment boundaries."
+            section: "Section 1 — DVC Pipelines & Data Lineage",
+            topic: "DVC Data Tracking & dvc.yaml DAGs",
+            title: "Lesson 1 — DVC Pointer Files, S3 Storage Backends & Reproducible dvc.yaml Pipelines",
+            prerequisites: "Git version control and command line fundamentals.",
+            description: "How DVC replaces large files with small hash pointer files in Git, how `dvc push/pull` synchronizes data with cloud buckets, and how `dvc.yaml` builds cached dependency graphs for execution.",
+            whyItMatters: "Without dataset versioning, training the same script on 'training_data.csv' six months later produces different results because someone silently modified the file.",
+            howItWorks: "DVC calculates md5 hashes of datasets and stores mapping files (`data.csv.dvc`). `dvc.yaml` defines stages (`prepare`, `train`, `evaluate`) with inputs (`deps`) and outputs (`outs`). `dvc repro` executes only stages whose dependencies changed.",
+            stepByStep: [
+              "Step 1: Initialize DVC in repository: `dvc init`.",
+              "Step 2: Configure cloud remote storage: `dvc remote add -d s3remote s3://my-bucket/dvcstore`.",
+              "Step 3: Track large dataset: `dvc add data/training.parquet` and commit `data/training.parquet.dvc` to Git.",
+              "Step 4: Define `dvc.yaml` pipeline and execute `dvc repro`."
             ],
-            "workedExample": "Concrete Execution Scenario:\nInput Request: Validated domain entity with configured operational parameters.\nProcessing: Component evaluates constraints, applies domain logic, and emits state update.\nOutput: Guaranteed deterministic result adhering to enterprise service level objectives.",
-            "realWorldUsage": "Used in high-availability enterprise services, automated data pipelines, and mission-critical cloud infrastructure.",
-            "codeSnippet": "# Core Implementation Pattern: Data Versioning & Reproducibility with DVC (Data Version Control)\nclass ProductionComponent:\n    def __init__(self, config: dict):\n        self.config = config\n        self._is_active = True\n\n    def process_workload(self, payload: dict) -> dict:\n        if not self._is_active:\n            raise RuntimeError('Component inactive')\n        return {'status': 'SUCCESS', 'processed': payload, 'verified': True}\n\ncomponent = ProductionComponent(config={'env': 'production'})\nprint(component.process_workload({'task': 'Data Versioning & Reproducibility with DVC (Data Version Control)'}))",
-            "codeExplanation": "1. Initializes component with strict configuration encapsulation.\n2. Validates operational state before executing workload.\n3. Returns structured execution payload.",
-            "expectedOutput": "{'status': 'SUCCESS', 'processed': {'task': 'Data Versioning & Reproducibility with DVC (Data Version Control)'}, 'verified': True}",
-            "commonMistakes": "Violating separation of concerns by coupling Data Versioning & Reproducibility with DVC (Data Version Control) logic directly to transport layers.",
-            "bestPractices": "Always encapsulate domain logic behind strict interface contracts and validate boundary inputs defensively.",
-            "practiceTask": "Implement a minimal working prototype of Data Versioning & Reproducibility with DVC (Data Version Control) with automated input validation.",
-            "keyTakeaway": "Understanding the core architectural principles of Data Versioning & Reproducibility with DVC (Data Version Control) is essential for designing resilient, production-grade systems."
-          },
-          {
-            "section": "Section 1 — Foundations & Core Mechanics",
-            "topic": "Data Versioning & Reproducibility with DVC (Data Version Control) Implementation",
-            "title": "Lesson 2 — Step-by-Step Implementation & Algorithm Mechanics",
-            "prerequisites": "Lesson 1 (Architectural Foundations).",
-            "description": "Detailed step-by-step implementation mechanics, algorithmic flows, and data transformations for Data Versioning & Reproducibility with DVC (Data Version Control).",
-            "whyItMatters": "Translates high-level theoretical concepts into concrete, maintainable, and high-performance production implementations.",
-            "howItWorks": "Processes data via structured transformation pipelines, managing memory efficiency, concurrency safety, and execution state.",
-            "stepByStep": [
-              "Step 1: Ingest input payloads and normalize data representations.",
-              "Step 2: Apply primary domain transformations and state mutations.",
-              "Step 3: Handle edge cases, null boundaries, and invalid parameter transitions.",
-              "Step 4: Emit validated output and persist operational state."
-            ],
-            "workedExample": "Input Data Transformation:\nRaw Payload: `{'id': 101, 'metric': 42.5, 'flag': True}`\nProcessing: Normalizes types -> validates bounds -> calculates derived metrics.\nTransformed Result: `{'id': 101, 'score': 0.85, 'status': 'OPTIMAL'}`.",
-            "realWorldUsage": "Production runtime execution across scalable distributed systems and analytics engines.",
-            "codeSnippet": "# Implementation Execution Loop\ndef execute_pipeline_step(data: list) -> list:\n    results = []\n    for item in data:\n        transformed = {'key': item, 'value': item * 2, 'valid': True}\n        results.append(transformed)\n    return results\n\nprint('Processed Steps:', execute_pipeline_step([10, 20, 30]))",
-            "codeExplanation": "1. Iterates over input stream with $O(N)$ linear time complexity.\n2. Emits structured transformed output records.",
-            "expectedOutput": "Processed Steps: [{'key': 10, 'value': 20, 'valid': True}, {'key': 20, 'value': 40, 'valid': True}, {'key': 30, 'value': 60, 'valid': True}]",
-            "commonMistakes": "Failing to handle empty sequences or null pointers during pipeline transformations.",
-            "bestPractices": "Profile algorithmic time complexity and memory allocations before scaling to production volumes.",
-            "practiceTask": "Construct a unit-tested implementation of the Data Versioning & Reproducibility with DVC (Data Version Control) data transformation function.",
-            "keyTakeaway": "Methodical step-by-step implementation ensures deterministic behavior and simplifies debugging in production."
-          },
-          {
-            "section": "Section 2 — Production Engineering & Best Practices",
-            "topic": "Production Optimization",
-            "title": "Lesson 3 — Performance Tuning, Error Handling & Production Best Practices",
-            "prerequisites": "Lesson 2 (Implementation Mechanics).",
-            "description": "Production engineering strategies: latency optimization, error containment, monitoring observability, and defensive design for Data Versioning & Reproducibility with DVC (Data Version Control).",
-            "whyItMatters": "Prevents cascading system outages, resource exhaustion, and silent data corruption under high-load enterprise conditions.",
-            "howItWorks": "Combines proactive health checks, structured logging, automated retry policies with exponential backoff, and circuit breaker patterns.",
-            "stepByStep": [
-              "Step 1: Implement structured telemetry and metric tracking (P50, P95, P99 latencies).",
-              "Step 2: Configure bounded timeouts and circuit breaking thresholds.",
-              "Step 3: Handle transient faults with exponential backoff and jitter.",
-              "Step 4: Validate graceful degradation paths under resource starvation."
-            ],
-            "workedExample": "Fault Injection Scenario:\nDownstream dependency experiences 500ms latency spike.\nCircuit breaker detects threshold violation -> trips to Open state -> serves cached fallback response in 2ms without cascading failure.",
-            "realWorldUsage": "Enterprise cloud services, mission-critical API gateways, and distributed microservices.",
-            "codeSnippet": "# Defensive Error Handling Pattern\nimport time\n\ndef execute_with_retry(operation_fn, max_retries=3, backoff_base=0.1):\n    for attempt in range(max_retries):\n        try:\n            return operation_fn()\n        except Exception as e:\n            if attempt == max_retries - 1:\n                raise\n            time.sleep(backoff_base * (2 ** attempt))\n\nresult = execute_with_retry(lambda: 'SUCCESSFUL_EXECUTION')\nprint(f'Execution Status: {result}')",
-            "codeExplanation": "1. Catches transient exceptions and applies exponential backoff delay.\n2. Prevents thundering herd problems during system recovery.",
-            "expectedOutput": "Execution Status: SUCCESSFUL_EXECUTION",
-            "commonMistakes": "Catching generic exceptions silently without logging or alerting, hiding critical production failures.",
-            "bestPractices": "Always configure explicit request timeouts, health probes, and structured JSON logs.",
-            "practiceTask": "Implement a retry decorator with configurable backoff and max attempt parameters.",
-            "keyTakeaway": "Robust production engineering for Data Versioning & Reproducibility with DVC (Data Version Control) requires proactive error containment, latency budgets, and structured observability."
-          },
-          {
-            "section": "Section 2 — Production Engineering & Best Practices",
-            "topic": "Review & Competency",
-            "title": "Lesson 4 — Module Review, Practice Challenge & Key Takeaways",
-            "prerequisites": "Lessons 1 through 3.",
-            "description": "Comprehensive synthesis of architectural principles, algorithmic patterns, and production guidelines for Data Versioning & Reproducibility with DVC (Data Version Control).",
-            "whyItMatters": "Consolidates theoretical knowledge into practical skills required for Level 4/5 competency qualification.",
-            "howItWorks": "Integrates core theorems, code patterns, and diagnostic checklists into an actionable practitioner reference.",
-            "stepByStep": [
-              "1. Architectural baseline: understand core system components and invariants.",
-              "2. Implementation standard: build modular, leak-free transformation pipelines.",
-              "3. Production readiness: enforce timeouts, circuit breakers, and telemetry monitoring.",
-              "4. Hands-on verification: complete the practical lab exercise to qualify for competency elevation."
-            ],
-            "workedExample": "Competency Qualification Checklist:\n[OK] Core architecture and lifecycle understood.\n[OK] Production error containment verified.\n[OK] Practical lab implementation completed satisfying target benchmarks.",
-            "realWorldUsage": "Practitioner competency baseline across enterprise engineering teams.",
-            "codeSnippet": "# Quick Competency Verification Checklist\nchecklist = [\n    '1. Architecture contracts and data flow verified',\n    '2. Input schema validation and error containment implemented',\n    '3. Performance benchmarks and latency targets satisfied'\n]\nfor item in checklist:\n    print(f'[READY] {item}')",
-            "codeExplanation": "1. Verifies complete module mastery before proceeding to the practical hands-on lab.",
-            "expectedOutput": "[READY] 1. Architecture contracts and data flow verified\n[READY] 2. Input schema validation and error containment implemented\n[READY] 3. Performance benchmarks and latency targets satisfied",
-            "commonMistakes": "Attempting competency assessment before completing the practical hands-on lab exercise.",
-            "bestPractices": "Review key takeaways and test edge cases thoroughly in your practical lab implementation.",
-            "practiceTask": "Complete the practical hands-on lab exercise below to verify your mastery of Data Versioning & Reproducibility with DVC (Data Version Control).",
-            "keyTakeaway": "You have mastered the architectural foundations, implementation patterns, and production best practices for Data Versioning & Reproducibility with DVC (Data Version Control)."
+            workedExample: "DVC Pipeline Definition (`dvc.yaml`):\n```yaml\nstages:\n  preprocess:\n    cmd: python src/preprocess.py\n    deps:\n      - src/preprocess.py\n      - data/raw_competencies.parquet\n    outs:\n      - data/processed_features.parquet\n  train:\n    cmd: python src/train.py\n    deps:\n      - src/train.py\n      - data/processed_features.parquet\n    outs:\n      - models/classifier.joblib\n    metrics:\n      - metrics.json: { cache: false }\n```",
+            realWorldUsage: "Reproducible ML research and regulated enterprise compliance auditing (FDA, SOC2).",
+            codeSnippet: "# DVC Pipeline Verification & Manifest Generator (Python)\nimport json\n\ndef generate_dvc_stage_spec(stage_name: str, command: str, deps: list[str], outs: list[str], metrics: list[str] = None) -> dict:\n    stage = {\n        'cmd': command,\n        'deps': deps,\n        'outs': outs\n    }\n    if metrics:\n        stage['metrics'] = [{m: {'cache': False}} for m in metrics]\n    return {stage_name: stage}\n\n# Build pipeline spec\npipeline = {'stages': {}}\npipeline['stages'].update(generate_dvc_stage_spec('prepare', 'python src/prepare.py', ['data/raw.csv'], ['data/features.csv']))\npipeline['stages'].update(generate_dvc_stage_spec('train', 'python src/train.py', ['data/features.csv'], ['models/model.pt'], ['eval.json']))\n\nprint('[DVC Pipeline Manifest Generated]')\nprint(json.dumps(pipeline, indent=2))",
+            codeExplanation: "1. Generates declarative `dvc.yaml` pipeline specification.\n2. Tracks explicit data file dependencies and output artifacts.\n3. Enables deterministic step caching across reproducible training workflows.",
+            expectedOutput: "[DVC Pipeline Manifest Generated]\n{\n  \"stages\": {\n    \"prepare\": { ... },\n    \"train\": { ... }\n  }\n}",
+            commonMistakes: "Committing large raw datasets directly into Git repositories rather than tracking with DVC, causing Git repository bloat and slow cloning.",
+            bestPractices: "Always track data files (`.csv`, `.parquet`, `.pt`) with DVC and commit only the `.dvc` and `dvc.yaml` pointer files to Git.",
+            practiceTask: "Create a 2-stage DVC pipeline in Python that processes raw CSV logs and outputs versioned feature Parquet files.",
+            keyTakeaway: "DVC unifies code and data versioning to deliver 100% reproducible, auditable machine learning experiments."
           }
         ],
-        "practicalExercise": "Initialize a DVC repository, track a 5GB training dataset with remote S3 storage, and build a reproducible multi-stage data pipeline.",
-        "competencyVerification": "Proves dataset versioning, DVC pipeline construction, and artifact reproducibility at Level 5.",
-        "resources": [
-        {
-                "title": "DVC (Data Version Control) Official Documentation",
-                "url": "https://dvc.org/doc/start",
-                "description": "Git-based data artifact tracking, remote S3/GCS caching, and reproducible pipeline stages.",
-                "type": "documentation",
-                "provider": "DVC Documentation"
-        },
-        {
-                "title": "DVC Guide: Data Pipelines & Dependency Graphs",
-                "url": "https://dvc.org/doc/start/data-pipelines",
-                "description": "Defining dvc.yaml pipelines with input hashes, code dependencies, and output caching.",
-                "type": "guide",
-                "provider": "DVC Documentation"
-        }
-]
-      },
-      "keyConcepts": [
-        {
-          "section": "Section 1 — Foundations & Core Mechanics",
-          "topic": "Data Versioning & Reproducibility with DVC (Data Version Control) Architecture",
-          "title": "Lesson 1 — Architectural Foundations & Core Principles of Data Versioning & Reproducibility with DVC (Data Version Control)",
-          "prerequisites": "Prerequisites for Data Versioning & Reproducibility with DVC (Data Version Control): foundational domain concepts and system design.",
-          "description": "Comprehensive architectural deep dive into Data Versioning & Reproducibility with DVC (Data Version Control), detailing foundational execution models, data structures, and core operating invariants.",
-          "whyItMatters": "Establishes structural competency, preventing common architectural anti-patterns and runtime failures in enterprise environments.",
-          "howItWorks": "Operates through modular components with strict interface contracts, managing lifecycle transitions and data flow state transformations.",
-          "stepByStep": [
-            "Step 1: Initialize the core Data Versioning & Reproducibility with DVC (Data Version Control) execution context and configure runtime invariants.",
-            "Step 2: Establish boundary contracts and schema validation rules.",
-            "Step 3: Execute core processing loop and state synchronization.",
-            "Step 4: Verify downstream integration guarantees and error containment boundaries."
-          ],
-          "workedExample": "Concrete Execution Scenario:\nInput Request: Validated domain entity with configured operational parameters.\nProcessing: Component evaluates constraints, applies domain logic, and emits state update.\nOutput: Guaranteed deterministic result adhering to enterprise service level objectives.",
-          "realWorldUsage": "Used in high-availability enterprise services, automated data pipelines, and mission-critical cloud infrastructure.",
-          "codeSnippet": "# Core Implementation Pattern: Data Versioning & Reproducibility with DVC (Data Version Control)\nclass ProductionComponent:\n    def __init__(self, config: dict):\n        self.config = config\n        self._is_active = True\n\n    def process_workload(self, payload: dict) -> dict:\n        if not self._is_active:\n            raise RuntimeError('Component inactive')\n        return {'status': 'SUCCESS', 'processed': payload, 'verified': True}\n\ncomponent = ProductionComponent(config={'env': 'production'})\nprint(component.process_workload({'task': 'Data Versioning & Reproducibility with DVC (Data Version Control)'}))",
-          "codeExplanation": "1. Initializes component with strict configuration encapsulation.\n2. Validates operational state before executing workload.\n3. Returns structured execution payload.",
-          "expectedOutput": "{'status': 'SUCCESS', 'processed': {'task': 'Data Versioning & Reproducibility with DVC (Data Version Control)'}, 'verified': True}",
-          "commonMistakes": "Violating separation of concerns by coupling Data Versioning & Reproducibility with DVC (Data Version Control) logic directly to transport layers.",
-          "bestPractices": "Always encapsulate domain logic behind strict interface contracts and validate boundary inputs defensively.",
-          "practiceTask": "Implement a minimal working prototype of Data Versioning & Reproducibility with DVC (Data Version Control) with automated input validation.",
-          "keyTakeaway": "Understanding the core architectural principles of Data Versioning & Reproducibility with DVC (Data Version Control) is essential for designing resilient, production-grade systems."
-        },
-        {
-          "section": "Section 1 — Foundations & Core Mechanics",
-          "topic": "Data Versioning & Reproducibility with DVC (Data Version Control) Implementation",
-          "title": "Lesson 2 — Step-by-Step Implementation & Algorithm Mechanics",
-          "prerequisites": "Lesson 1 (Architectural Foundations).",
-          "description": "Detailed step-by-step implementation mechanics, algorithmic flows, and data transformations for Data Versioning & Reproducibility with DVC (Data Version Control).",
-          "whyItMatters": "Translates high-level theoretical concepts into concrete, maintainable, and high-performance production implementations.",
-          "howItWorks": "Processes data via structured transformation pipelines, managing memory efficiency, concurrency safety, and execution state.",
-          "stepByStep": [
-            "Step 1: Ingest input payloads and normalize data representations.",
-            "Step 2: Apply primary domain transformations and state mutations.",
-            "Step 3: Handle edge cases, null boundaries, and invalid parameter transitions.",
-            "Step 4: Emit validated output and persist operational state."
-          ],
-          "workedExample": "Input Data Transformation:\nRaw Payload: `{'id': 101, 'metric': 42.5, 'flag': True}`\nProcessing: Normalizes types -> validates bounds -> calculates derived metrics.\nTransformed Result: `{'id': 101, 'score': 0.85, 'status': 'OPTIMAL'}`.",
-          "realWorldUsage": "Production runtime execution across scalable distributed systems and analytics engines.",
-          "codeSnippet": "# Implementation Execution Loop\ndef execute_pipeline_step(data: list) -> list:\n    results = []\n    for item in data:\n        transformed = {'key': item, 'value': item * 2, 'valid': True}\n        results.append(transformed)\n    return results\n\nprint('Processed Steps:', execute_pipeline_step([10, 20, 30]))",
-          "codeExplanation": "1. Iterates over input stream with $O(N)$ linear time complexity.\n2. Emits structured transformed output records.",
-          "expectedOutput": "Processed Steps: [{'key': 10, 'value': 20, 'valid': True}, {'key': 20, 'value': 40, 'valid': True}, {'key': 30, 'value': 60, 'valid': True}]",
-          "commonMistakes": "Failing to handle empty sequences or null pointers during pipeline transformations.",
-          "bestPractices": "Profile algorithmic time complexity and memory allocations before scaling to production volumes.",
-          "practiceTask": "Construct a unit-tested implementation of the Data Versioning & Reproducibility with DVC (Data Version Control) data transformation function.",
-          "keyTakeaway": "Methodical step-by-step implementation ensures deterministic behavior and simplifies debugging in production."
-        },
-        {
-          "section": "Section 2 — Production Engineering & Best Practices",
-          "topic": "Production Optimization",
-          "title": "Lesson 3 — Performance Tuning, Error Handling & Production Best Practices",
-          "prerequisites": "Lesson 2 (Implementation Mechanics).",
-          "description": "Production engineering strategies: latency optimization, error containment, monitoring observability, and defensive design for Data Versioning & Reproducibility with DVC (Data Version Control).",
-          "whyItMatters": "Prevents cascading system outages, resource exhaustion, and silent data corruption under high-load enterprise conditions.",
-          "howItWorks": "Combines proactive health checks, structured logging, automated retry policies with exponential backoff, and circuit breaker patterns.",
-          "stepByStep": [
-            "Step 1: Implement structured telemetry and metric tracking (P50, P95, P99 latencies).",
-            "Step 2: Configure bounded timeouts and circuit breaking thresholds.",
-            "Step 3: Handle transient faults with exponential backoff and jitter.",
-            "Step 4: Validate graceful degradation paths under resource starvation."
-          ],
-          "workedExample": "Fault Injection Scenario:\nDownstream dependency experiences 500ms latency spike.\nCircuit breaker detects threshold violation -> trips to Open state -> serves cached fallback response in 2ms without cascading failure.",
-          "realWorldUsage": "Enterprise cloud services, mission-critical API gateways, and distributed microservices.",
-          "codeSnippet": "# Defensive Error Handling Pattern\nimport time\n\ndef execute_with_retry(operation_fn, max_retries=3, backoff_base=0.1):\n    for attempt in range(max_retries):\n        try:\n            return operation_fn()\n        except Exception as e:\n            if attempt == max_retries - 1:\n                raise\n            time.sleep(backoff_base * (2 ** attempt))\n\nresult = execute_with_retry(lambda: 'SUCCESSFUL_EXECUTION')\nprint(f'Execution Status: {result}')",
-          "codeExplanation": "1. Catches transient exceptions and applies exponential backoff delay.\n2. Prevents thundering herd problems during system recovery.",
-          "expectedOutput": "Execution Status: SUCCESSFUL_EXECUTION",
-          "commonMistakes": "Catching generic exceptions silently without logging or alerting, hiding critical production failures.",
-          "bestPractices": "Always configure explicit request timeouts, health probes, and structured JSON logs.",
-          "practiceTask": "Implement a retry decorator with configurable backoff and max attempt parameters.",
-          "keyTakeaway": "Robust production engineering for Data Versioning & Reproducibility with DVC (Data Version Control) requires proactive error containment, latency budgets, and structured observability."
-        },
-        {
-          "section": "Section 2 — Production Engineering & Best Practices",
-          "topic": "Review & Competency",
-          "title": "Lesson 4 — Module Review, Practice Challenge & Key Takeaways",
-          "prerequisites": "Lessons 1 through 3.",
-          "description": "Comprehensive synthesis of architectural principles, algorithmic patterns, and production guidelines for Data Versioning & Reproducibility with DVC (Data Version Control).",
-          "whyItMatters": "Consolidates theoretical knowledge into practical skills required for Level 4/5 competency qualification.",
-          "howItWorks": "Integrates core theorems, code patterns, and diagnostic checklists into an actionable practitioner reference.",
-          "stepByStep": [
-            "1. Architectural baseline: understand core system components and invariants.",
-            "2. Implementation standard: build modular, leak-free transformation pipelines.",
-            "3. Production readiness: enforce timeouts, circuit breakers, and telemetry monitoring.",
-            "4. Hands-on verification: complete the practical lab exercise to qualify for competency elevation."
-          ],
-          "workedExample": "Competency Qualification Checklist:\n[OK] Core architecture and lifecycle understood.\n[OK] Production error containment verified.\n[OK] Practical lab implementation completed satisfying target benchmarks.",
-          "realWorldUsage": "Practitioner competency baseline across enterprise engineering teams.",
-          "codeSnippet": "# Quick Competency Verification Checklist\nchecklist = [\n    '1. Architecture contracts and data flow verified',\n    '2. Input schema validation and error containment implemented',\n    '3. Performance benchmarks and latency targets satisfied'\n]\nfor item in checklist:\n    print(f'[READY] {item}')",
-          "codeExplanation": "1. Verifies complete module mastery before proceeding to the practical hands-on lab.",
-          "expectedOutput": "[READY] 1. Architecture contracts and data flow verified\n[READY] 2. Input schema validation and error containment implemented\n[READY] 3. Performance benchmarks and latency targets satisfied",
-          "commonMistakes": "Attempting competency assessment before completing the practical hands-on lab exercise.",
-          "bestPractices": "Review key takeaways and test edge cases thoroughly in your practical lab implementation.",
-          "practiceTask": "Complete the practical hands-on lab exercise below to verify your mastery of Data Versioning & Reproducibility with DVC (Data Version Control).",
-          "keyTakeaway": "You have mastered the architectural foundations, implementation patterns, and production best practices for Data Versioning & Reproducibility with DVC (Data Version Control)."
-        }
-      ]
+        practicalExercise: "Construct a 3-stage reproducible MLOps data pipeline using DVC and `dvc.yaml` that tracks data transformations from raw ingest to trained model artifacts.",
+        competencyVerification: "Demonstrates data versioning principles, DVC pipeline design, and experiment reproducibility at Level 4.",
+        resources: [
+          {
+            title: "DVC (Data Version Control) Official Documentation: Core Concepts",
+            url: "https://dvc.org/doc",
+            description: "Data tracking (.dvc files), remote storage, pipeline DAGs, and reproduction.",
+            type: "documentation",
+            provider: "Iterative.ai"
+          },
+          {
+            title: "DVC Guide: Data Pipelines and dvc.yaml Specifications",
+            url: "https://dvc.org/doc/user-guide/pipelines/defining-pipelines",
+            description: "Defining stages, dependencies, outputs, parameters, and metrics in dvc.yaml.",
+            type: "guide",
+            provider: "Iterative.ai"
+          }
+        ]
+      }
     },
     {
-      "id": "mlops-mod-3",
-      "order": 3,
-      "title": "Module 3 — Experiment Tracking & Artifact Management with MLflow",
-      "durationMinutes": 200,
-      "summary": "Systematic experiment tracking with MLflow: logging parameters, metrics, hyperparameters, artifacts, autologging integrations (Scikit-Learn, PyTorch, XGBoost), and comparative metric visualization.",
-      "learningObjectives": [
-        "Instrument ML training scripts with MLflow Tracking SDK (`mlflow.log_params`, `mlflow.log_metrics`).",
-        "Configure centralized MLflow Tracking Servers with PostgreSQL backend and S3 artifact root.",
-        "Compare experiment runs across ROC-AUC, latency, and memory metrics using the MLflow UI."
+      id: "mlops-mod-3",
+      order: 3,
+      title: "Module 3 — Experiment Tracking, Model Registry & Artifact Management with MLflow",
+      durationMinutes: 180,
+      summary: "MLflow Tracking (parameters, metrics, artifacts), model packaging with MLmodel format, centralized MLflow Model Registry, model stages (Staging, Production, Archived), and model version governance.",
+      learningObjectives: [
+        "Instrument ML training scripts with MLflow to log hyperparameters, metrics, and model artifacts.",
+        "Package models into standard MLflow MLmodel formats with environment lockfiles.",
+        "Manage model promotion lifecycles through the MLflow Model Registry with automated transition webhooks."
       ],
-      "resources": [
+      resources: [
         {
-                "title": "MLflow Official Documentation: Tracking Component",
-                "url": "https://mlflow.org/docs/latest/tracking.html",
-                "description": "Logging parameters, code versions, metrics over epochs, and model artifacts to a central server.",
-                "type": "documentation",
-                "provider": "MLflow Documentation"
+          title: "MLflow Official Documentation: Tracking & Model Registry",
+          url: "https://mlflow.org/docs/latest/index.html",
+          description: "Logging runs, autologging, model packaging, and registry governance workflows.",
+          type: "documentation",
+          provider: "MLflow / Linux Foundation"
         },
         {
-                "title": "Weights & Biases Documentation: Experiment Tracking Guide",
-                "url": "https://docs.wandb.ai/guides/track",
-                "description": "Visualizing loss curves, system GPU utilization, and hyperparameter coordinate plots.",
-                "type": "documentation",
-                "provider": "Weights & Biases"
+          title: "Databricks: Managing the Complete Machine Learning Lifecycle with MLflow",
+          url: "https://docs.databricks.com/en/mlflow/index.html",
+          description: "Enterprise model registry, stage transitions, and governance best practices.",
+          type: "guide",
+          provider: "Databricks"
         }
-],
-      "content": {
-        "overview": "MLflow Tracking provides an API and UI for logging parameters, code versions, metrics, and output files when running machine learning code to visualize and compare experimentation results.",
-        "keyConcepts": [
+      ],
+      content: {
+        overview: "MLflow provides a centralized platform for tracking experiments and managing model governance. The MLflow Model Registry tracks versioned model artifacts, metadata, and deployment stages (Staging -> Production) with auditability.",
+        keyConcepts: [
           {
-            "section": "Section 1 — Foundations & Core Mechanics",
-            "topic": "Experiment Tracking & Artifact Management with MLflow Architecture",
-            "title": "Lesson 1 — Architectural Foundations & Core Principles of Experiment Tracking & Artifact Management with MLflow",
-            "prerequisites": "Prerequisites for Experiment Tracking & Artifact Management with MLflow: foundational domain concepts and system design.",
-            "description": "Comprehensive architectural deep dive into Experiment Tracking & Artifact Management with MLflow, detailing foundational execution models, data structures, and core operating invariants.",
-            "whyItMatters": "Establishes structural competency, preventing common architectural anti-patterns and runtime failures in enterprise environments.",
-            "howItWorks": "Operates through modular components with strict interface contracts, managing lifecycle transitions and data flow state transformations.",
-            "stepByStep": [
-              "Step 1: Initialize the core Experiment Tracking & Artifact Management with MLflow execution context and configure runtime invariants.",
-              "Step 2: Establish boundary contracts and schema validation rules.",
-              "Step 3: Execute core processing loop and state synchronization.",
-              "Step 4: Verify downstream integration guarantees and error containment boundaries."
+            section: "Section 1 — MLflow Tracking & Registry",
+            topic: "Experiment Logging & Registry Governance",
+            title: "Lesson 1 — MLflow Run Instrumentation, Artifact Logging & Model Registry Promotion",
+            prerequisites: "Module 1 (Production ML Lifecycle) and Python.",
+            description: "How to log hyperparameters (`log_param`), evaluation metrics (`log_metric`), and model artifacts (`log_model`), register models to the Central Registry, and transition stages programmatically.",
+            whyItMatters: "Data scientists running hundreds of training experiments lose track of which combination of hyperparameters and dataset produced the best model without automated tracking.",
+            howItWorks: "`mlflow.start_run()` initiates tracking context. Metadata writes to a Postgres/MySQL backend; artifacts upload to S3/GCS. The Model Registry tracks registered models with semantic versioning (`v1`, `v2`).",
+            stepByStep: [
+              "Step 1: Configure tracking URI: `mlflow.set_tracking_uri('http://mlflow-server:5000')`.",
+              "Step 2: Wrap training in `with mlflow.start_run():` and log params/metrics.",
+              "Step 3: Save model with `mlflow.sklearn.log_model(model, 'model', registered_model_name='SkillPredictor')`.",
+              "Step 4: Transition model stage to `'Staging'` or `'Production'` using `MlflowClient`."
             ],
-            "workedExample": "Concrete Execution Scenario:\nInput Request: Validated domain entity with configured operational parameters.\nProcessing: Component evaluates constraints, applies domain logic, and emits state update.\nOutput: Guaranteed deterministic result adhering to enterprise service level objectives.",
-            "realWorldUsage": "Used in high-availability enterprise services, automated data pipelines, and mission-critical cloud infrastructure.",
-            "codeSnippet": "# Core Implementation Pattern: Experiment Tracking & Artifact Management with MLflow\nclass ProductionComponent:\n    def __init__(self, config: dict):\n        self.config = config\n        self._is_active = True\n\n    def process_workload(self, payload: dict) -> dict:\n        if not self._is_active:\n            raise RuntimeError('Component inactive')\n        return {'status': 'SUCCESS', 'processed': payload, 'verified': True}\n\ncomponent = ProductionComponent(config={'env': 'production'})\nprint(component.process_workload({'task': 'Experiment Tracking & Artifact Management with MLflow'}))",
-            "codeExplanation": "1. Initializes component with strict configuration encapsulation.\n2. Validates operational state before executing workload.\n3. Returns structured execution payload.",
-            "expectedOutput": "{'status': 'SUCCESS', 'processed': {'task': 'Experiment Tracking & Artifact Management with MLflow'}, 'verified': True}",
-            "commonMistakes": "Violating separation of concerns by coupling Experiment Tracking & Artifact Management with MLflow logic directly to transport layers.",
-            "bestPractices": "Always encapsulate domain logic behind strict interface contracts and validate boundary inputs defensively.",
-            "practiceTask": "Implement a minimal working prototype of Experiment Tracking & Artifact Management with MLflow with automated input validation.",
-            "keyTakeaway": "Understanding the core architectural principles of Experiment Tracking & Artifact Management with MLflow is essential for designing resilient, production-grade systems."
-          },
-          {
-            "section": "Section 1 — Foundations & Core Mechanics",
-            "topic": "Experiment Tracking & Artifact Management with MLflow Implementation",
-            "title": "Lesson 2 — Step-by-Step Implementation & Algorithm Mechanics",
-            "prerequisites": "Lesson 1 (Architectural Foundations).",
-            "description": "Detailed step-by-step implementation mechanics, algorithmic flows, and data transformations for Experiment Tracking & Artifact Management with MLflow.",
-            "whyItMatters": "Translates high-level theoretical concepts into concrete, maintainable, and high-performance production implementations.",
-            "howItWorks": "Processes data via structured transformation pipelines, managing memory efficiency, concurrency safety, and execution state.",
-            "stepByStep": [
-              "Step 1: Ingest input payloads and normalize data representations.",
-              "Step 2: Apply primary domain transformations and state mutations.",
-              "Step 3: Handle edge cases, null boundaries, and invalid parameter transitions.",
-              "Step 4: Emit validated output and persist operational state."
-            ],
-            "workedExample": "Input Data Transformation:\nRaw Payload: `{'id': 101, 'metric': 42.5, 'flag': True}`\nProcessing: Normalizes types -> validates bounds -> calculates derived metrics.\nTransformed Result: `{'id': 101, 'score': 0.85, 'status': 'OPTIMAL'}`.",
-            "realWorldUsage": "Production runtime execution across scalable distributed systems and analytics engines.",
-            "codeSnippet": "# Implementation Execution Loop\ndef execute_pipeline_step(data: list) -> list:\n    results = []\n    for item in data:\n        transformed = {'key': item, 'value': item * 2, 'valid': True}\n        results.append(transformed)\n    return results\n\nprint('Processed Steps:', execute_pipeline_step([10, 20, 30]))",
-            "codeExplanation": "1. Iterates over input stream with $O(N)$ linear time complexity.\n2. Emits structured transformed output records.",
-            "expectedOutput": "Processed Steps: [{'key': 10, 'value': 20, 'valid': True}, {'key': 20, 'value': 40, 'valid': True}, {'key': 30, 'value': 60, 'valid': True}]",
-            "commonMistakes": "Failing to handle empty sequences or null pointers during pipeline transformations.",
-            "bestPractices": "Profile algorithmic time complexity and memory allocations before scaling to production volumes.",
-            "practiceTask": "Construct a unit-tested implementation of the Experiment Tracking & Artifact Management with MLflow data transformation function.",
-            "keyTakeaway": "Methodical step-by-step implementation ensures deterministic behavior and simplifies debugging in production."
-          },
-          {
-            "section": "Section 2 — Production Engineering & Best Practices",
-            "topic": "Production Optimization",
-            "title": "Lesson 3 — Performance Tuning, Error Handling & Production Best Practices",
-            "prerequisites": "Lesson 2 (Implementation Mechanics).",
-            "description": "Production engineering strategies: latency optimization, error containment, monitoring observability, and defensive design for Experiment Tracking & Artifact Management with MLflow.",
-            "whyItMatters": "Prevents cascading system outages, resource exhaustion, and silent data corruption under high-load enterprise conditions.",
-            "howItWorks": "Combines proactive health checks, structured logging, automated retry policies with exponential backoff, and circuit breaker patterns.",
-            "stepByStep": [
-              "Step 1: Implement structured telemetry and metric tracking (P50, P95, P99 latencies).",
-              "Step 2: Configure bounded timeouts and circuit breaking thresholds.",
-              "Step 3: Handle transient faults with exponential backoff and jitter.",
-              "Step 4: Validate graceful degradation paths under resource starvation."
-            ],
-            "workedExample": "Fault Injection Scenario:\nDownstream dependency experiences 500ms latency spike.\nCircuit breaker detects threshold violation -> trips to Open state -> serves cached fallback response in 2ms without cascading failure.",
-            "realWorldUsage": "Enterprise cloud services, mission-critical API gateways, and distributed microservices.",
-            "codeSnippet": "# Defensive Error Handling Pattern\nimport time\n\ndef execute_with_retry(operation_fn, max_retries=3, backoff_base=0.1):\n    for attempt in range(max_retries):\n        try:\n            return operation_fn()\n        except Exception as e:\n            if attempt == max_retries - 1:\n                raise\n            time.sleep(backoff_base * (2 ** attempt))\n\nresult = execute_with_retry(lambda: 'SUCCESSFUL_EXECUTION')\nprint(f'Execution Status: {result}')",
-            "codeExplanation": "1. Catches transient exceptions and applies exponential backoff delay.\n2. Prevents thundering herd problems during system recovery.",
-            "expectedOutput": "Execution Status: SUCCESSFUL_EXECUTION",
-            "commonMistakes": "Catching generic exceptions silently without logging or alerting, hiding critical production failures.",
-            "bestPractices": "Always configure explicit request timeouts, health probes, and structured JSON logs.",
-            "practiceTask": "Implement a retry decorator with configurable backoff and max attempt parameters.",
-            "keyTakeaway": "Robust production engineering for Experiment Tracking & Artifact Management with MLflow requires proactive error containment, latency budgets, and structured observability."
-          },
-          {
-            "section": "Section 2 — Production Engineering & Best Practices",
-            "topic": "Review & Competency",
-            "title": "Lesson 4 — Module Review, Practice Challenge & Key Takeaways",
-            "prerequisites": "Lessons 1 through 3.",
-            "description": "Comprehensive synthesis of architectural principles, algorithmic patterns, and production guidelines for Experiment Tracking & Artifact Management with MLflow.",
-            "whyItMatters": "Consolidates theoretical knowledge into practical skills required for Level 4/5 competency qualification.",
-            "howItWorks": "Integrates core theorems, code patterns, and diagnostic checklists into an actionable practitioner reference.",
-            "stepByStep": [
-              "1. Architectural baseline: understand core system components and invariants.",
-              "2. Implementation standard: build modular, leak-free transformation pipelines.",
-              "3. Production readiness: enforce timeouts, circuit breakers, and telemetry monitoring.",
-              "4. Hands-on verification: complete the practical lab exercise to qualify for competency elevation."
-            ],
-            "workedExample": "Competency Qualification Checklist:\n[OK] Core architecture and lifecycle understood.\n[OK] Production error containment verified.\n[OK] Practical lab implementation completed satisfying target benchmarks.",
-            "realWorldUsage": "Practitioner competency baseline across enterprise engineering teams.",
-            "codeSnippet": "# Quick Competency Verification Checklist\nchecklist = [\n    '1. Architecture contracts and data flow verified',\n    '2. Input schema validation and error containment implemented',\n    '3. Performance benchmarks and latency targets satisfied'\n]\nfor item in checklist:\n    print(f'[READY] {item}')",
-            "codeExplanation": "1. Verifies complete module mastery before proceeding to the practical hands-on lab.",
-            "expectedOutput": "[READY] 1. Architecture contracts and data flow verified\n[READY] 2. Input schema validation and error containment implemented\n[READY] 3. Performance benchmarks and latency targets satisfied",
-            "commonMistakes": "Attempting competency assessment before completing the practical hands-on lab exercise.",
-            "bestPractices": "Review key takeaways and test edge cases thoroughly in your practical lab implementation.",
-            "practiceTask": "Complete the practical hands-on lab exercise below to verify your mastery of Experiment Tracking & Artifact Management with MLflow.",
-            "keyTakeaway": "You have mastered the architectural foundations, implementation patterns, and production best practices for Experiment Tracking & Artifact Management with MLflow."
+            workedExample: "MLflow Run Logging:\n```python\nwith mlflow.start_run(run_name='xgboost_lr0.05'):\n    mlflow.log_params({'learning_rate': 0.05, 'max_depth': 6})\n    mlflow.log_metrics({'f1_score': 0.92, 'roc_auc': 0.96})\n    mlflow.sklearn.log_model(model, 'model')\n```",
+            realWorldUsage: "Enterprise ML tracking at Databricks, Microsoft, Uber, and Amazon.",
+            codeSnippet: "# Complete MLflow Experiment Tracking & Registry Pipeline (Python)\nimport os\n\nclass MLflowExperimentLogger:\n    def __init__(self, experiment_name: str):\n        self.experiment_name = experiment_name\n        self.active_run = None\n\n    def log_experiment_run(self, params: dict, metrics: dict, model_name: str) -> dict:\n        run_id = f'run_{int(os.times().elapsed * 1000)}'\n        print(f'[MLflow] Starting run {run_id} in experiment \"{self.experiment_name}\"')\n        print(f'[MLflow] Logging Parameters: {params}')\n        print(f'[MLflow] Logging Metrics: {metrics}')\n        print(f'[MLflow] Registering model \"{model_name}\" version 1 to Model Registry')\n        return {\n            'run_id': run_id,\n            'status': 'FINISHED',\n            'registered_model': model_name,\n            'stage': 'Staging'\n        }\n\nlogger = MLflowExperimentLogger('Competency-Prediction')\nresult = logger.log_experiment_run(\n    params={'learning_rate': 0.01, 'n_estimators': 200},\n    metrics={'accuracy': 0.94, 'p99_latency_ms': 18.2},\n    model_name='SkillClassifier'\n)\nprint('Run Summary:', result)",
+            codeExplanation: "1. Encapsulates MLflow experiment tracking workflows.\n2. Logs hyperparameters and performance metrics.\n3. Registers versioned model into centralized governance registry.",
+            expectedOutput: "[MLflow] Starting run ... in experiment \"Competency-Prediction\"\nRun Summary: {'run_id': '...', 'status': 'FINISHED', 'registered_model': 'SkillClassifier', 'stage': 'Staging'}",
+            commonMistakes: "Logging models as generic pickle files without environment specifications (conda.yaml / requirements.txt), causing runtime deserialization failures during deployment.",
+            bestPractices: "Always use standard flavor loggers (`mlflow.pytorch.log_model`, `mlflow.sklearn.log_model`) which automatically capture exact environment dependencies.",
+            practiceTask: "Implement an automated script that queries the MLflow Model Registry, finds the latest model in Staging, and transitions it to Production if accuracy exceeds current baseline.",
+            keyTakeaway: "MLflow provides complete lineage tracking from experimental hyperparameters to production model registry deployment."
           }
         ],
-        "practicalExercise": "Set up an MLflow Tracking server and log 10 hyperparameter tuning runs with automated artifact saving.",
-        "competencyVerification": "Demonstrates systematic experiment tracking, parameter logging, and artifact management at Level 5.",
-        "resources": [
-        {
-                "title": "MLflow Official Documentation: Tracking Component",
-                "url": "https://mlflow.org/docs/latest/tracking.html",
-                "description": "Logging parameters, code versions, metrics over epochs, and model artifacts to a central server.",
-                "type": "documentation",
-                "provider": "MLflow Documentation"
-        },
-        {
-                "title": "Weights & Biases Documentation: Experiment Tracking Guide",
-                "url": "https://docs.wandb.ai/guides/track",
-                "description": "Visualizing loss curves, system GPU utilization, and hyperparameter coordinate plots.",
-                "type": "documentation",
-                "provider": "Weights & Biases"
-        }
-]
-      },
-      "keyConcepts": [
-        {
-          "section": "Section 1 — Foundations & Core Mechanics",
-          "topic": "Experiment Tracking & Artifact Management with MLflow Architecture",
-          "title": "Lesson 1 — Architectural Foundations & Core Principles of Experiment Tracking & Artifact Management with MLflow",
-          "prerequisites": "Prerequisites for Experiment Tracking & Artifact Management with MLflow: foundational domain concepts and system design.",
-          "description": "Comprehensive architectural deep dive into Experiment Tracking & Artifact Management with MLflow, detailing foundational execution models, data structures, and core operating invariants.",
-          "whyItMatters": "Establishes structural competency, preventing common architectural anti-patterns and runtime failures in enterprise environments.",
-          "howItWorks": "Operates through modular components with strict interface contracts, managing lifecycle transitions and data flow state transformations.",
-          "stepByStep": [
-            "Step 1: Initialize the core Experiment Tracking & Artifact Management with MLflow execution context and configure runtime invariants.",
-            "Step 2: Establish boundary contracts and schema validation rules.",
-            "Step 3: Execute core processing loop and state synchronization.",
-            "Step 4: Verify downstream integration guarantees and error containment boundaries."
-          ],
-          "workedExample": "Concrete Execution Scenario:\nInput Request: Validated domain entity with configured operational parameters.\nProcessing: Component evaluates constraints, applies domain logic, and emits state update.\nOutput: Guaranteed deterministic result adhering to enterprise service level objectives.",
-          "realWorldUsage": "Used in high-availability enterprise services, automated data pipelines, and mission-critical cloud infrastructure.",
-          "codeSnippet": "# Core Implementation Pattern: Experiment Tracking & Artifact Management with MLflow\nclass ProductionComponent:\n    def __init__(self, config: dict):\n        self.config = config\n        self._is_active = True\n\n    def process_workload(self, payload: dict) -> dict:\n        if not self._is_active:\n            raise RuntimeError('Component inactive')\n        return {'status': 'SUCCESS', 'processed': payload, 'verified': True}\n\ncomponent = ProductionComponent(config={'env': 'production'})\nprint(component.process_workload({'task': 'Experiment Tracking & Artifact Management with MLflow'}))",
-          "codeExplanation": "1. Initializes component with strict configuration encapsulation.\n2. Validates operational state before executing workload.\n3. Returns structured execution payload.",
-          "expectedOutput": "{'status': 'SUCCESS', 'processed': {'task': 'Experiment Tracking & Artifact Management with MLflow'}, 'verified': True}",
-          "commonMistakes": "Violating separation of concerns by coupling Experiment Tracking & Artifact Management with MLflow logic directly to transport layers.",
-          "bestPractices": "Always encapsulate domain logic behind strict interface contracts and validate boundary inputs defensively.",
-          "practiceTask": "Implement a minimal working prototype of Experiment Tracking & Artifact Management with MLflow with automated input validation.",
-          "keyTakeaway": "Understanding the core architectural principles of Experiment Tracking & Artifact Management with MLflow is essential for designing resilient, production-grade systems."
-        },
-        {
-          "section": "Section 1 — Foundations & Core Mechanics",
-          "topic": "Experiment Tracking & Artifact Management with MLflow Implementation",
-          "title": "Lesson 2 — Step-by-Step Implementation & Algorithm Mechanics",
-          "prerequisites": "Lesson 1 (Architectural Foundations).",
-          "description": "Detailed step-by-step implementation mechanics, algorithmic flows, and data transformations for Experiment Tracking & Artifact Management with MLflow.",
-          "whyItMatters": "Translates high-level theoretical concepts into concrete, maintainable, and high-performance production implementations.",
-          "howItWorks": "Processes data via structured transformation pipelines, managing memory efficiency, concurrency safety, and execution state.",
-          "stepByStep": [
-            "Step 1: Ingest input payloads and normalize data representations.",
-            "Step 2: Apply primary domain transformations and state mutations.",
-            "Step 3: Handle edge cases, null boundaries, and invalid parameter transitions.",
-            "Step 4: Emit validated output and persist operational state."
-          ],
-          "workedExample": "Input Data Transformation:\nRaw Payload: `{'id': 101, 'metric': 42.5, 'flag': True}`\nProcessing: Normalizes types -> validates bounds -> calculates derived metrics.\nTransformed Result: `{'id': 101, 'score': 0.85, 'status': 'OPTIMAL'}`.",
-          "realWorldUsage": "Production runtime execution across scalable distributed systems and analytics engines.",
-          "codeSnippet": "# Implementation Execution Loop\ndef execute_pipeline_step(data: list) -> list:\n    results = []\n    for item in data:\n        transformed = {'key': item, 'value': item * 2, 'valid': True}\n        results.append(transformed)\n    return results\n\nprint('Processed Steps:', execute_pipeline_step([10, 20, 30]))",
-          "codeExplanation": "1. Iterates over input stream with $O(N)$ linear time complexity.\n2. Emits structured transformed output records.",
-          "expectedOutput": "Processed Steps: [{'key': 10, 'value': 20, 'valid': True}, {'key': 20, 'value': 40, 'valid': True}, {'key': 30, 'value': 60, 'valid': True}]",
-          "commonMistakes": "Failing to handle empty sequences or null pointers during pipeline transformations.",
-          "bestPractices": "Profile algorithmic time complexity and memory allocations before scaling to production volumes.",
-          "practiceTask": "Construct a unit-tested implementation of the Experiment Tracking & Artifact Management with MLflow data transformation function.",
-          "keyTakeaway": "Methodical step-by-step implementation ensures deterministic behavior and simplifies debugging in production."
-        },
-        {
-          "section": "Section 2 — Production Engineering & Best Practices",
-          "topic": "Production Optimization",
-          "title": "Lesson 3 — Performance Tuning, Error Handling & Production Best Practices",
-          "prerequisites": "Lesson 2 (Implementation Mechanics).",
-          "description": "Production engineering strategies: latency optimization, error containment, monitoring observability, and defensive design for Experiment Tracking & Artifact Management with MLflow.",
-          "whyItMatters": "Prevents cascading system outages, resource exhaustion, and silent data corruption under high-load enterprise conditions.",
-          "howItWorks": "Combines proactive health checks, structured logging, automated retry policies with exponential backoff, and circuit breaker patterns.",
-          "stepByStep": [
-            "Step 1: Implement structured telemetry and metric tracking (P50, P95, P99 latencies).",
-            "Step 2: Configure bounded timeouts and circuit breaking thresholds.",
-            "Step 3: Handle transient faults with exponential backoff and jitter.",
-            "Step 4: Validate graceful degradation paths under resource starvation."
-          ],
-          "workedExample": "Fault Injection Scenario:\nDownstream dependency experiences 500ms latency spike.\nCircuit breaker detects threshold violation -> trips to Open state -> serves cached fallback response in 2ms without cascading failure.",
-          "realWorldUsage": "Enterprise cloud services, mission-critical API gateways, and distributed microservices.",
-          "codeSnippet": "# Defensive Error Handling Pattern\nimport time\n\ndef execute_with_retry(operation_fn, max_retries=3, backoff_base=0.1):\n    for attempt in range(max_retries):\n        try:\n            return operation_fn()\n        except Exception as e:\n            if attempt == max_retries - 1:\n                raise\n            time.sleep(backoff_base * (2 ** attempt))\n\nresult = execute_with_retry(lambda: 'SUCCESSFUL_EXECUTION')\nprint(f'Execution Status: {result}')",
-          "codeExplanation": "1. Catches transient exceptions and applies exponential backoff delay.\n2. Prevents thundering herd problems during system recovery.",
-          "expectedOutput": "Execution Status: SUCCESSFUL_EXECUTION",
-          "commonMistakes": "Catching generic exceptions silently without logging or alerting, hiding critical production failures.",
-          "bestPractices": "Always configure explicit request timeouts, health probes, and structured JSON logs.",
-          "practiceTask": "Implement a retry decorator with configurable backoff and max attempt parameters.",
-          "keyTakeaway": "Robust production engineering for Experiment Tracking & Artifact Management with MLflow requires proactive error containment, latency budgets, and structured observability."
-        },
-        {
-          "section": "Section 2 — Production Engineering & Best Practices",
-          "topic": "Review & Competency",
-          "title": "Lesson 4 — Module Review, Practice Challenge & Key Takeaways",
-          "prerequisites": "Lessons 1 through 3.",
-          "description": "Comprehensive synthesis of architectural principles, algorithmic patterns, and production guidelines for Experiment Tracking & Artifact Management with MLflow.",
-          "whyItMatters": "Consolidates theoretical knowledge into practical skills required for Level 4/5 competency qualification.",
-          "howItWorks": "Integrates core theorems, code patterns, and diagnostic checklists into an actionable practitioner reference.",
-          "stepByStep": [
-            "1. Architectural baseline: understand core system components and invariants.",
-            "2. Implementation standard: build modular, leak-free transformation pipelines.",
-            "3. Production readiness: enforce timeouts, circuit breakers, and telemetry monitoring.",
-            "4. Hands-on verification: complete the practical lab exercise to qualify for competency elevation."
-          ],
-          "workedExample": "Competency Qualification Checklist:\n[OK] Core architecture and lifecycle understood.\n[OK] Production error containment verified.\n[OK] Practical lab implementation completed satisfying target benchmarks.",
-          "realWorldUsage": "Practitioner competency baseline across enterprise engineering teams.",
-          "codeSnippet": "# Quick Competency Verification Checklist\nchecklist = [\n    '1. Architecture contracts and data flow verified',\n    '2. Input schema validation and error containment implemented',\n    '3. Performance benchmarks and latency targets satisfied'\n]\nfor item in checklist:\n    print(f'[READY] {item}')",
-          "codeExplanation": "1. Verifies complete module mastery before proceeding to the practical hands-on lab.",
-          "expectedOutput": "[READY] 1. Architecture contracts and data flow verified\n[READY] 2. Input schema validation and error containment implemented\n[READY] 3. Performance benchmarks and latency targets satisfied",
-          "commonMistakes": "Attempting competency assessment before completing the practical hands-on lab exercise.",
-          "bestPractices": "Review key takeaways and test edge cases thoroughly in your practical lab implementation.",
-          "practiceTask": "Complete the practical hands-on lab exercise below to verify your mastery of Experiment Tracking & Artifact Management with MLflow.",
-          "keyTakeaway": "You have mastered the architectural foundations, implementation patterns, and production best practices for Experiment Tracking & Artifact Management with MLflow."
-        }
-      ]
+        practicalExercise: "Build an automated MLflow experiment tracking and model registration pipeline in Python that logs training runs, compares candidate metrics, and promotes the best model to Production.",
+        competencyVerification: "Demonstrates experiment tracking, MLflow Model Registry governance, and artifact version management at Level 4.",
+        resources: [
+          {
+            title: "MLflow Official Documentation: Tracking & Model Registry",
+            url: "https://mlflow.org/docs/latest/index.html",
+            description: "Logging runs, autologging, model packaging, and registry governance workflows.",
+            type: "documentation",
+            provider: "MLflow / Linux Foundation"
+          },
+          {
+            title: "Databricks: Managing the Complete Machine Learning Lifecycle with MLflow",
+            url: "https://docs.databricks.com/en/mlflow/index.html",
+            description: "Enterprise model registry, stage transitions, and governance best practices.",
+            type: "guide",
+            provider: "Databricks"
+          }
+        ]
+      }
     },
     {
-      "id": "mlops-mod-4",
-      "order": 4,
-      "title": "Module 4 — Model Registry, Versioning & Lifecycle Promotion Stages",
-      "durationMinutes": 190,
-      "summary": "Governing model lifecycles: MLflow Model Registry, model versioning, stage transitions (Staging -> Production -> Archived), automated validation gates, and model signatures.",
-      "learningObjectives": [
-        "Register trained models into the centralized MLflow Model Registry with explicit input/output signatures.",
-        "Implement automated CI promotion gates validating that candidate models outperform current production baselines.",
-        "Transition model stages via Python SDK and enforce role-based access approvals."
+      id: "mlops-mod-4",
+      order: 4,
+      title: "Module 4 — Enterprise Feature Stores: Offline vs Online Synchronization with Feast",
+      durationMinutes: 180,
+      summary: "Feature engineering duplication, Feature Stores architecture (Feast), point-in-time correct joins (preventing data leakage), Offline Store (Snowflake/BigQuery/Parquet) to Online Store (Redis/DynamoDB) sync.",
+      learningObjectives: [
+        "Explain training-serving skew and the purpose of centralized Feature Stores.",
+        "Perform point-in-time correct (AS-OF) joins to eliminate future data leakage during feature generation.",
+        "Configure Feast to synchronize features between offline historical storage and low-latency online Redis stores."
       ],
-      "resources": [
+      resources: [
         {
-                "title": "MLflow Official Documentation: Model Registry",
-                "url": "https://mlflow.org/docs/latest/model-registry.html",
-                "description": "Model versioning, stage transitions (Staging -> Production -> Archived), and governance.",
-                "type": "documentation",
-                "provider": "MLflow Documentation"
+          title: "Feast (Feature Store) Official Documentation & Architecture Overview",
+          url: "https://docs.feast.dev/",
+          description: "Entities, feature views, point-in-time retrieval, and online/offline storage sync.",
+          type: "documentation",
+          provider: "Feast / Linux Foundation"
         },
         {
-                "title": "AWS Sagemaker Model Registry Documentation",
-                "url": "https://docs.aws.amazon.com/sagemaker/latest/dg/model-registry.html",
-                "description": "Enterprise model cataloging, metadata approvals, and automated deployment triggers.",
-                "type": "documentation",
-                "provider": "AWS Documentation"
+          title: "Tecton: What is a Feature Store & Why Do You Need One?",
+          url: "https://www.tecton.ai/blog/what-is-a-feature-store/",
+          description: "Solving training-serving skew, feature reuse across teams, and real-time inference lookup.",
+          type: "article",
+          provider: "Tecton"
         }
-],
-      "content": {
-        "overview": "The Model Registry provides a centralized model store, set of APIs, and UI to collaboratively manage the full lifecycle of an ML model from experimentation to production retirement.",
-        "keyConcepts": [
+      ],
+      content: {
+        overview: "Feature stores solve training-serving skew by providing a single definition for features used across both offline batch training (Parquet/Snowflake) and sub-millisecond online inference (Redis). Point-in-time joins guarantee historical consistency without future data leakage.",
+        keyConcepts: [
           {
-            "section": "Section 1 — Foundations & Core Mechanics",
-            "topic": "Model Registry, Versioning & Lifecycle Promotion Stages Architecture",
-            "title": "Lesson 1 — Architectural Foundations & Core Principles of Model Registry, Versioning & Lifecycle Promotion Stages",
-            "prerequisites": "Prerequisites for Model Registry, Versioning & Lifecycle Promotion Stages: foundational domain concepts and system design.",
-            "description": "Comprehensive architectural deep dive into Model Registry, Versioning & Lifecycle Promotion Stages, detailing foundational execution models, data structures, and core operating invariants.",
-            "whyItMatters": "Establishes structural competency, preventing common architectural anti-patterns and runtime failures in enterprise environments.",
-            "howItWorks": "Operates through modular components with strict interface contracts, managing lifecycle transitions and data flow state transformations.",
-            "stepByStep": [
-              "Step 1: Initialize the core Model Registry, Versioning & Lifecycle Promotion Stages execution context and configure runtime invariants.",
-              "Step 2: Establish boundary contracts and schema validation rules.",
-              "Step 3: Execute core processing loop and state synchronization.",
-              "Step 4: Verify downstream integration guarantees and error containment boundaries."
+            section: "Section 1 — Feature Store Architecture & Feast",
+            topic: "Point-in-Time Joins & Online Sync",
+            title: "Lesson 1 — Feature Views, Point-in-Time (AS-OF) Joins & Redis Online Sync with Feast",
+            prerequisites: "Module 1 (ML Lifecycle) and SQL joins.",
+            description: "How Feast defines FeatureViews over raw data sources, how point-in-time correct joins prevent data leakage by matching features as they existed at the exact timestamp of each training event, and how `feast materialize` synchronizes data to Redis for online lookup.",
+            whyItMatters: "Using current feature values when training on past events introduces target leakage (using future information), causing models to fail catastrophically in production.",
+            howItWorks: "Feast evaluates: `EventTimestamp >= FeatureTimestamp`. For training, it executes an AS-OF join against the Offline Store. For real-time inference, it performs an $O(1)$ key lookup against the Online Store (Redis).",
+            stepByStep: [
+              "Step 1: Define `Entity` (e.g., `employee_id`) and `FeatureView` in Python.",
+              "Step 2: Execute `store.get_historical_features()` for point-in-time training data extraction.",
+              "Step 3: Run `feast materialize` to push latest features into online Redis store.",
+              "Step 4: Fetch online features in inference API via `store.get_online_features()` in <5ms."
             ],
-            "workedExample": "Concrete Execution Scenario:\nInput Request: Validated domain entity with configured operational parameters.\nProcessing: Component evaluates constraints, applies domain logic, and emits state update.\nOutput: Guaranteed deterministic result adhering to enterprise service level objectives.",
-            "realWorldUsage": "Used in high-availability enterprise services, automated data pipelines, and mission-critical cloud infrastructure.",
-            "codeSnippet": "# Core Implementation Pattern: Model Registry, Versioning & Lifecycle Promotion Stages\nclass ProductionComponent:\n    def __init__(self, config: dict):\n        self.config = config\n        self._is_active = True\n\n    def process_workload(self, payload: dict) -> dict:\n        if not self._is_active:\n            raise RuntimeError('Component inactive')\n        return {'status': 'SUCCESS', 'processed': payload, 'verified': True}\n\ncomponent = ProductionComponent(config={'env': 'production'})\nprint(component.process_workload({'task': 'Model Registry, Versioning & Lifecycle Promotion Stages'}))",
-            "codeExplanation": "1. Initializes component with strict configuration encapsulation.\n2. Validates operational state before executing workload.\n3. Returns structured execution payload.",
-            "expectedOutput": "{'status': 'SUCCESS', 'processed': {'task': 'Model Registry, Versioning & Lifecycle Promotion Stages'}, 'verified': True}",
-            "commonMistakes": "Violating separation of concerns by coupling Model Registry, Versioning & Lifecycle Promotion Stages logic directly to transport layers.",
-            "bestPractices": "Always encapsulate domain logic behind strict interface contracts and validate boundary inputs defensively.",
-            "practiceTask": "Implement a minimal working prototype of Model Registry, Versioning & Lifecycle Promotion Stages with automated input validation.",
-            "keyTakeaway": "Understanding the core architectural principles of Model Registry, Versioning & Lifecycle Promotion Stages is essential for designing resilient, production-grade systems."
-          },
-          {
-            "section": "Section 1 — Foundations & Core Mechanics",
-            "topic": "Model Registry, Versioning & Lifecycle Promotion Stages Implementation",
-            "title": "Lesson 2 — Step-by-Step Implementation & Algorithm Mechanics",
-            "prerequisites": "Lesson 1 (Architectural Foundations).",
-            "description": "Detailed step-by-step implementation mechanics, algorithmic flows, and data transformations for Model Registry, Versioning & Lifecycle Promotion Stages.",
-            "whyItMatters": "Translates high-level theoretical concepts into concrete, maintainable, and high-performance production implementations.",
-            "howItWorks": "Processes data via structured transformation pipelines, managing memory efficiency, concurrency safety, and execution state.",
-            "stepByStep": [
-              "Step 1: Ingest input payloads and normalize data representations.",
-              "Step 2: Apply primary domain transformations and state mutations.",
-              "Step 3: Handle edge cases, null boundaries, and invalid parameter transitions.",
-              "Step 4: Emit validated output and persist operational state."
-            ],
-            "workedExample": "Input Data Transformation:\nRaw Payload: `{'id': 101, 'metric': 42.5, 'flag': True}`\nProcessing: Normalizes types -> validates bounds -> calculates derived metrics.\nTransformed Result: `{'id': 101, 'score': 0.85, 'status': 'OPTIMAL'}`.",
-            "realWorldUsage": "Production runtime execution across scalable distributed systems and analytics engines.",
-            "codeSnippet": "# Implementation Execution Loop\ndef execute_pipeline_step(data: list) -> list:\n    results = []\n    for item in data:\n        transformed = {'key': item, 'value': item * 2, 'valid': True}\n        results.append(transformed)\n    return results\n\nprint('Processed Steps:', execute_pipeline_step([10, 20, 30]))",
-            "codeExplanation": "1. Iterates over input stream with $O(N)$ linear time complexity.\n2. Emits structured transformed output records.",
-            "expectedOutput": "Processed Steps: [{'key': 10, 'value': 20, 'valid': True}, {'key': 20, 'value': 40, 'valid': True}, {'key': 30, 'value': 60, 'valid': True}]",
-            "commonMistakes": "Failing to handle empty sequences or null pointers during pipeline transformations.",
-            "bestPractices": "Profile algorithmic time complexity and memory allocations before scaling to production volumes.",
-            "practiceTask": "Construct a unit-tested implementation of the Model Registry, Versioning & Lifecycle Promotion Stages data transformation function.",
-            "keyTakeaway": "Methodical step-by-step implementation ensures deterministic behavior and simplifies debugging in production."
-          },
-          {
-            "section": "Section 2 — Production Engineering & Best Practices",
-            "topic": "Production Optimization",
-            "title": "Lesson 3 — Performance Tuning, Error Handling & Production Best Practices",
-            "prerequisites": "Lesson 2 (Implementation Mechanics).",
-            "description": "Production engineering strategies: latency optimization, error containment, monitoring observability, and defensive design for Model Registry, Versioning & Lifecycle Promotion Stages.",
-            "whyItMatters": "Prevents cascading system outages, resource exhaustion, and silent data corruption under high-load enterprise conditions.",
-            "howItWorks": "Combines proactive health checks, structured logging, automated retry policies with exponential backoff, and circuit breaker patterns.",
-            "stepByStep": [
-              "Step 1: Implement structured telemetry and metric tracking (P50, P95, P99 latencies).",
-              "Step 2: Configure bounded timeouts and circuit breaking thresholds.",
-              "Step 3: Handle transient faults with exponential backoff and jitter.",
-              "Step 4: Validate graceful degradation paths under resource starvation."
-            ],
-            "workedExample": "Fault Injection Scenario:\nDownstream dependency experiences 500ms latency spike.\nCircuit breaker detects threshold violation -> trips to Open state -> serves cached fallback response in 2ms without cascading failure.",
-            "realWorldUsage": "Enterprise cloud services, mission-critical API gateways, and distributed microservices.",
-            "codeSnippet": "# Defensive Error Handling Pattern\nimport time\n\ndef execute_with_retry(operation_fn, max_retries=3, backoff_base=0.1):\n    for attempt in range(max_retries):\n        try:\n            return operation_fn()\n        except Exception as e:\n            if attempt == max_retries - 1:\n                raise\n            time.sleep(backoff_base * (2 ** attempt))\n\nresult = execute_with_retry(lambda: 'SUCCESSFUL_EXECUTION')\nprint(f'Execution Status: {result}')",
-            "codeExplanation": "1. Catches transient exceptions and applies exponential backoff delay.\n2. Prevents thundering herd problems during system recovery.",
-            "expectedOutput": "Execution Status: SUCCESSFUL_EXECUTION",
-            "commonMistakes": "Catching generic exceptions silently without logging or alerting, hiding critical production failures.",
-            "bestPractices": "Always configure explicit request timeouts, health probes, and structured JSON logs.",
-            "practiceTask": "Implement a retry decorator with configurable backoff and max attempt parameters.",
-            "keyTakeaway": "Robust production engineering for Model Registry, Versioning & Lifecycle Promotion Stages requires proactive error containment, latency budgets, and structured observability."
-          },
-          {
-            "section": "Section 2 — Production Engineering & Best Practices",
-            "topic": "Review & Competency",
-            "title": "Lesson 4 — Module Review, Practice Challenge & Key Takeaways",
-            "prerequisites": "Lessons 1 through 3.",
-            "description": "Comprehensive synthesis of architectural principles, algorithmic patterns, and production guidelines for Model Registry, Versioning & Lifecycle Promotion Stages.",
-            "whyItMatters": "Consolidates theoretical knowledge into practical skills required for Level 4/5 competency qualification.",
-            "howItWorks": "Integrates core theorems, code patterns, and diagnostic checklists into an actionable practitioner reference.",
-            "stepByStep": [
-              "1. Architectural baseline: understand core system components and invariants.",
-              "2. Implementation standard: build modular, leak-free transformation pipelines.",
-              "3. Production readiness: enforce timeouts, circuit breakers, and telemetry monitoring.",
-              "4. Hands-on verification: complete the practical lab exercise to qualify for competency elevation."
-            ],
-            "workedExample": "Competency Qualification Checklist:\n[OK] Core architecture and lifecycle understood.\n[OK] Production error containment verified.\n[OK] Practical lab implementation completed satisfying target benchmarks.",
-            "realWorldUsage": "Practitioner competency baseline across enterprise engineering teams.",
-            "codeSnippet": "# Quick Competency Verification Checklist\nchecklist = [\n    '1. Architecture contracts and data flow verified',\n    '2. Input schema validation and error containment implemented',\n    '3. Performance benchmarks and latency targets satisfied'\n]\nfor item in checklist:\n    print(f'[READY] {item}')",
-            "codeExplanation": "1. Verifies complete module mastery before proceeding to the practical hands-on lab.",
-            "expectedOutput": "[READY] 1. Architecture contracts and data flow verified\n[READY] 2. Input schema validation and error containment implemented\n[READY] 3. Performance benchmarks and latency targets satisfied",
-            "commonMistakes": "Attempting competency assessment before completing the practical hands-on lab exercise.",
-            "bestPractices": "Review key takeaways and test edge cases thoroughly in your practical lab implementation.",
-            "practiceTask": "Complete the practical hands-on lab exercise below to verify your mastery of Model Registry, Versioning & Lifecycle Promotion Stages.",
-            "keyTakeaway": "You have mastered the architectural foundations, implementation patterns, and production best practices for Model Registry, Versioning & Lifecycle Promotion Stages."
+            workedExample: "Point-in-Time Join Logic:\n- Training Event: Employee assessment submitted at `2026-06-01 14:00:00`.\n- Feature Store retrieves employee's completed courses as of `2026-06-01 14:00:00`, strictly ignoring courses completed in August 2026.",
+            realWorldUsage: "Real-time fraud scoring, recommendation engines, employee talent matching.",
+            codeSnippet: "# Feast Feature Store Definition & Online Retrieval Pattern (Python)\nfrom datetime import datetime\n\nclass MockFeastFeatureStore:\n    def __init__(self):\n        # Simulated online Redis feature store\n        self.online_store = {\n            'EMP_101': {'completed_modules_count': 14, 'avg_assessment_score': 92.5, 'days_active': 120}\n        }\n\n    def get_online_features(self, entity_keys: list[str], features: list[str]) -> list[dict]:\n        results = []\n        for key in entity_keys:\n            stored = self.online_store.get(key, {})\n            filtered = {f: stored.get(f, 0.0) for f in features}\n            filtered['entity_id'] = key\n            results.append(filtered)\n        return results\n\nstore = MockFeastFeatureStore()\nfeatures = store.get_online_features(\n    entity_keys=['EMP_101'],\n    features=['completed_modules_count', 'avg_assessment_score']\n)\nprint('Retrieved Online Features for Real-Time Inference:', features)",
+            codeExplanation: "1. Defines entity-level feature retrieval schema.\n2. Performs sub-millisecond feature lookup for online model inference.\n3. Eliminates training-serving skew by referencing consistent feature definitions.",
+            expectedOutput: "Retrieved Online Features for Real-Time Inference: [{'completed_modules_count': 14, 'avg_assessment_score': 92.5, 'entity_id': 'EMP_101'}]",
+            commonMistakes: "Calculating features differently in SQL for offline training vs in Python for real-time serving, creating training-serving skew.",
+            bestPractices: "Define features once in a centralized Feast feature repository and share across both training and serving pipelines.",
+            practiceTask: "Define a Feast FeatureView in Python for employee learning telemetry and execute a simulated point-in-time historical feature join.",
+            keyTakeaway: "Feature stores eliminate training-serving skew and prevent target leakage through point-in-time historical joins."
           }
         ],
-        "practicalExercise": "Build an automated Model Registry promotion pipeline that verifies accuracy benchmarks before staging release.",
-        "competencyVerification": "Proves model registry administration, lifecycle governance, and automated promotion gating at Level 5.",
-        "resources": [
-        {
-                "title": "MLflow Official Documentation: Model Registry",
-                "url": "https://mlflow.org/docs/latest/model-registry.html",
-                "description": "Model versioning, stage transitions (Staging -> Production -> Archived), and governance.",
-                "type": "documentation",
-                "provider": "MLflow Documentation"
-        },
-        {
-                "title": "AWS Sagemaker Model Registry Documentation",
-                "url": "https://docs.aws.amazon.com/sagemaker/latest/dg/model-registry.html",
-                "description": "Enterprise model cataloging, metadata approvals, and automated deployment triggers.",
-                "type": "documentation",
-                "provider": "AWS Documentation"
-        }
-]
-      },
-      "keyConcepts": [
-        {
-          "section": "Section 1 — Foundations & Core Mechanics",
-          "topic": "Model Registry, Versioning & Lifecycle Promotion Stages Architecture",
-          "title": "Lesson 1 — Architectural Foundations & Core Principles of Model Registry, Versioning & Lifecycle Promotion Stages",
-          "prerequisites": "Prerequisites for Model Registry, Versioning & Lifecycle Promotion Stages: foundational domain concepts and system design.",
-          "description": "Comprehensive architectural deep dive into Model Registry, Versioning & Lifecycle Promotion Stages, detailing foundational execution models, data structures, and core operating invariants.",
-          "whyItMatters": "Establishes structural competency, preventing common architectural anti-patterns and runtime failures in enterprise environments.",
-          "howItWorks": "Operates through modular components with strict interface contracts, managing lifecycle transitions and data flow state transformations.",
-          "stepByStep": [
-            "Step 1: Initialize the core Model Registry, Versioning & Lifecycle Promotion Stages execution context and configure runtime invariants.",
-            "Step 2: Establish boundary contracts and schema validation rules.",
-            "Step 3: Execute core processing loop and state synchronization.",
-            "Step 4: Verify downstream integration guarantees and error containment boundaries."
-          ],
-          "workedExample": "Concrete Execution Scenario:\nInput Request: Validated domain entity with configured operational parameters.\nProcessing: Component evaluates constraints, applies domain logic, and emits state update.\nOutput: Guaranteed deterministic result adhering to enterprise service level objectives.",
-          "realWorldUsage": "Used in high-availability enterprise services, automated data pipelines, and mission-critical cloud infrastructure.",
-          "codeSnippet": "# Core Implementation Pattern: Model Registry, Versioning & Lifecycle Promotion Stages\nclass ProductionComponent:\n    def __init__(self, config: dict):\n        self.config = config\n        self._is_active = True\n\n    def process_workload(self, payload: dict) -> dict:\n        if not self._is_active:\n            raise RuntimeError('Component inactive')\n        return {'status': 'SUCCESS', 'processed': payload, 'verified': True}\n\ncomponent = ProductionComponent(config={'env': 'production'})\nprint(component.process_workload({'task': 'Model Registry, Versioning & Lifecycle Promotion Stages'}))",
-          "codeExplanation": "1. Initializes component with strict configuration encapsulation.\n2. Validates operational state before executing workload.\n3. Returns structured execution payload.",
-          "expectedOutput": "{'status': 'SUCCESS', 'processed': {'task': 'Model Registry, Versioning & Lifecycle Promotion Stages'}, 'verified': True}",
-          "commonMistakes": "Violating separation of concerns by coupling Model Registry, Versioning & Lifecycle Promotion Stages logic directly to transport layers.",
-          "bestPractices": "Always encapsulate domain logic behind strict interface contracts and validate boundary inputs defensively.",
-          "practiceTask": "Implement a minimal working prototype of Model Registry, Versioning & Lifecycle Promotion Stages with automated input validation.",
-          "keyTakeaway": "Understanding the core architectural principles of Model Registry, Versioning & Lifecycle Promotion Stages is essential for designing resilient, production-grade systems."
-        },
-        {
-          "section": "Section 1 — Foundations & Core Mechanics",
-          "topic": "Model Registry, Versioning & Lifecycle Promotion Stages Implementation",
-          "title": "Lesson 2 — Step-by-Step Implementation & Algorithm Mechanics",
-          "prerequisites": "Lesson 1 (Architectural Foundations).",
-          "description": "Detailed step-by-step implementation mechanics, algorithmic flows, and data transformations for Model Registry, Versioning & Lifecycle Promotion Stages.",
-          "whyItMatters": "Translates high-level theoretical concepts into concrete, maintainable, and high-performance production implementations.",
-          "howItWorks": "Processes data via structured transformation pipelines, managing memory efficiency, concurrency safety, and execution state.",
-          "stepByStep": [
-            "Step 1: Ingest input payloads and normalize data representations.",
-            "Step 2: Apply primary domain transformations and state mutations.",
-            "Step 3: Handle edge cases, null boundaries, and invalid parameter transitions.",
-            "Step 4: Emit validated output and persist operational state."
-          ],
-          "workedExample": "Input Data Transformation:\nRaw Payload: `{'id': 101, 'metric': 42.5, 'flag': True}`\nProcessing: Normalizes types -> validates bounds -> calculates derived metrics.\nTransformed Result: `{'id': 101, 'score': 0.85, 'status': 'OPTIMAL'}`.",
-          "realWorldUsage": "Production runtime execution across scalable distributed systems and analytics engines.",
-          "codeSnippet": "# Implementation Execution Loop\ndef execute_pipeline_step(data: list) -> list:\n    results = []\n    for item in data:\n        transformed = {'key': item, 'value': item * 2, 'valid': True}\n        results.append(transformed)\n    return results\n\nprint('Processed Steps:', execute_pipeline_step([10, 20, 30]))",
-          "codeExplanation": "1. Iterates over input stream with $O(N)$ linear time complexity.\n2. Emits structured transformed output records.",
-          "expectedOutput": "Processed Steps: [{'key': 10, 'value': 20, 'valid': True}, {'key': 20, 'value': 40, 'valid': True}, {'key': 30, 'value': 60, 'valid': True}]",
-          "commonMistakes": "Failing to handle empty sequences or null pointers during pipeline transformations.",
-          "bestPractices": "Profile algorithmic time complexity and memory allocations before scaling to production volumes.",
-          "practiceTask": "Construct a unit-tested implementation of the Model Registry, Versioning & Lifecycle Promotion Stages data transformation function.",
-          "keyTakeaway": "Methodical step-by-step implementation ensures deterministic behavior and simplifies debugging in production."
-        },
-        {
-          "section": "Section 2 — Production Engineering & Best Practices",
-          "topic": "Production Optimization",
-          "title": "Lesson 3 — Performance Tuning, Error Handling & Production Best Practices",
-          "prerequisites": "Lesson 2 (Implementation Mechanics).",
-          "description": "Production engineering strategies: latency optimization, error containment, monitoring observability, and defensive design for Model Registry, Versioning & Lifecycle Promotion Stages.",
-          "whyItMatters": "Prevents cascading system outages, resource exhaustion, and silent data corruption under high-load enterprise conditions.",
-          "howItWorks": "Combines proactive health checks, structured logging, automated retry policies with exponential backoff, and circuit breaker patterns.",
-          "stepByStep": [
-            "Step 1: Implement structured telemetry and metric tracking (P50, P95, P99 latencies).",
-            "Step 2: Configure bounded timeouts and circuit breaking thresholds.",
-            "Step 3: Handle transient faults with exponential backoff and jitter.",
-            "Step 4: Validate graceful degradation paths under resource starvation."
-          ],
-          "workedExample": "Fault Injection Scenario:\nDownstream dependency experiences 500ms latency spike.\nCircuit breaker detects threshold violation -> trips to Open state -> serves cached fallback response in 2ms without cascading failure.",
-          "realWorldUsage": "Enterprise cloud services, mission-critical API gateways, and distributed microservices.",
-          "codeSnippet": "# Defensive Error Handling Pattern\nimport time\n\ndef execute_with_retry(operation_fn, max_retries=3, backoff_base=0.1):\n    for attempt in range(max_retries):\n        try:\n            return operation_fn()\n        except Exception as e:\n            if attempt == max_retries - 1:\n                raise\n            time.sleep(backoff_base * (2 ** attempt))\n\nresult = execute_with_retry(lambda: 'SUCCESSFUL_EXECUTION')\nprint(f'Execution Status: {result}')",
-          "codeExplanation": "1. Catches transient exceptions and applies exponential backoff delay.\n2. Prevents thundering herd problems during system recovery.",
-          "expectedOutput": "Execution Status: SUCCESSFUL_EXECUTION",
-          "commonMistakes": "Catching generic exceptions silently without logging or alerting, hiding critical production failures.",
-          "bestPractices": "Always configure explicit request timeouts, health probes, and structured JSON logs.",
-          "practiceTask": "Implement a retry decorator with configurable backoff and max attempt parameters.",
-          "keyTakeaway": "Robust production engineering for Model Registry, Versioning & Lifecycle Promotion Stages requires proactive error containment, latency budgets, and structured observability."
-        },
-        {
-          "section": "Section 2 — Production Engineering & Best Practices",
-          "topic": "Review & Competency",
-          "title": "Lesson 4 — Module Review, Practice Challenge & Key Takeaways",
-          "prerequisites": "Lessons 1 through 3.",
-          "description": "Comprehensive synthesis of architectural principles, algorithmic patterns, and production guidelines for Model Registry, Versioning & Lifecycle Promotion Stages.",
-          "whyItMatters": "Consolidates theoretical knowledge into practical skills required for Level 4/5 competency qualification.",
-          "howItWorks": "Integrates core theorems, code patterns, and diagnostic checklists into an actionable practitioner reference.",
-          "stepByStep": [
-            "1. Architectural baseline: understand core system components and invariants.",
-            "2. Implementation standard: build modular, leak-free transformation pipelines.",
-            "3. Production readiness: enforce timeouts, circuit breakers, and telemetry monitoring.",
-            "4. Hands-on verification: complete the practical lab exercise to qualify for competency elevation."
-          ],
-          "workedExample": "Competency Qualification Checklist:\n[OK] Core architecture and lifecycle understood.\n[OK] Production error containment verified.\n[OK] Practical lab implementation completed satisfying target benchmarks.",
-          "realWorldUsage": "Practitioner competency baseline across enterprise engineering teams.",
-          "codeSnippet": "# Quick Competency Verification Checklist\nchecklist = [\n    '1. Architecture contracts and data flow verified',\n    '2. Input schema validation and error containment implemented',\n    '3. Performance benchmarks and latency targets satisfied'\n]\nfor item in checklist:\n    print(f'[READY] {item}')",
-          "codeExplanation": "1. Verifies complete module mastery before proceeding to the practical hands-on lab.",
-          "expectedOutput": "[READY] 1. Architecture contracts and data flow verified\n[READY] 2. Input schema validation and error containment implemented\n[READY] 3. Performance benchmarks and latency targets satisfied",
-          "commonMistakes": "Attempting competency assessment before completing the practical hands-on lab exercise.",
-          "bestPractices": "Review key takeaways and test edge cases thoroughly in your practical lab implementation.",
-          "practiceTask": "Complete the practical hands-on lab exercise below to verify your mastery of Model Registry, Versioning & Lifecycle Promotion Stages.",
-          "keyTakeaway": "You have mastered the architectural foundations, implementation patterns, and production best practices for Model Registry, Versioning & Lifecycle Promotion Stages."
-        }
-      ]
+        practicalExercise: "Design a complete Feast feature store repository for workforce capacity analytics with offline historical dataset joins and low-latency Redis online serving.",
+        competencyVerification: "Demonstrates Feature Store architecture, point-in-time join mathematics, and Feast online synchronization at Level 4.",
+        resources: [
+          {
+            title: "Feast (Feature Store) Official Documentation & Architecture Overview",
+            url: "https://docs.feast.dev/",
+            description: "Entities, feature views, point-in-time retrieval, and online/offline storage sync.",
+            type: "documentation",
+            provider: "Feast / Linux Foundation"
+          },
+          {
+            title: "Tecton: What is a Feature Store & Why Do You Need One?",
+            url: "https://www.tecton.ai/blog/what-is-a-feature-store/",
+            description: "Solving training-serving skew, feature reuse across teams, and real-time inference lookup.",
+            type: "article",
+            provider: "Tecton"
+          }
+        ]
+      }
     },
     {
-      "id": "mlops-mod-5",
-      "order": 5,
-      "title": "Module 5 — Continuous Integration & Automated Testing for ML (CI/CD for ML)",
-      "durationMinutes": 200,
-      "summary": "Testing ML systems: Data validation tests (Great Expectations), unit testing model components, integration testing training pipelines, regression testing model accuracy, and GitHub Actions automation.",
-      "learningObjectives": [
-        "Author declarative data validation suites using Great Expectations to catch data anomalies.",
-        "Implement unit tests for feature transformation pipelines preventing silent calculation bugs.",
-        "Construct GitHub Actions CI/CD workflows executing automated model regression tests on pull requests."
+      id: "mlops-mod-5",
+      order: 5,
+      title: "Module 5 — Continuous Integration for ML: Automated Testing, Data Validation (Great Expectations)",
+      durationMinutes: 180,
+      summary: "Data validation pipelines (Great Expectations, Pandera), schema enforcement, automated unit/integration tests for ML pipelines, and pre-commit model regression checks.",
+      learningObjectives: [
+        "Author declarative data validation suites using Great Expectations.",
+        "Implement automated CI/CD pipeline tests validating feature distributions and null rates.",
+        "Detect data corruption before data enters model training pipelines."
       ],
-      "resources": [
+      resources: [
         {
-                "title": "CML (Continuous Machine Learning) Documentation",
-                "url": "https://cml.dev/",
-                "description": "Automated model evaluation reports, pull request metric diffs, and cloud GPU runner provisioning.",
-                "type": "documentation",
-                "provider": "Iterative CML"
+          title: "Great Expectations Official Documentation: Core Concepts",
+          url: "https://docs.greatexpectations.io/docs/",
+          description: "Expectations, Expectation Suites, Data Docs, and Checkpoints for automated data testing.",
+          type: "documentation",
+          provider: "Great Expectations"
         },
         {
-                "title": "Great Expectations Documentation: Automated Data Validation",
-                "url": "https://docs.greatexpectations.io/docs/home/",
-                "description": "Asserting data schema integrity, null checks, distribution constraints in CI/CD pipelines.",
-                "type": "documentation",
-                "provider": "Great Expectations"
+          title: "Testing Machine Learning Systems: Code, Data, Model (Eugene Yan)",
+          url: "https://eugeneyan.com/writing/testing-ml/",
+          description: "Comprehensive taxonomy of unit tests, integration tests, and behavioral tests for ML systems.",
+          type: "guide",
+          provider: "Eugene Yan"
         }
-],
-      "content": {
-        "overview": "Testing in ML extends beyond traditional code unit tests to include data validation, feature invariant checks, and model performance regression verification.",
-        "keyConcepts": [
+      ],
+      content: {
+        overview: "In software engineering, bugs originate in code; in machine learning, bugs originate in code AND data. Great Expectations validates data schemas, value ranges, and distribution constraints before corrupted data triggers silent model training failures.",
+        keyConcepts: [
           {
-            "section": "Section 1 — Foundations & Core Mechanics",
-            "topic": "Continuous Integration & Automated Testing for ML (CI/CD for ML) Architecture",
-            "title": "Lesson 1 — Architectural Foundations & Core Principles of Continuous Integration & Automated Testing for ML (CI/CD for ML)",
-            "prerequisites": "Prerequisites for Continuous Integration & Automated Testing for ML (CI/CD for ML): foundational domain concepts and system design.",
-            "description": "Comprehensive architectural deep dive into Continuous Integration & Automated Testing for ML (CI/CD for ML), detailing foundational execution models, data structures, and core operating invariants.",
-            "whyItMatters": "Establishes structural competency, preventing common architectural anti-patterns and runtime failures in enterprise environments.",
-            "howItWorks": "Operates through modular components with strict interface contracts, managing lifecycle transitions and data flow state transformations.",
-            "stepByStep": [
-              "Step 1: Initialize the core Continuous Integration & Automated Testing for ML (CI/CD for ML) execution context and configure runtime invariants.",
-              "Step 2: Establish boundary contracts and schema validation rules.",
-              "Step 3: Execute core processing loop and state synchronization.",
-              "Step 4: Verify downstream integration guarantees and error containment boundaries."
+            section: "Section 1 — Data Testing & Great Expectations",
+            topic: "Expectation Suites & Automated CI",
+            title: "Lesson 1 — Great Expectations Suites, Automated Data Assertions & CI Quality Gates",
+            prerequisites: "Module 2 (DVC) and Python data processing.",
+            description: "How to declare expectation assertions (`expect_column_values_to_be_between`, `expect_column_values_to_not_be_null`), build Expectation Suites, and block CI pipeline execution if data validation fails.",
+            whyItMatters: "Upstream database changes (e.g., changing rating scale from 1-5 to 1-100 or introducing nulls) silently corrupt model training without throwing syntax errors.",
+            howItWorks: "Great Expectations executes assertions against Pandas/Spark DataFrames, generates visual Data Docs reports, and returns a binary pass/fail validation result to the CI pipeline.",
+            stepByStep: [
+              "Step 1: Define Expectation Suite with column type, nullability, and range constraints.",
+              "Step 2: Run Checkpoint validation against incoming batch data.",
+              "Step 3: Inspect validation report (`success: true / false`).",
+              "Step 4: Block automated training pipeline if any critical expectation fails."
             ],
-            "workedExample": "Concrete Execution Scenario:\nInput Request: Validated domain entity with configured operational parameters.\nProcessing: Component evaluates constraints, applies domain logic, and emits state update.\nOutput: Guaranteed deterministic result adhering to enterprise service level objectives.",
-            "realWorldUsage": "Used in high-availability enterprise services, automated data pipelines, and mission-critical cloud infrastructure.",
-            "codeSnippet": "# Core Implementation Pattern: Continuous Integration & Automated Testing for ML (CI/CD for ML)\nclass ProductionComponent:\n    def __init__(self, config: dict):\n        self.config = config\n        self._is_active = True\n\n    def process_workload(self, payload: dict) -> dict:\n        if not self._is_active:\n            raise RuntimeError('Component inactive')\n        return {'status': 'SUCCESS', 'processed': payload, 'verified': True}\n\ncomponent = ProductionComponent(config={'env': 'production'})\nprint(component.process_workload({'task': 'Continuous Integration & Automated Testing for ML (CI/CD for ML)'}))",
-            "codeExplanation": "1. Initializes component with strict configuration encapsulation.\n2. Validates operational state before executing workload.\n3. Returns structured execution payload.",
-            "expectedOutput": "{'status': 'SUCCESS', 'processed': {'task': 'Continuous Integration & Automated Testing for ML (CI/CD for ML)'}, 'verified': True}",
-            "commonMistakes": "Violating separation of concerns by coupling Continuous Integration & Automated Testing for ML (CI/CD for ML) logic directly to transport layers.",
-            "bestPractices": "Always encapsulate domain logic behind strict interface contracts and validate boundary inputs defensively.",
-            "practiceTask": "Implement a minimal working prototype of Continuous Integration & Automated Testing for ML (CI/CD for ML) with automated input validation.",
-            "keyTakeaway": "Understanding the core architectural principles of Continuous Integration & Automated Testing for ML (CI/CD for ML) is essential for designing resilient, production-grade systems."
-          },
-          {
-            "section": "Section 1 — Foundations & Core Mechanics",
-            "topic": "Continuous Integration & Automated Testing for ML (CI/CD for ML) Implementation",
-            "title": "Lesson 2 — Step-by-Step Implementation & Algorithm Mechanics",
-            "prerequisites": "Lesson 1 (Architectural Foundations).",
-            "description": "Detailed step-by-step implementation mechanics, algorithmic flows, and data transformations for Continuous Integration & Automated Testing for ML (CI/CD for ML).",
-            "whyItMatters": "Translates high-level theoretical concepts into concrete, maintainable, and high-performance production implementations.",
-            "howItWorks": "Processes data via structured transformation pipelines, managing memory efficiency, concurrency safety, and execution state.",
-            "stepByStep": [
-              "Step 1: Ingest input payloads and normalize data representations.",
-              "Step 2: Apply primary domain transformations and state mutations.",
-              "Step 3: Handle edge cases, null boundaries, and invalid parameter transitions.",
-              "Step 4: Emit validated output and persist operational state."
-            ],
-            "workedExample": "Input Data Transformation:\nRaw Payload: `{'id': 101, 'metric': 42.5, 'flag': True}`\nProcessing: Normalizes types -> validates bounds -> calculates derived metrics.\nTransformed Result: `{'id': 101, 'score': 0.85, 'status': 'OPTIMAL'}`.",
-            "realWorldUsage": "Production runtime execution across scalable distributed systems and analytics engines.",
-            "codeSnippet": "# Implementation Execution Loop\ndef execute_pipeline_step(data: list) -> list:\n    results = []\n    for item in data:\n        transformed = {'key': item, 'value': item * 2, 'valid': True}\n        results.append(transformed)\n    return results\n\nprint('Processed Steps:', execute_pipeline_step([10, 20, 30]))",
-            "codeExplanation": "1. Iterates over input stream with $O(N)$ linear time complexity.\n2. Emits structured transformed output records.",
-            "expectedOutput": "Processed Steps: [{'key': 10, 'value': 20, 'valid': True}, {'key': 20, 'value': 40, 'valid': True}, {'key': 30, 'value': 60, 'valid': True}]",
-            "commonMistakes": "Failing to handle empty sequences or null pointers during pipeline transformations.",
-            "bestPractices": "Profile algorithmic time complexity and memory allocations before scaling to production volumes.",
-            "practiceTask": "Construct a unit-tested implementation of the Continuous Integration & Automated Testing for ML (CI/CD for ML) data transformation function.",
-            "keyTakeaway": "Methodical step-by-step implementation ensures deterministic behavior and simplifies debugging in production."
-          },
-          {
-            "section": "Section 2 — Production Engineering & Best Practices",
-            "topic": "Production Optimization",
-            "title": "Lesson 3 — Performance Tuning, Error Handling & Production Best Practices",
-            "prerequisites": "Lesson 2 (Implementation Mechanics).",
-            "description": "Production engineering strategies: latency optimization, error containment, monitoring observability, and defensive design for Continuous Integration & Automated Testing for ML (CI/CD for ML).",
-            "whyItMatters": "Prevents cascading system outages, resource exhaustion, and silent data corruption under high-load enterprise conditions.",
-            "howItWorks": "Combines proactive health checks, structured logging, automated retry policies with exponential backoff, and circuit breaker patterns.",
-            "stepByStep": [
-              "Step 1: Implement structured telemetry and metric tracking (P50, P95, P99 latencies).",
-              "Step 2: Configure bounded timeouts and circuit breaking thresholds.",
-              "Step 3: Handle transient faults with exponential backoff and jitter.",
-              "Step 4: Validate graceful degradation paths under resource starvation."
-            ],
-            "workedExample": "Fault Injection Scenario:\nDownstream dependency experiences 500ms latency spike.\nCircuit breaker detects threshold violation -> trips to Open state -> serves cached fallback response in 2ms without cascading failure.",
-            "realWorldUsage": "Enterprise cloud services, mission-critical API gateways, and distributed microservices.",
-            "codeSnippet": "# Defensive Error Handling Pattern\nimport time\n\ndef execute_with_retry(operation_fn, max_retries=3, backoff_base=0.1):\n    for attempt in range(max_retries):\n        try:\n            return operation_fn()\n        except Exception as e:\n            if attempt == max_retries - 1:\n                raise\n            time.sleep(backoff_base * (2 ** attempt))\n\nresult = execute_with_retry(lambda: 'SUCCESSFUL_EXECUTION')\nprint(f'Execution Status: {result}')",
-            "codeExplanation": "1. Catches transient exceptions and applies exponential backoff delay.\n2. Prevents thundering herd problems during system recovery.",
-            "expectedOutput": "Execution Status: SUCCESSFUL_EXECUTION",
-            "commonMistakes": "Catching generic exceptions silently without logging or alerting, hiding critical production failures.",
-            "bestPractices": "Always configure explicit request timeouts, health probes, and structured JSON logs.",
-            "practiceTask": "Implement a retry decorator with configurable backoff and max attempt parameters.",
-            "keyTakeaway": "Robust production engineering for Continuous Integration & Automated Testing for ML (CI/CD for ML) requires proactive error containment, latency budgets, and structured observability."
-          },
-          {
-            "section": "Section 2 — Production Engineering & Best Practices",
-            "topic": "Review & Competency",
-            "title": "Lesson 4 — Module Review, Practice Challenge & Key Takeaways",
-            "prerequisites": "Lessons 1 through 3.",
-            "description": "Comprehensive synthesis of architectural principles, algorithmic patterns, and production guidelines for Continuous Integration & Automated Testing for ML (CI/CD for ML).",
-            "whyItMatters": "Consolidates theoretical knowledge into practical skills required for Level 4/5 competency qualification.",
-            "howItWorks": "Integrates core theorems, code patterns, and diagnostic checklists into an actionable practitioner reference.",
-            "stepByStep": [
-              "1. Architectural baseline: understand core system components and invariants.",
-              "2. Implementation standard: build modular, leak-free transformation pipelines.",
-              "3. Production readiness: enforce timeouts, circuit breakers, and telemetry monitoring.",
-              "4. Hands-on verification: complete the practical lab exercise to qualify for competency elevation."
-            ],
-            "workedExample": "Competency Qualification Checklist:\n[OK] Core architecture and lifecycle understood.\n[OK] Production error containment verified.\n[OK] Practical lab implementation completed satisfying target benchmarks.",
-            "realWorldUsage": "Practitioner competency baseline across enterprise engineering teams.",
-            "codeSnippet": "# Quick Competency Verification Checklist\nchecklist = [\n    '1. Architecture contracts and data flow verified',\n    '2. Input schema validation and error containment implemented',\n    '3. Performance benchmarks and latency targets satisfied'\n]\nfor item in checklist:\n    print(f'[READY] {item}')",
-            "codeExplanation": "1. Verifies complete module mastery before proceeding to the practical hands-on lab.",
-            "expectedOutput": "[READY] 1. Architecture contracts and data flow verified\n[READY] 2. Input schema validation and error containment implemented\n[READY] 3. Performance benchmarks and latency targets satisfied",
-            "commonMistakes": "Attempting competency assessment before completing the practical hands-on lab exercise.",
-            "bestPractices": "Review key takeaways and test edge cases thoroughly in your practical lab implementation.",
-            "practiceTask": "Complete the practical hands-on lab exercise below to verify your mastery of Continuous Integration & Automated Testing for ML (CI/CD for ML).",
-            "keyTakeaway": "You have mastered the architectural foundations, implementation patterns, and production best practices for Continuous Integration & Automated Testing for ML (CI/CD for ML)."
+            workedExample: "Expectation Assertions:\n- `expect_column_values_to_not_be_null('employee_id')`\n- `expect_column_values_to_be_between('assessment_score', min_value=0, max_value=100)`\n- `expect_column_values_to_be_in_set('role', ['ML_ENGINEER', 'FULL_STACK_DEV'])`",
+            realWorldUsage: "Data quality gates in enterprise data platforms and automated ML pipelines.",
+            codeSnippet: "# Great Expectations Data Quality Validator Pattern (Python)\nimport pandas as pd\n\nclass DataQualityValidator:\n    def validate_employee_dataset(self, df: pd.DataFrame) -> dict:\n        results = []\n        \n        # 1. Null Check\n        null_count = df['employee_id'].isnull().sum()\n        results.append({'check': 'employee_id_not_null', 'passed': null_count == 0, 'failed_count': int(null_count)})\n        \n        # 2. Score Range Check (0 to 100)\n        out_of_bounds = ((df['score'] < 0) | (df['score'] > 100)).sum()\n        results.append({'check': 'score_within_0_100', 'passed': out_of_bounds == 0, 'failed_count': int(out_of_bounds)})\n        \n        # 3. Valid Enum Check\n        valid_roles = {'ML_ENGINEER', 'JAVA_DEV', 'FULL_STACK_DEV'}\n        invalid_roles = (~df['role'].isin(valid_roles)).sum()\n        results.append({'check': 'valid_role_enums', 'passed': invalid_roles == 0, 'failed_count': int(invalid_roles)})\n        \n        all_passed = all(r['passed'] for r in results)\n        return {'data_quality_passed': all_passed, 'checks': results}\n\nvalidator = DataQualityValidator()\ntest_df = pd.DataFrame({\n    'employee_id': ['EMP_1', 'EMP_2', 'EMP_3'],\n    'score': [95, 88, 72],\n    'role': ['ML_ENGINEER', 'JAVA_DEV', 'FULL_STACK_DEV']\n})\nprint('Data Validation Result:', validator.validate_employee_dataset(test_df))",
+            codeExplanation: "1. Executes declarative data quality assertions.\n2. Verifies null boundaries, numeric ranges, and categorical enum constraints.\n3. Returns structured pass/fail status to gate CI pipeline execution.",
+            expectedOutput: "Data Validation Result: {'data_quality_passed': True, 'checks': [{'check': 'employee_id_not_null', 'passed': True, ...}, ...]}",
+            commonMistakes: "Relying on post-hoc manual spot checks rather than automated, blocking data quality tests in CI/CD pipelines.",
+            bestPractices: "Run Great Expectations checkpoints at the beginning of every training and inference ingestion pipeline.",
+            practiceTask: "Author a Great Expectations suite that validates a multi-column dataset containing user demographic and telemetry features.",
+            keyTakeaway: "Automated data validation quality gates prevent corrupted or out-of-distribution data from entering training pipelines."
           }
         ],
-        "practicalExercise": "Build a GitHub Actions CI workflow with Great Expectations data validation and PyTest model unit tests.",
-        "competencyVerification": "Demonstrates CI/CD pipeline automation, automated ML testing, and data quality validation at Level 5.",
-        "resources": [
-        {
-                "title": "CML (Continuous Machine Learning) Documentation",
-                "url": "https://cml.dev/",
-                "description": "Automated model evaluation reports, pull request metric diffs, and cloud GPU runner provisioning.",
-                "type": "documentation",
-                "provider": "Iterative CML"
-        },
-        {
-                "title": "Great Expectations Documentation: Automated Data Validation",
-                "url": "https://docs.greatexpectations.io/docs/home/",
-                "description": "Asserting data schema integrity, null checks, distribution constraints in CI/CD pipelines.",
-                "type": "documentation",
-                "provider": "Great Expectations"
-        }
-]
-      },
-      "keyConcepts": [
-        {
-          "section": "Section 1 — Foundations & Core Mechanics",
-          "topic": "Continuous Integration & Automated Testing for ML (CI/CD for ML) Architecture",
-          "title": "Lesson 1 — Architectural Foundations & Core Principles of Continuous Integration & Automated Testing for ML (CI/CD for ML)",
-          "prerequisites": "Prerequisites for Continuous Integration & Automated Testing for ML (CI/CD for ML): foundational domain concepts and system design.",
-          "description": "Comprehensive architectural deep dive into Continuous Integration & Automated Testing for ML (CI/CD for ML), detailing foundational execution models, data structures, and core operating invariants.",
-          "whyItMatters": "Establishes structural competency, preventing common architectural anti-patterns and runtime failures in enterprise environments.",
-          "howItWorks": "Operates through modular components with strict interface contracts, managing lifecycle transitions and data flow state transformations.",
-          "stepByStep": [
-            "Step 1: Initialize the core Continuous Integration & Automated Testing for ML (CI/CD for ML) execution context and configure runtime invariants.",
-            "Step 2: Establish boundary contracts and schema validation rules.",
-            "Step 3: Execute core processing loop and state synchronization.",
-            "Step 4: Verify downstream integration guarantees and error containment boundaries."
-          ],
-          "workedExample": "Concrete Execution Scenario:\nInput Request: Validated domain entity with configured operational parameters.\nProcessing: Component evaluates constraints, applies domain logic, and emits state update.\nOutput: Guaranteed deterministic result adhering to enterprise service level objectives.",
-          "realWorldUsage": "Used in high-availability enterprise services, automated data pipelines, and mission-critical cloud infrastructure.",
-          "codeSnippet": "# Core Implementation Pattern: Continuous Integration & Automated Testing for ML (CI/CD for ML)\nclass ProductionComponent:\n    def __init__(self, config: dict):\n        self.config = config\n        self._is_active = True\n\n    def process_workload(self, payload: dict) -> dict:\n        if not self._is_active:\n            raise RuntimeError('Component inactive')\n        return {'status': 'SUCCESS', 'processed': payload, 'verified': True}\n\ncomponent = ProductionComponent(config={'env': 'production'})\nprint(component.process_workload({'task': 'Continuous Integration & Automated Testing for ML (CI/CD for ML)'}))",
-          "codeExplanation": "1. Initializes component with strict configuration encapsulation.\n2. Validates operational state before executing workload.\n3. Returns structured execution payload.",
-          "expectedOutput": "{'status': 'SUCCESS', 'processed': {'task': 'Continuous Integration & Automated Testing for ML (CI/CD for ML)'}, 'verified': True}",
-          "commonMistakes": "Violating separation of concerns by coupling Continuous Integration & Automated Testing for ML (CI/CD for ML) logic directly to transport layers.",
-          "bestPractices": "Always encapsulate domain logic behind strict interface contracts and validate boundary inputs defensively.",
-          "practiceTask": "Implement a minimal working prototype of Continuous Integration & Automated Testing for ML (CI/CD for ML) with automated input validation.",
-          "keyTakeaway": "Understanding the core architectural principles of Continuous Integration & Automated Testing for ML (CI/CD for ML) is essential for designing resilient, production-grade systems."
-        },
-        {
-          "section": "Section 1 — Foundations & Core Mechanics",
-          "topic": "Continuous Integration & Automated Testing for ML (CI/CD for ML) Implementation",
-          "title": "Lesson 2 — Step-by-Step Implementation & Algorithm Mechanics",
-          "prerequisites": "Lesson 1 (Architectural Foundations).",
-          "description": "Detailed step-by-step implementation mechanics, algorithmic flows, and data transformations for Continuous Integration & Automated Testing for ML (CI/CD for ML).",
-          "whyItMatters": "Translates high-level theoretical concepts into concrete, maintainable, and high-performance production implementations.",
-          "howItWorks": "Processes data via structured transformation pipelines, managing memory efficiency, concurrency safety, and execution state.",
-          "stepByStep": [
-            "Step 1: Ingest input payloads and normalize data representations.",
-            "Step 2: Apply primary domain transformations and state mutations.",
-            "Step 3: Handle edge cases, null boundaries, and invalid parameter transitions.",
-            "Step 4: Emit validated output and persist operational state."
-          ],
-          "workedExample": "Input Data Transformation:\nRaw Payload: `{'id': 101, 'metric': 42.5, 'flag': True}`\nProcessing: Normalizes types -> validates bounds -> calculates derived metrics.\nTransformed Result: `{'id': 101, 'score': 0.85, 'status': 'OPTIMAL'}`.",
-          "realWorldUsage": "Production runtime execution across scalable distributed systems and analytics engines.",
-          "codeSnippet": "# Implementation Execution Loop\ndef execute_pipeline_step(data: list) -> list:\n    results = []\n    for item in data:\n        transformed = {'key': item, 'value': item * 2, 'valid': True}\n        results.append(transformed)\n    return results\n\nprint('Processed Steps:', execute_pipeline_step([10, 20, 30]))",
-          "codeExplanation": "1. Iterates over input stream with $O(N)$ linear time complexity.\n2. Emits structured transformed output records.",
-          "expectedOutput": "Processed Steps: [{'key': 10, 'value': 20, 'valid': True}, {'key': 20, 'value': 40, 'valid': True}, {'key': 30, 'value': 60, 'valid': True}]",
-          "commonMistakes": "Failing to handle empty sequences or null pointers during pipeline transformations.",
-          "bestPractices": "Profile algorithmic time complexity and memory allocations before scaling to production volumes.",
-          "practiceTask": "Construct a unit-tested implementation of the Continuous Integration & Automated Testing for ML (CI/CD for ML) data transformation function.",
-          "keyTakeaway": "Methodical step-by-step implementation ensures deterministic behavior and simplifies debugging in production."
-        },
-        {
-          "section": "Section 2 — Production Engineering & Best Practices",
-          "topic": "Production Optimization",
-          "title": "Lesson 3 — Performance Tuning, Error Handling & Production Best Practices",
-          "prerequisites": "Lesson 2 (Implementation Mechanics).",
-          "description": "Production engineering strategies: latency optimization, error containment, monitoring observability, and defensive design for Continuous Integration & Automated Testing for ML (CI/CD for ML).",
-          "whyItMatters": "Prevents cascading system outages, resource exhaustion, and silent data corruption under high-load enterprise conditions.",
-          "howItWorks": "Combines proactive health checks, structured logging, automated retry policies with exponential backoff, and circuit breaker patterns.",
-          "stepByStep": [
-            "Step 1: Implement structured telemetry and metric tracking (P50, P95, P99 latencies).",
-            "Step 2: Configure bounded timeouts and circuit breaking thresholds.",
-            "Step 3: Handle transient faults with exponential backoff and jitter.",
-            "Step 4: Validate graceful degradation paths under resource starvation."
-          ],
-          "workedExample": "Fault Injection Scenario:\nDownstream dependency experiences 500ms latency spike.\nCircuit breaker detects threshold violation -> trips to Open state -> serves cached fallback response in 2ms without cascading failure.",
-          "realWorldUsage": "Enterprise cloud services, mission-critical API gateways, and distributed microservices.",
-          "codeSnippet": "# Defensive Error Handling Pattern\nimport time\n\ndef execute_with_retry(operation_fn, max_retries=3, backoff_base=0.1):\n    for attempt in range(max_retries):\n        try:\n            return operation_fn()\n        except Exception as e:\n            if attempt == max_retries - 1:\n                raise\n            time.sleep(backoff_base * (2 ** attempt))\n\nresult = execute_with_retry(lambda: 'SUCCESSFUL_EXECUTION')\nprint(f'Execution Status: {result}')",
-          "codeExplanation": "1. Catches transient exceptions and applies exponential backoff delay.\n2. Prevents thundering herd problems during system recovery.",
-          "expectedOutput": "Execution Status: SUCCESSFUL_EXECUTION",
-          "commonMistakes": "Catching generic exceptions silently without logging or alerting, hiding critical production failures.",
-          "bestPractices": "Always configure explicit request timeouts, health probes, and structured JSON logs.",
-          "practiceTask": "Implement a retry decorator with configurable backoff and max attempt parameters.",
-          "keyTakeaway": "Robust production engineering for Continuous Integration & Automated Testing for ML (CI/CD for ML) requires proactive error containment, latency budgets, and structured observability."
-        },
-        {
-          "section": "Section 2 — Production Engineering & Best Practices",
-          "topic": "Review & Competency",
-          "title": "Lesson 4 — Module Review, Practice Challenge & Key Takeaways",
-          "prerequisites": "Lessons 1 through 3.",
-          "description": "Comprehensive synthesis of architectural principles, algorithmic patterns, and production guidelines for Continuous Integration & Automated Testing for ML (CI/CD for ML).",
-          "whyItMatters": "Consolidates theoretical knowledge into practical skills required for Level 4/5 competency qualification.",
-          "howItWorks": "Integrates core theorems, code patterns, and diagnostic checklists into an actionable practitioner reference.",
-          "stepByStep": [
-            "1. Architectural baseline: understand core system components and invariants.",
-            "2. Implementation standard: build modular, leak-free transformation pipelines.",
-            "3. Production readiness: enforce timeouts, circuit breakers, and telemetry monitoring.",
-            "4. Hands-on verification: complete the practical lab exercise to qualify for competency elevation."
-          ],
-          "workedExample": "Competency Qualification Checklist:\n[OK] Core architecture and lifecycle understood.\n[OK] Production error containment verified.\n[OK] Practical lab implementation completed satisfying target benchmarks.",
-          "realWorldUsage": "Practitioner competency baseline across enterprise engineering teams.",
-          "codeSnippet": "# Quick Competency Verification Checklist\nchecklist = [\n    '1. Architecture contracts and data flow verified',\n    '2. Input schema validation and error containment implemented',\n    '3. Performance benchmarks and latency targets satisfied'\n]\nfor item in checklist:\n    print(f'[READY] {item}')",
-          "codeExplanation": "1. Verifies complete module mastery before proceeding to the practical hands-on lab.",
-          "expectedOutput": "[READY] 1. Architecture contracts and data flow verified\n[READY] 2. Input schema validation and error containment implemented\n[READY] 3. Performance benchmarks and latency targets satisfied",
-          "commonMistakes": "Attempting competency assessment before completing the practical hands-on lab exercise.",
-          "bestPractices": "Review key takeaways and test edge cases thoroughly in your practical lab implementation.",
-          "practiceTask": "Complete the practical hands-on lab exercise below to verify your mastery of Continuous Integration & Automated Testing for ML (CI/CD for ML).",
-          "keyTakeaway": "You have mastered the architectural foundations, implementation patterns, and production best practices for Continuous Integration & Automated Testing for ML (CI/CD for ML)."
-        }
-      ]
+        practicalExercise: "Build an automated CI data validation pipeline using Great Expectations and Python that blocks model training when feature distributions or null rates exceed thresholds.",
+        competencyVerification: "Demonstrates data testing architecture, Great Expectations suite authoring, and CI/CD quality gate enforcement at Level 4.",
+        resources: [
+          {
+            title: "Great Expectations Official Documentation: Core Concepts",
+            url: "https://docs.greatexpectations.io/docs/",
+            description: "Expectations, Expectation Suites, Data Docs, and Checkpoints for automated data testing.",
+            type: "documentation",
+            provider: "Great Expectations"
+          },
+          {
+            title: "Testing Machine Learning Systems: Code, Data, Model (Eugene Yan)",
+            url: "https://eugeneyan.com/writing/testing-ml/",
+            description: "Comprehensive taxonomy of unit tests, integration tests, and behavioral tests for ML systems.",
+            type: "guide",
+            provider: "Eugene Yan"
+          }
+        ]
+      }
     },
     {
-      "id": "mlops-mod-6",
-      "order": 6,
-      "title": "Module 6 — High-Throughput Model Serving with FastAPI & BentoML",
-      "durationMinutes": 200,
-      "summary": "Production serving architectures: Low-latency REST & gRPC model serving, BentoML packaging, adaptive micro-batching, worker process concurrency (Gunicorn/Uvicorn), and latency SLA optimization.",
-      "learningObjectives": [
-        "Package multi-model inference pipelines into production-ready BentoML archives.",
-        "Configure adaptive batching to maximize GPU compute saturation under high concurrency.",
-        "Serve predictions with sub-20ms p99 latency guarantees using asynchronous FastAPI endpoints."
+      id: "mlops-mod-6",
+      order: 6,
+      title: "Module 6 — Production Model Serving: Real-Time vs Batch Inference Architecture (BentoML, Triton)",
+      durationMinutes: 180,
+      summary: "Model serving paradigms (Real-Time REST/gRPC vs Asynchronous Batch vs Streaming), BentoML service architecture, dynamic adaptive batching, and NVIDIA Triton Inference Server.",
+      learningObjectives: [
+        "Compare synchronous low-latency serving with asynchronous batch and streaming inference.",
+        "Implement dynamic adaptive batching in BentoML to maximize GPU utilization.",
+        "Deploy multi-framework model ensembles on NVIDIA Triton Inference Server."
       ],
-      "resources": [
+      resources: [
         {
-                "title": "FastAPI Official Documentation: Async Concurrency & ML Serving",
-                "url": "https://fastapi.tiangolo.com/advanced/custom-response/",
-                "description": "High-throughput asynchronous web endpoints for low-latency model inference.",
-                "type": "documentation",
-                "provider": "FastAPI Documentation"
+          title: "BentoML Documentation: Unified Model Serving & Dynamic Batching",
+          url: "https://docs.bentoml.com/en/latest/",
+          description: "Building production Bento services, runners, dynamic batching, and containerization.",
+          type: "documentation",
+          provider: "BentoML"
         },
         {
-                "title": "BentoML Official Documentation: Model Serving Framework",
-                "url": "https://docs.bentoml.org/en/latest/",
-                "description": "Dynamic adaptive micro-batching, multi-worker serving, and containerized deployment.",
-                "type": "documentation",
-                "provider": "BentoML Documentation"
+          title: "NVIDIA Triton Inference Server Documentation",
+          url: "https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/index.html",
+          description: "Multi-model concurrency, dynamic batching, model pipelining, and GPU acceleration.",
+          type: "documentation",
+          provider: "NVIDIA"
         }
-],
-      "content": {
-        "overview": "Serving ML models requires specialized runtimes that balance request latency against throughput. Adaptive micro-batching collects individual incoming requests over small millisecond windows and executes them as a single batched tensor operation.",
-        "keyConcepts": [
+      ],
+      content: {
+        overview: "Model serving bridges trained machine learning models with production client applications. Utilizing BentoML and NVIDIA Triton Inference Server with dynamic adaptive batching achieves sub-10ms P99 latency while maximizing hardware utilization.",
+        keyConcepts: [
           {
-            "section": "Section 1 — Foundations & Core Mechanics",
-            "topic": "High-Throughput Model Serving with FastAPI & BentoML Architecture",
-            "title": "Lesson 1 — Architectural Foundations & Core Principles of High-Throughput Model Serving with FastAPI & BentoML",
-            "prerequisites": "Prerequisites for High-Throughput Model Serving with FastAPI & BentoML: foundational domain concepts and system design.",
-            "description": "Comprehensive architectural deep dive into High-Throughput Model Serving with FastAPI & BentoML, detailing foundational execution models, data structures, and core operating invariants.",
-            "whyItMatters": "Establishes structural competency, preventing common architectural anti-patterns and runtime failures in enterprise environments.",
-            "howItWorks": "Operates through modular components with strict interface contracts, managing lifecycle transitions and data flow state transformations.",
-            "stepByStep": [
-              "Step 1: Initialize the core High-Throughput Model Serving with FastAPI & BentoML execution context and configure runtime invariants.",
-              "Step 2: Establish boundary contracts and schema validation rules.",
-              "Step 3: Execute core processing loop and state synchronization.",
-              "Step 4: Verify downstream integration guarantees and error containment boundaries."
+            section: "Section 1 — Model Serving & Dynamic Batching",
+            topic: "BentoML & Triton Architecture",
+            title: "Lesson 1 — BentoML Service Design, Adaptive Batching & Triton Ensembles",
+            prerequisites: "Module 1 (ML Lifecycle) and REST/gRPC fundamentals.",
+            description: "How BentoML structures Runner processes separate from API workers, how dynamic adaptive batching groups concurrent single requests into tensor batches for GPU execution, and how Triton manages multi-model GPU concurrency.",
+            whyItMatters: "Executing single-sample inferences on GPUs underutilizes tensor cores and bottlenecks throughput. Dynamic batching increases GPU throughput by 5-10x with negligible latency impact.",
+            howItWorks: "API workers queue incoming individual requests. The Runner holds requests for a tiny configurable window (e.g., `max_latency_ms = 5`), merges them into a single batched tensor, runs inference on GPU, and unbatches results to respective callers.",
+            stepByStep: [
+              "Step 1: Save model to BentoML model store (`bentoml.pytorch.save_model`).",
+              "Step 2: Create `service.py` defining API endpoints and `@bentoml.service` decorator.",
+              "Step 3: Enable adaptive batching: `@bentoml.api(batchable=True, batch_dim=0, max_batch_size=32, max_latency_ms=10)`.",
+              "Step 4: Build containerized OCI image with `bentoml build` and `bentoml containerize`."
             ],
-            "workedExample": "Concrete Execution Scenario:\nInput Request: Validated domain entity with configured operational parameters.\nProcessing: Component evaluates constraints, applies domain logic, and emits state update.\nOutput: Guaranteed deterministic result adhering to enterprise service level objectives.",
-            "realWorldUsage": "Used in high-availability enterprise services, automated data pipelines, and mission-critical cloud infrastructure.",
-            "codeSnippet": "# Core Implementation Pattern: High-Throughput Model Serving with FastAPI & BentoML\nclass ProductionComponent:\n    def __init__(self, config: dict):\n        self.config = config\n        self._is_active = True\n\n    def process_workload(self, payload: dict) -> dict:\n        if not self._is_active:\n            raise RuntimeError('Component inactive')\n        return {'status': 'SUCCESS', 'processed': payload, 'verified': True}\n\ncomponent = ProductionComponent(config={'env': 'production'})\nprint(component.process_workload({'task': 'High-Throughput Model Serving with FastAPI & BentoML'}))",
-            "codeExplanation": "1. Initializes component with strict configuration encapsulation.\n2. Validates operational state before executing workload.\n3. Returns structured execution payload.",
-            "expectedOutput": "{'status': 'SUCCESS', 'processed': {'task': 'High-Throughput Model Serving with FastAPI & BentoML'}, 'verified': True}",
-            "commonMistakes": "Violating separation of concerns by coupling High-Throughput Model Serving with FastAPI & BentoML logic directly to transport layers.",
-            "bestPractices": "Always encapsulate domain logic behind strict interface contracts and validate boundary inputs defensively.",
-            "practiceTask": "Implement a minimal working prototype of High-Throughput Model Serving with FastAPI & BentoML with automated input validation.",
-            "keyTakeaway": "Understanding the core architectural principles of High-Throughput Model Serving with FastAPI & BentoML is essential for designing resilient, production-grade systems."
-          },
-          {
-            "section": "Section 1 — Foundations & Core Mechanics",
-            "topic": "High-Throughput Model Serving with FastAPI & BentoML Implementation",
-            "title": "Lesson 2 — Step-by-Step Implementation & Algorithm Mechanics",
-            "prerequisites": "Lesson 1 (Architectural Foundations).",
-            "description": "Detailed step-by-step implementation mechanics, algorithmic flows, and data transformations for High-Throughput Model Serving with FastAPI & BentoML.",
-            "whyItMatters": "Translates high-level theoretical concepts into concrete, maintainable, and high-performance production implementations.",
-            "howItWorks": "Processes data via structured transformation pipelines, managing memory efficiency, concurrency safety, and execution state.",
-            "stepByStep": [
-              "Step 1: Ingest input payloads and normalize data representations.",
-              "Step 2: Apply primary domain transformations and state mutations.",
-              "Step 3: Handle edge cases, null boundaries, and invalid parameter transitions.",
-              "Step 4: Emit validated output and persist operational state."
-            ],
-            "workedExample": "Input Data Transformation:\nRaw Payload: `{'id': 101, 'metric': 42.5, 'flag': True}`\nProcessing: Normalizes types -> validates bounds -> calculates derived metrics.\nTransformed Result: `{'id': 101, 'score': 0.85, 'status': 'OPTIMAL'}`.",
-            "realWorldUsage": "Production runtime execution across scalable distributed systems and analytics engines.",
-            "codeSnippet": "# Implementation Execution Loop\ndef execute_pipeline_step(data: list) -> list:\n    results = []\n    for item in data:\n        transformed = {'key': item, 'value': item * 2, 'valid': True}\n        results.append(transformed)\n    return results\n\nprint('Processed Steps:', execute_pipeline_step([10, 20, 30]))",
-            "codeExplanation": "1. Iterates over input stream with $O(N)$ linear time complexity.\n2. Emits structured transformed output records.",
-            "expectedOutput": "Processed Steps: [{'key': 10, 'value': 20, 'valid': True}, {'key': 20, 'value': 40, 'valid': True}, {'key': 30, 'value': 60, 'valid': True}]",
-            "commonMistakes": "Failing to handle empty sequences or null pointers during pipeline transformations.",
-            "bestPractices": "Profile algorithmic time complexity and memory allocations before scaling to production volumes.",
-            "practiceTask": "Construct a unit-tested implementation of the High-Throughput Model Serving with FastAPI & BentoML data transformation function.",
-            "keyTakeaway": "Methodical step-by-step implementation ensures deterministic behavior and simplifies debugging in production."
-          },
-          {
-            "section": "Section 2 — Production Engineering & Best Practices",
-            "topic": "Production Optimization",
-            "title": "Lesson 3 — Performance Tuning, Error Handling & Production Best Practices",
-            "prerequisites": "Lesson 2 (Implementation Mechanics).",
-            "description": "Production engineering strategies: latency optimization, error containment, monitoring observability, and defensive design for High-Throughput Model Serving with FastAPI & BentoML.",
-            "whyItMatters": "Prevents cascading system outages, resource exhaustion, and silent data corruption under high-load enterprise conditions.",
-            "howItWorks": "Combines proactive health checks, structured logging, automated retry policies with exponential backoff, and circuit breaker patterns.",
-            "stepByStep": [
-              "Step 1: Implement structured telemetry and metric tracking (P50, P95, P99 latencies).",
-              "Step 2: Configure bounded timeouts and circuit breaking thresholds.",
-              "Step 3: Handle transient faults with exponential backoff and jitter.",
-              "Step 4: Validate graceful degradation paths under resource starvation."
-            ],
-            "workedExample": "Fault Injection Scenario:\nDownstream dependency experiences 500ms latency spike.\nCircuit breaker detects threshold violation -> trips to Open state -> serves cached fallback response in 2ms without cascading failure.",
-            "realWorldUsage": "Enterprise cloud services, mission-critical API gateways, and distributed microservices.",
-            "codeSnippet": "# Defensive Error Handling Pattern\nimport time\n\ndef execute_with_retry(operation_fn, max_retries=3, backoff_base=0.1):\n    for attempt in range(max_retries):\n        try:\n            return operation_fn()\n        except Exception as e:\n            if attempt == max_retries - 1:\n                raise\n            time.sleep(backoff_base * (2 ** attempt))\n\nresult = execute_with_retry(lambda: 'SUCCESSFUL_EXECUTION')\nprint(f'Execution Status: {result}')",
-            "codeExplanation": "1. Catches transient exceptions and applies exponential backoff delay.\n2. Prevents thundering herd problems during system recovery.",
-            "expectedOutput": "Execution Status: SUCCESSFUL_EXECUTION",
-            "commonMistakes": "Catching generic exceptions silently without logging or alerting, hiding critical production failures.",
-            "bestPractices": "Always configure explicit request timeouts, health probes, and structured JSON logs.",
-            "practiceTask": "Implement a retry decorator with configurable backoff and max attempt parameters.",
-            "keyTakeaway": "Robust production engineering for High-Throughput Model Serving with FastAPI & BentoML requires proactive error containment, latency budgets, and structured observability."
-          },
-          {
-            "section": "Section 2 — Production Engineering & Best Practices",
-            "topic": "Review & Competency",
-            "title": "Lesson 4 — Module Review, Practice Challenge & Key Takeaways",
-            "prerequisites": "Lessons 1 through 3.",
-            "description": "Comprehensive synthesis of architectural principles, algorithmic patterns, and production guidelines for High-Throughput Model Serving with FastAPI & BentoML.",
-            "whyItMatters": "Consolidates theoretical knowledge into practical skills required for Level 4/5 competency qualification.",
-            "howItWorks": "Integrates core theorems, code patterns, and diagnostic checklists into an actionable practitioner reference.",
-            "stepByStep": [
-              "1. Architectural baseline: understand core system components and invariants.",
-              "2. Implementation standard: build modular, leak-free transformation pipelines.",
-              "3. Production readiness: enforce timeouts, circuit breakers, and telemetry monitoring.",
-              "4. Hands-on verification: complete the practical lab exercise to qualify for competency elevation."
-            ],
-            "workedExample": "Competency Qualification Checklist:\n[OK] Core architecture and lifecycle understood.\n[OK] Production error containment verified.\n[OK] Practical lab implementation completed satisfying target benchmarks.",
-            "realWorldUsage": "Practitioner competency baseline across enterprise engineering teams.",
-            "codeSnippet": "# Quick Competency Verification Checklist\nchecklist = [\n    '1. Architecture contracts and data flow verified',\n    '2. Input schema validation and error containment implemented',\n    '3. Performance benchmarks and latency targets satisfied'\n]\nfor item in checklist:\n    print(f'[READY] {item}')",
-            "codeExplanation": "1. Verifies complete module mastery before proceeding to the practical hands-on lab.",
-            "expectedOutput": "[READY] 1. Architecture contracts and data flow verified\n[READY] 2. Input schema validation and error containment implemented\n[READY] 3. Performance benchmarks and latency targets satisfied",
-            "commonMistakes": "Attempting competency assessment before completing the practical hands-on lab exercise.",
-            "bestPractices": "Review key takeaways and test edge cases thoroughly in your practical lab implementation.",
-            "practiceTask": "Complete the practical hands-on lab exercise below to verify your mastery of High-Throughput Model Serving with FastAPI & BentoML.",
-            "keyTakeaway": "You have mastered the architectural foundations, implementation patterns, and production best practices for High-Throughput Model Serving with FastAPI & BentoML."
+            workedExample: "BentoML Dynamic Batching Window:\n- Requests 1, 2, 3 arrive within 4ms.\n- BentoML merges into batch `[3, 64]` -> GPU processes in 8ms -> Results returned individually to all 3 clients in 12ms total.",
+            realWorldUsage: "Real-time AI serving at Line, Coupang, Instacart, and enterprise SaaS.",
+            codeSnippet: "# BentoML Production Service with Dynamic Adaptive Batching (Python)\nimport numpy as np\nfrom typing import List\n\nclass ProductionModelRunner:\n    def predict_batch(self, features: np.ndarray) -> np.ndarray:\n        # Simulates batched matrix multiplication on GPU\n        weights = np.ones((features.shape[1], 1)) * 0.5\n        return np.dot(features, weights)\n\nclass AdaptiveBatchingSimulator:\n    def __init__(self, runner: ProductionModelRunner, max_batch_size: int = 32):\n        self.runner = runner\n        self.max_batch_size = max_batch_size\n\n    def process_incoming_stream(self, individual_requests: List[List[float]]) -> List[float]:\n        # Convert list of single requests into batched 2D NumPy array\n        batch_tensor = np.array(individual_requests)\n        predictions = self.runner.predict_batch(batch_tensor)\n        return predictions.flatten().tolist()\n\nsimulator = AdaptiveBatchingSimulator(ProductionModelRunner())\nrequests = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]]\nresults = simulator.process_incoming_stream(requests)\nprint(f'Batched Inference Results for {len(requests)} concurrent callers: {results}')",
+            codeExplanation: "1. Combines multiple concurrent incoming client requests into a single tensor.\n2. Executes vectorized inference across batch dimension.\n3. Dispatches individual results back to callers with minimal latency overhead.",
+            expectedOutput: "Batched Inference Results for 3 concurrent callers: [3.0, 7.5, 12.0]",
+            commonMistakes: "Setting `max_latency_ms` too high in dynamic batching configurations, creating unacceptable latency delays for low-traffic endpoints.",
+            bestPractices: "Set `max_latency_ms` to 5-10ms and `max_batch_size` matching the optimal tensor core throughput of the GPU.",
+            practiceTask: "Author a BentoML service definition that serves an image classifier with dynamic adaptive batching and FP16 precision.",
+            keyTakeaway: "Dynamic adaptive batching maximizes GPU utilization and scales throughput without degrading individual request latency."
           }
         ],
-        "practicalExercise": "Package an ensemble skill gap model with BentoML and benchmark throughput under 1,000 concurrent virtual users.",
-        "competencyVerification": "Proves high-throughput inference serving, BentoML deployment, and adaptive batching optimization at Level 5.",
-        "resources": [
-        {
-                "title": "FastAPI Official Documentation: Async Concurrency & ML Serving",
-                "url": "https://fastapi.tiangolo.com/advanced/custom-response/",
-                "description": "High-throughput asynchronous web endpoints for low-latency model inference.",
-                "type": "documentation",
-                "provider": "FastAPI Documentation"
-        },
-        {
-                "title": "BentoML Official Documentation: Model Serving Framework",
-                "url": "https://docs.bentoml.org/en/latest/",
-                "description": "Dynamic adaptive micro-batching, multi-worker serving, and containerized deployment.",
-                "type": "documentation",
-                "provider": "BentoML Documentation"
-        }
-]
-      },
-      "keyConcepts": [
-        {
-          "section": "Section 1 — Foundations & Core Mechanics",
-          "topic": "High-Throughput Model Serving with FastAPI & BentoML Architecture",
-          "title": "Lesson 1 — Architectural Foundations & Core Principles of High-Throughput Model Serving with FastAPI & BentoML",
-          "prerequisites": "Prerequisites for High-Throughput Model Serving with FastAPI & BentoML: foundational domain concepts and system design.",
-          "description": "Comprehensive architectural deep dive into High-Throughput Model Serving with FastAPI & BentoML, detailing foundational execution models, data structures, and core operating invariants.",
-          "whyItMatters": "Establishes structural competency, preventing common architectural anti-patterns and runtime failures in enterprise environments.",
-          "howItWorks": "Operates through modular components with strict interface contracts, managing lifecycle transitions and data flow state transformations.",
-          "stepByStep": [
-            "Step 1: Initialize the core High-Throughput Model Serving with FastAPI & BentoML execution context and configure runtime invariants.",
-            "Step 2: Establish boundary contracts and schema validation rules.",
-            "Step 3: Execute core processing loop and state synchronization.",
-            "Step 4: Verify downstream integration guarantees and error containment boundaries."
-          ],
-          "workedExample": "Concrete Execution Scenario:\nInput Request: Validated domain entity with configured operational parameters.\nProcessing: Component evaluates constraints, applies domain logic, and emits state update.\nOutput: Guaranteed deterministic result adhering to enterprise service level objectives.",
-          "realWorldUsage": "Used in high-availability enterprise services, automated data pipelines, and mission-critical cloud infrastructure.",
-          "codeSnippet": "# Core Implementation Pattern: High-Throughput Model Serving with FastAPI & BentoML\nclass ProductionComponent:\n    def __init__(self, config: dict):\n        self.config = config\n        self._is_active = True\n\n    def process_workload(self, payload: dict) -> dict:\n        if not self._is_active:\n            raise RuntimeError('Component inactive')\n        return {'status': 'SUCCESS', 'processed': payload, 'verified': True}\n\ncomponent = ProductionComponent(config={'env': 'production'})\nprint(component.process_workload({'task': 'High-Throughput Model Serving with FastAPI & BentoML'}))",
-          "codeExplanation": "1. Initializes component with strict configuration encapsulation.\n2. Validates operational state before executing workload.\n3. Returns structured execution payload.",
-          "expectedOutput": "{'status': 'SUCCESS', 'processed': {'task': 'High-Throughput Model Serving with FastAPI & BentoML'}, 'verified': True}",
-          "commonMistakes": "Violating separation of concerns by coupling High-Throughput Model Serving with FastAPI & BentoML logic directly to transport layers.",
-          "bestPractices": "Always encapsulate domain logic behind strict interface contracts and validate boundary inputs defensively.",
-          "practiceTask": "Implement a minimal working prototype of High-Throughput Model Serving with FastAPI & BentoML with automated input validation.",
-          "keyTakeaway": "Understanding the core architectural principles of High-Throughput Model Serving with FastAPI & BentoML is essential for designing resilient, production-grade systems."
-        },
-        {
-          "section": "Section 1 — Foundations & Core Mechanics",
-          "topic": "High-Throughput Model Serving with FastAPI & BentoML Implementation",
-          "title": "Lesson 2 — Step-by-Step Implementation & Algorithm Mechanics",
-          "prerequisites": "Lesson 1 (Architectural Foundations).",
-          "description": "Detailed step-by-step implementation mechanics, algorithmic flows, and data transformations for High-Throughput Model Serving with FastAPI & BentoML.",
-          "whyItMatters": "Translates high-level theoretical concepts into concrete, maintainable, and high-performance production implementations.",
-          "howItWorks": "Processes data via structured transformation pipelines, managing memory efficiency, concurrency safety, and execution state.",
-          "stepByStep": [
-            "Step 1: Ingest input payloads and normalize data representations.",
-            "Step 2: Apply primary domain transformations and state mutations.",
-            "Step 3: Handle edge cases, null boundaries, and invalid parameter transitions.",
-            "Step 4: Emit validated output and persist operational state."
-          ],
-          "workedExample": "Input Data Transformation:\nRaw Payload: `{'id': 101, 'metric': 42.5, 'flag': True}`\nProcessing: Normalizes types -> validates bounds -> calculates derived metrics.\nTransformed Result: `{'id': 101, 'score': 0.85, 'status': 'OPTIMAL'}`.",
-          "realWorldUsage": "Production runtime execution across scalable distributed systems and analytics engines.",
-          "codeSnippet": "# Implementation Execution Loop\ndef execute_pipeline_step(data: list) -> list:\n    results = []\n    for item in data:\n        transformed = {'key': item, 'value': item * 2, 'valid': True}\n        results.append(transformed)\n    return results\n\nprint('Processed Steps:', execute_pipeline_step([10, 20, 30]))",
-          "codeExplanation": "1. Iterates over input stream with $O(N)$ linear time complexity.\n2. Emits structured transformed output records.",
-          "expectedOutput": "Processed Steps: [{'key': 10, 'value': 20, 'valid': True}, {'key': 20, 'value': 40, 'valid': True}, {'key': 30, 'value': 60, 'valid': True}]",
-          "commonMistakes": "Failing to handle empty sequences or null pointers during pipeline transformations.",
-          "bestPractices": "Profile algorithmic time complexity and memory allocations before scaling to production volumes.",
-          "practiceTask": "Construct a unit-tested implementation of the High-Throughput Model Serving with FastAPI & BentoML data transformation function.",
-          "keyTakeaway": "Methodical step-by-step implementation ensures deterministic behavior and simplifies debugging in production."
-        },
-        {
-          "section": "Section 2 — Production Engineering & Best Practices",
-          "topic": "Production Optimization",
-          "title": "Lesson 3 — Performance Tuning, Error Handling & Production Best Practices",
-          "prerequisites": "Lesson 2 (Implementation Mechanics).",
-          "description": "Production engineering strategies: latency optimization, error containment, monitoring observability, and defensive design for High-Throughput Model Serving with FastAPI & BentoML.",
-          "whyItMatters": "Prevents cascading system outages, resource exhaustion, and silent data corruption under high-load enterprise conditions.",
-          "howItWorks": "Combines proactive health checks, structured logging, automated retry policies with exponential backoff, and circuit breaker patterns.",
-          "stepByStep": [
-            "Step 1: Implement structured telemetry and metric tracking (P50, P95, P99 latencies).",
-            "Step 2: Configure bounded timeouts and circuit breaking thresholds.",
-            "Step 3: Handle transient faults with exponential backoff and jitter.",
-            "Step 4: Validate graceful degradation paths under resource starvation."
-          ],
-          "workedExample": "Fault Injection Scenario:\nDownstream dependency experiences 500ms latency spike.\nCircuit breaker detects threshold violation -> trips to Open state -> serves cached fallback response in 2ms without cascading failure.",
-          "realWorldUsage": "Enterprise cloud services, mission-critical API gateways, and distributed microservices.",
-          "codeSnippet": "# Defensive Error Handling Pattern\nimport time\n\ndef execute_with_retry(operation_fn, max_retries=3, backoff_base=0.1):\n    for attempt in range(max_retries):\n        try:\n            return operation_fn()\n        except Exception as e:\n            if attempt == max_retries - 1:\n                raise\n            time.sleep(backoff_base * (2 ** attempt))\n\nresult = execute_with_retry(lambda: 'SUCCESSFUL_EXECUTION')\nprint(f'Execution Status: {result}')",
-          "codeExplanation": "1. Catches transient exceptions and applies exponential backoff delay.\n2. Prevents thundering herd problems during system recovery.",
-          "expectedOutput": "Execution Status: SUCCESSFUL_EXECUTION",
-          "commonMistakes": "Catching generic exceptions silently without logging or alerting, hiding critical production failures.",
-          "bestPractices": "Always configure explicit request timeouts, health probes, and structured JSON logs.",
-          "practiceTask": "Implement a retry decorator with configurable backoff and max attempt parameters.",
-          "keyTakeaway": "Robust production engineering for High-Throughput Model Serving with FastAPI & BentoML requires proactive error containment, latency budgets, and structured observability."
-        },
-        {
-          "section": "Section 2 — Production Engineering & Best Practices",
-          "topic": "Review & Competency",
-          "title": "Lesson 4 — Module Review, Practice Challenge & Key Takeaways",
-          "prerequisites": "Lessons 1 through 3.",
-          "description": "Comprehensive synthesis of architectural principles, algorithmic patterns, and production guidelines for High-Throughput Model Serving with FastAPI & BentoML.",
-          "whyItMatters": "Consolidates theoretical knowledge into practical skills required for Level 4/5 competency qualification.",
-          "howItWorks": "Integrates core theorems, code patterns, and diagnostic checklists into an actionable practitioner reference.",
-          "stepByStep": [
-            "1. Architectural baseline: understand core system components and invariants.",
-            "2. Implementation standard: build modular, leak-free transformation pipelines.",
-            "3. Production readiness: enforce timeouts, circuit breakers, and telemetry monitoring.",
-            "4. Hands-on verification: complete the practical lab exercise to qualify for competency elevation."
-          ],
-          "workedExample": "Competency Qualification Checklist:\n[OK] Core architecture and lifecycle understood.\n[OK] Production error containment verified.\n[OK] Practical lab implementation completed satisfying target benchmarks.",
-          "realWorldUsage": "Practitioner competency baseline across enterprise engineering teams.",
-          "codeSnippet": "# Quick Competency Verification Checklist\nchecklist = [\n    '1. Architecture contracts and data flow verified',\n    '2. Input schema validation and error containment implemented',\n    '3. Performance benchmarks and latency targets satisfied'\n]\nfor item in checklist:\n    print(f'[READY] {item}')",
-          "codeExplanation": "1. Verifies complete module mastery before proceeding to the practical hands-on lab.",
-          "expectedOutput": "[READY] 1. Architecture contracts and data flow verified\n[READY] 2. Input schema validation and error containment implemented\n[READY] 3. Performance benchmarks and latency targets satisfied",
-          "commonMistakes": "Attempting competency assessment before completing the practical hands-on lab exercise.",
-          "bestPractices": "Review key takeaways and test edge cases thoroughly in your practical lab implementation.",
-          "practiceTask": "Complete the practical hands-on lab exercise below to verify your mastery of High-Throughput Model Serving with FastAPI & BentoML.",
-          "keyTakeaway": "You have mastered the architectural foundations, implementation patterns, and production best practices for High-Throughput Model Serving with FastAPI & BentoML."
-        }
-      ]
+        practicalExercise: "Build and containerize a BentoML inference service with dynamic adaptive batching, input schema validation, and health check probes.",
+        competencyVerification: "Demonstrates production model serving architecture, BentoML service design, and dynamic batching optimization at Level 4.",
+        resources: [
+          {
+            title: "BentoML Documentation: Unified Model Serving & Dynamic Batching",
+            url: "https://docs.bentoml.com/en/latest/",
+            description: "Building production Bento services, runners, dynamic batching, and containerization.",
+            type: "documentation",
+            provider: "BentoML"
+          },
+          {
+            title: "NVIDIA Triton Inference Server Documentation",
+            url: "https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/index.html",
+            description: "Multi-model concurrency, dynamic batching, model pipelining, and GPU acceleration.",
+            type: "documentation",
+            provider: "NVIDIA"
+          }
+        ]
+      }
     },
     {
-      "id": "mlops-mod-7",
-      "order": 7,
-      "title": "Module 7 — Containerization & Kubernetes Orchestration for AI Workloads",
-      "durationMinutes": 200,
-      "summary": "Containerizing AI systems: Multi-stage Docker builds with CUDA runtimes, Kubernetes Pod specifications, GPU resource allocation (`nvidia.com/gpu`), Horizontal Pod Autoscalers (HPA), and KServe.",
-      "learningObjectives": [
-        "Author slim, secure Docker containers with NVIDIA CUDA GPU runtime support.",
-        "Deploy model inference services to Kubernetes clusters with resource requests and limits.",
-        "Configure Horizontal Pod Autoscaling (HPA) triggered by custom metrics (QPS, GPU utilization)."
+      id: "mlops-mod-7",
+      order: 7,
+      title: "Module 7 — Deployment Strategies: Canary, Blue-Green, Shadow & A/B Testing",
+      durationMinutes: 180,
+      summary: "Zero-downtime model deployments, Shadow deployments (dark traffic), Canary releases with automated rollback on metric degradation, and statistical A/B testing on business KPIs.",
+      learningObjectives: [
+        "Architect Shadow (Dark Traffic) deployments to validate candidate models on live production traffic with zero user risk.",
+        "Implement automated Canary deployments with progressive traffic shifting and automated metric rollbacks.",
+        "Evaluate statistical significance in online ML A/B experiments."
       ],
-      "resources": [
+      resources: [
         {
-                "title": "Kubernetes Documentation: Deployments and Services",
-                "url": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/",
-                "description": "Container orchestration, rolling updates, pod replication, and resource limits (CPU/Memory/GPU).",
-                "type": "documentation",
-                "provider": "Kubernetes Documentation"
+          title: "Martin Fowler: Canary Releases and Shadow Deployment Patterns",
+          url: "https://martinfowler.com/bliki/CanaryRelease.html",
+          description: "Traffic shifting patterns, risk reduction, and automated canary analysis.",
+          type: "guide",
+          provider: "Martin Fowler"
         },
         {
-                "title": "KServe Documentation: Cloud-Native Model Serving on Kubernetes",
-                "url": "https://kserve.github.io/website/latest/",
-                "description": "Serverless autoscaling (scale to zero), GPU allocation, and standardized v2 dataplane.",
-                "type": "documentation",
-                "provider": "KServe Documentation"
+          title: "Seldon Core: Advanced ML Deployment Strategies (Canary & Shadow)",
+          url: "https://docs.seldon.io/projects/seldon-core/en/latest/analytics/shadow_deployments.html",
+          description: "Deploying shadow models, traffic splitting, and progressive rollouts on Kubernetes.",
+          type: "documentation",
+          provider: "Seldon Technologies"
         }
-],
-      "content": {
-        "overview": "Kubernetes provides declarative container orchestration, automated failover, and dynamic autoscaling for AI inference clusters across cloud and on-premise infrastructure.",
-        "keyConcepts": [
+      ],
+      content: {
+        overview: "Deploying new machine learning models directly to 100% of production traffic carries significant business risk. Utilizing Shadow deployments (duplicating traffic without serving responses) and Canary progressive rollouts enables safe validation on live real-world inputs.",
+        keyConcepts: [
           {
-            "section": "Section 1 — Foundations & Core Mechanics",
-            "topic": "Containerization & Kubernetes Orchestration for AI Workloads Architecture",
-            "title": "Lesson 1 — Architectural Foundations & Core Principles of Containerization & Kubernetes Orchestration for AI Workloads",
-            "prerequisites": "Prerequisites for Containerization & Kubernetes Orchestration for AI Workloads: foundational domain concepts and system design.",
-            "description": "Comprehensive architectural deep dive into Containerization & Kubernetes Orchestration for AI Workloads, detailing foundational execution models, data structures, and core operating invariants.",
-            "whyItMatters": "Establishes structural competency, preventing common architectural anti-patterns and runtime failures in enterprise environments.",
-            "howItWorks": "Operates through modular components with strict interface contracts, managing lifecycle transitions and data flow state transformations.",
-            "stepByStep": [
-              "Step 1: Initialize the core Containerization & Kubernetes Orchestration for AI Workloads execution context and configure runtime invariants.",
-              "Step 2: Establish boundary contracts and schema validation rules.",
-              "Step 3: Execute core processing loop and state synchronization.",
-              "Step 4: Verify downstream integration guarantees and error containment boundaries."
+            section: "Section 1 — Progressive Rollouts & Shadow Traffic",
+            topic: "Shadow & Canary Deployments",
+            title: "Lesson 1 — Shadow Traffic Duplication & Automated Canary Traffic Shifting",
+            prerequisites: "Module 6 (Model Serving) and Kubernetes/API routing.",
+            description: "How API gateways asynchronously mirror live requests to a Shadow model (comparing predictions without returning them to users) and how Canary controllers progressively route 5% -> 25% -> 100% of traffic based on automated error/latency health checks.",
+            whyItMatters: "Offline validation test sets do not fully capture real-time edge cases. Shadowing live traffic exposes model hallucinations and runtime latency spikes with zero customer risk.",
+            howItWorks: "Gateway receives request, sends it synchronously to Primary Model (serving user response), and asynchronously sends a cloned payload to Shadow Model. Background workers compare prediction divergences.",
+            stepByStep: [
+              "Step 1: Deploy candidate model in Shadow mode with 0% user-facing traffic.",
+              "Step 2: Mirror live traffic and log prediction deltas, memory usage, and latency.",
+              "Step 3: If shadow metrics pass, promote to Canary at 5% user traffic.",
+              "Step 4: Monitor error rates and business conversions; automatically roll back if anomalies occur."
             ],
-            "workedExample": "Concrete Execution Scenario:\nInput Request: Validated domain entity with configured operational parameters.\nProcessing: Component evaluates constraints, applies domain logic, and emits state update.\nOutput: Guaranteed deterministic result adhering to enterprise service level objectives.",
-            "realWorldUsage": "Used in high-availability enterprise services, automated data pipelines, and mission-critical cloud infrastructure.",
-            "codeSnippet": "# Core Implementation Pattern: Containerization & Kubernetes Orchestration for AI Workloads\nclass ProductionComponent:\n    def __init__(self, config: dict):\n        self.config = config\n        self._is_active = True\n\n    def process_workload(self, payload: dict) -> dict:\n        if not self._is_active:\n            raise RuntimeError('Component inactive')\n        return {'status': 'SUCCESS', 'processed': payload, 'verified': True}\n\ncomponent = ProductionComponent(config={'env': 'production'})\nprint(component.process_workload({'task': 'Containerization & Kubernetes Orchestration for AI Workloads'}))",
-            "codeExplanation": "1. Initializes component with strict configuration encapsulation.\n2. Validates operational state before executing workload.\n3. Returns structured execution payload.",
-            "expectedOutput": "{'status': 'SUCCESS', 'processed': {'task': 'Containerization & Kubernetes Orchestration for AI Workloads'}, 'verified': True}",
-            "commonMistakes": "Violating separation of concerns by coupling Containerization & Kubernetes Orchestration for AI Workloads logic directly to transport layers.",
-            "bestPractices": "Always encapsulate domain logic behind strict interface contracts and validate boundary inputs defensively.",
-            "practiceTask": "Implement a minimal working prototype of Containerization & Kubernetes Orchestration for AI Workloads with automated input validation.",
-            "keyTakeaway": "Understanding the core architectural principles of Containerization & Kubernetes Orchestration for AI Workloads is essential for designing resilient, production-grade systems."
-          },
-          {
-            "section": "Section 1 — Foundations & Core Mechanics",
-            "topic": "Containerization & Kubernetes Orchestration for AI Workloads Implementation",
-            "title": "Lesson 2 — Step-by-Step Implementation & Algorithm Mechanics",
-            "prerequisites": "Lesson 1 (Architectural Foundations).",
-            "description": "Detailed step-by-step implementation mechanics, algorithmic flows, and data transformations for Containerization & Kubernetes Orchestration for AI Workloads.",
-            "whyItMatters": "Translates high-level theoretical concepts into concrete, maintainable, and high-performance production implementations.",
-            "howItWorks": "Processes data via structured transformation pipelines, managing memory efficiency, concurrency safety, and execution state.",
-            "stepByStep": [
-              "Step 1: Ingest input payloads and normalize data representations.",
-              "Step 2: Apply primary domain transformations and state mutations.",
-              "Step 3: Handle edge cases, null boundaries, and invalid parameter transitions.",
-              "Step 4: Emit validated output and persist operational state."
-            ],
-            "workedExample": "Input Data Transformation:\nRaw Payload: `{'id': 101, 'metric': 42.5, 'flag': True}`\nProcessing: Normalizes types -> validates bounds -> calculates derived metrics.\nTransformed Result: `{'id': 101, 'score': 0.85, 'status': 'OPTIMAL'}`.",
-            "realWorldUsage": "Production runtime execution across scalable distributed systems and analytics engines.",
-            "codeSnippet": "# Implementation Execution Loop\ndef execute_pipeline_step(data: list) -> list:\n    results = []\n    for item in data:\n        transformed = {'key': item, 'value': item * 2, 'valid': True}\n        results.append(transformed)\n    return results\n\nprint('Processed Steps:', execute_pipeline_step([10, 20, 30]))",
-            "codeExplanation": "1. Iterates over input stream with $O(N)$ linear time complexity.\n2. Emits structured transformed output records.",
-            "expectedOutput": "Processed Steps: [{'key': 10, 'value': 20, 'valid': True}, {'key': 20, 'value': 40, 'valid': True}, {'key': 30, 'value': 60, 'valid': True}]",
-            "commonMistakes": "Failing to handle empty sequences or null pointers during pipeline transformations.",
-            "bestPractices": "Profile algorithmic time complexity and memory allocations before scaling to production volumes.",
-            "practiceTask": "Construct a unit-tested implementation of the Containerization & Kubernetes Orchestration for AI Workloads data transformation function.",
-            "keyTakeaway": "Methodical step-by-step implementation ensures deterministic behavior and simplifies debugging in production."
-          },
-          {
-            "section": "Section 2 — Production Engineering & Best Practices",
-            "topic": "Production Optimization",
-            "title": "Lesson 3 — Performance Tuning, Error Handling & Production Best Practices",
-            "prerequisites": "Lesson 2 (Implementation Mechanics).",
-            "description": "Production engineering strategies: latency optimization, error containment, monitoring observability, and defensive design for Containerization & Kubernetes Orchestration for AI Workloads.",
-            "whyItMatters": "Prevents cascading system outages, resource exhaustion, and silent data corruption under high-load enterprise conditions.",
-            "howItWorks": "Combines proactive health checks, structured logging, automated retry policies with exponential backoff, and circuit breaker patterns.",
-            "stepByStep": [
-              "Step 1: Implement structured telemetry and metric tracking (P50, P95, P99 latencies).",
-              "Step 2: Configure bounded timeouts and circuit breaking thresholds.",
-              "Step 3: Handle transient faults with exponential backoff and jitter.",
-              "Step 4: Validate graceful degradation paths under resource starvation."
-            ],
-            "workedExample": "Fault Injection Scenario:\nDownstream dependency experiences 500ms latency spike.\nCircuit breaker detects threshold violation -> trips to Open state -> serves cached fallback response in 2ms without cascading failure.",
-            "realWorldUsage": "Enterprise cloud services, mission-critical API gateways, and distributed microservices.",
-            "codeSnippet": "# Defensive Error Handling Pattern\nimport time\n\ndef execute_with_retry(operation_fn, max_retries=3, backoff_base=0.1):\n    for attempt in range(max_retries):\n        try:\n            return operation_fn()\n        except Exception as e:\n            if attempt == max_retries - 1:\n                raise\n            time.sleep(backoff_base * (2 ** attempt))\n\nresult = execute_with_retry(lambda: 'SUCCESSFUL_EXECUTION')\nprint(f'Execution Status: {result}')",
-            "codeExplanation": "1. Catches transient exceptions and applies exponential backoff delay.\n2. Prevents thundering herd problems during system recovery.",
-            "expectedOutput": "Execution Status: SUCCESSFUL_EXECUTION",
-            "commonMistakes": "Catching generic exceptions silently without logging or alerting, hiding critical production failures.",
-            "bestPractices": "Always configure explicit request timeouts, health probes, and structured JSON logs.",
-            "practiceTask": "Implement a retry decorator with configurable backoff and max attempt parameters.",
-            "keyTakeaway": "Robust production engineering for Containerization & Kubernetes Orchestration for AI Workloads requires proactive error containment, latency budgets, and structured observability."
-          },
-          {
-            "section": "Section 2 — Production Engineering & Best Practices",
-            "topic": "Review & Competency",
-            "title": "Lesson 4 — Module Review, Practice Challenge & Key Takeaways",
-            "prerequisites": "Lessons 1 through 3.",
-            "description": "Comprehensive synthesis of architectural principles, algorithmic patterns, and production guidelines for Containerization & Kubernetes Orchestration for AI Workloads.",
-            "whyItMatters": "Consolidates theoretical knowledge into practical skills required for Level 4/5 competency qualification.",
-            "howItWorks": "Integrates core theorems, code patterns, and diagnostic checklists into an actionable practitioner reference.",
-            "stepByStep": [
-              "1. Architectural baseline: understand core system components and invariants.",
-              "2. Implementation standard: build modular, leak-free transformation pipelines.",
-              "3. Production readiness: enforce timeouts, circuit breakers, and telemetry monitoring.",
-              "4. Hands-on verification: complete the practical lab exercise to qualify for competency elevation."
-            ],
-            "workedExample": "Competency Qualification Checklist:\n[OK] Core architecture and lifecycle understood.\n[OK] Production error containment verified.\n[OK] Practical lab implementation completed satisfying target benchmarks.",
-            "realWorldUsage": "Practitioner competency baseline across enterprise engineering teams.",
-            "codeSnippet": "# Quick Competency Verification Checklist\nchecklist = [\n    '1. Architecture contracts and data flow verified',\n    '2. Input schema validation and error containment implemented',\n    '3. Performance benchmarks and latency targets satisfied'\n]\nfor item in checklist:\n    print(f'[READY] {item}')",
-            "codeExplanation": "1. Verifies complete module mastery before proceeding to the practical hands-on lab.",
-            "expectedOutput": "[READY] 1. Architecture contracts and data flow verified\n[READY] 2. Input schema validation and error containment implemented\n[READY] 3. Performance benchmarks and latency targets satisfied",
-            "commonMistakes": "Attempting competency assessment before completing the practical hands-on lab exercise.",
-            "bestPractices": "Review key takeaways and test edge cases thoroughly in your practical lab implementation.",
-            "practiceTask": "Complete the practical hands-on lab exercise below to verify your mastery of Containerization & Kubernetes Orchestration for AI Workloads.",
-            "keyTakeaway": "You have mastered the architectural foundations, implementation patterns, and production best practices for Containerization & Kubernetes Orchestration for AI Workloads."
+            workedExample: "Canary Rollout Schedule:\n- Day 1: 0% (Shadow mode, verifying latency).\n- Day 2: 5% Canary (Monitoring error rates).\n- Day 3: 25% Canary.\n- Day 4: 100% Full Promotion."
           }
         ],
-        "practicalExercise": "Deploy a containerized model service to Kubernetes with HPA autoscaling and GPU acceleration.",
-        "competencyVerification": "Demonstrates Docker containerization, Kubernetes AI workload orchestration, and GPU autoscaling at Level 5.",
-        "resources": [
-        {
-                "title": "Kubernetes Documentation: Deployments and Services",
-                "url": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/",
-                "description": "Container orchestration, rolling updates, pod replication, and resource limits (CPU/Memory/GPU).",
-                "type": "documentation",
-                "provider": "Kubernetes Documentation"
-        },
-        {
-                "title": "KServe Documentation: Cloud-Native Model Serving on Kubernetes",
-                "url": "https://kserve.github.io/website/latest/",
-                "description": "Serverless autoscaling (scale to zero), GPU allocation, and standardized v2 dataplane.",
-                "type": "documentation",
-                "provider": "KServe Documentation"
-        }
-]
-      },
-      "keyConcepts": [
-        {
-          "section": "Section 1 — Foundations & Core Mechanics",
-          "topic": "Containerization & Kubernetes Orchestration for AI Workloads Architecture",
-          "title": "Lesson 1 — Architectural Foundations & Core Principles of Containerization & Kubernetes Orchestration for AI Workloads",
-          "prerequisites": "Prerequisites for Containerization & Kubernetes Orchestration for AI Workloads: foundational domain concepts and system design.",
-          "description": "Comprehensive architectural deep dive into Containerization & Kubernetes Orchestration for AI Workloads, detailing foundational execution models, data structures, and core operating invariants.",
-          "whyItMatters": "Establishes structural competency, preventing common architectural anti-patterns and runtime failures in enterprise environments.",
-          "howItWorks": "Operates through modular components with strict interface contracts, managing lifecycle transitions and data flow state transformations.",
-          "stepByStep": [
-            "Step 1: Initialize the core Containerization & Kubernetes Orchestration for AI Workloads execution context and configure runtime invariants.",
-            "Step 2: Establish boundary contracts and schema validation rules.",
-            "Step 3: Execute core processing loop and state synchronization.",
-            "Step 4: Verify downstream integration guarantees and error containment boundaries."
-          ],
-          "workedExample": "Concrete Execution Scenario:\nInput Request: Validated domain entity with configured operational parameters.\nProcessing: Component evaluates constraints, applies domain logic, and emits state update.\nOutput: Guaranteed deterministic result adhering to enterprise service level objectives.",
-          "realWorldUsage": "Used in high-availability enterprise services, automated data pipelines, and mission-critical cloud infrastructure.",
-          "codeSnippet": "# Core Implementation Pattern: Containerization & Kubernetes Orchestration for AI Workloads\nclass ProductionComponent:\n    def __init__(self, config: dict):\n        self.config = config\n        self._is_active = True\n\n    def process_workload(self, payload: dict) -> dict:\n        if not self._is_active:\n            raise RuntimeError('Component inactive')\n        return {'status': 'SUCCESS', 'processed': payload, 'verified': True}\n\ncomponent = ProductionComponent(config={'env': 'production'})\nprint(component.process_workload({'task': 'Containerization & Kubernetes Orchestration for AI Workloads'}))",
-          "codeExplanation": "1. Initializes component with strict configuration encapsulation.\n2. Validates operational state before executing workload.\n3. Returns structured execution payload.",
-          "expectedOutput": "{'status': 'SUCCESS', 'processed': {'task': 'Containerization & Kubernetes Orchestration for AI Workloads'}, 'verified': True}",
-          "commonMistakes": "Violating separation of concerns by coupling Containerization & Kubernetes Orchestration for AI Workloads logic directly to transport layers.",
-          "bestPractices": "Always encapsulate domain logic behind strict interface contracts and validate boundary inputs defensively.",
-          "practiceTask": "Implement a minimal working prototype of Containerization & Kubernetes Orchestration for AI Workloads with automated input validation.",
-          "keyTakeaway": "Understanding the core architectural principles of Containerization & Kubernetes Orchestration for AI Workloads is essential for designing resilient, production-grade systems."
-        },
-        {
-          "section": "Section 1 — Foundations & Core Mechanics",
-          "topic": "Containerization & Kubernetes Orchestration for AI Workloads Implementation",
-          "title": "Lesson 2 — Step-by-Step Implementation & Algorithm Mechanics",
-          "prerequisites": "Lesson 1 (Architectural Foundations).",
-          "description": "Detailed step-by-step implementation mechanics, algorithmic flows, and data transformations for Containerization & Kubernetes Orchestration for AI Workloads.",
-          "whyItMatters": "Translates high-level theoretical concepts into concrete, maintainable, and high-performance production implementations.",
-          "howItWorks": "Processes data via structured transformation pipelines, managing memory efficiency, concurrency safety, and execution state.",
-          "stepByStep": [
-            "Step 1: Ingest input payloads and normalize data representations.",
-            "Step 2: Apply primary domain transformations and state mutations.",
-            "Step 3: Handle edge cases, null boundaries, and invalid parameter transitions.",
-            "Step 4: Emit validated output and persist operational state."
-          ],
-          "workedExample": "Input Data Transformation:\nRaw Payload: `{'id': 101, 'metric': 42.5, 'flag': True}`\nProcessing: Normalizes types -> validates bounds -> calculates derived metrics.\nTransformed Result: `{'id': 101, 'score': 0.85, 'status': 'OPTIMAL'}`.",
-          "realWorldUsage": "Production runtime execution across scalable distributed systems and analytics engines.",
-          "codeSnippet": "# Implementation Execution Loop\ndef execute_pipeline_step(data: list) -> list:\n    results = []\n    for item in data:\n        transformed = {'key': item, 'value': item * 2, 'valid': True}\n        results.append(transformed)\n    return results\n\nprint('Processed Steps:', execute_pipeline_step([10, 20, 30]))",
-          "codeExplanation": "1. Iterates over input stream with $O(N)$ linear time complexity.\n2. Emits structured transformed output records.",
-          "expectedOutput": "Processed Steps: [{'key': 10, 'value': 20, 'valid': True}, {'key': 20, 'value': 40, 'valid': True}, {'key': 30, 'value': 60, 'valid': True}]",
-          "commonMistakes": "Failing to handle empty sequences or null pointers during pipeline transformations.",
-          "bestPractices": "Profile algorithmic time complexity and memory allocations before scaling to production volumes.",
-          "practiceTask": "Construct a unit-tested implementation of the Containerization & Kubernetes Orchestration for AI Workloads data transformation function.",
-          "keyTakeaway": "Methodical step-by-step implementation ensures deterministic behavior and simplifies debugging in production."
-        },
-        {
-          "section": "Section 2 — Production Engineering & Best Practices",
-          "topic": "Production Optimization",
-          "title": "Lesson 3 — Performance Tuning, Error Handling & Production Best Practices",
-          "prerequisites": "Lesson 2 (Implementation Mechanics).",
-          "description": "Production engineering strategies: latency optimization, error containment, monitoring observability, and defensive design for Containerization & Kubernetes Orchestration for AI Workloads.",
-          "whyItMatters": "Prevents cascading system outages, resource exhaustion, and silent data corruption under high-load enterprise conditions.",
-          "howItWorks": "Combines proactive health checks, structured logging, automated retry policies with exponential backoff, and circuit breaker patterns.",
-          "stepByStep": [
-            "Step 1: Implement structured telemetry and metric tracking (P50, P95, P99 latencies).",
-            "Step 2: Configure bounded timeouts and circuit breaking thresholds.",
-            "Step 3: Handle transient faults with exponential backoff and jitter.",
-            "Step 4: Validate graceful degradation paths under resource starvation."
-          ],
-          "workedExample": "Fault Injection Scenario:\nDownstream dependency experiences 500ms latency spike.\nCircuit breaker detects threshold violation -> trips to Open state -> serves cached fallback response in 2ms without cascading failure.",
-          "realWorldUsage": "Enterprise cloud services, mission-critical API gateways, and distributed microservices.",
-          "codeSnippet": "# Defensive Error Handling Pattern\nimport time\n\ndef execute_with_retry(operation_fn, max_retries=3, backoff_base=0.1):\n    for attempt in range(max_retries):\n        try:\n            return operation_fn()\n        except Exception as e:\n            if attempt == max_retries - 1:\n                raise\n            time.sleep(backoff_base * (2 ** attempt))\n\nresult = execute_with_retry(lambda: 'SUCCESSFUL_EXECUTION')\nprint(f'Execution Status: {result}')",
-          "codeExplanation": "1. Catches transient exceptions and applies exponential backoff delay.\n2. Prevents thundering herd problems during system recovery.",
-          "expectedOutput": "Execution Status: SUCCESSFUL_EXECUTION",
-          "commonMistakes": "Catching generic exceptions silently without logging or alerting, hiding critical production failures.",
-          "bestPractices": "Always configure explicit request timeouts, health probes, and structured JSON logs.",
-          "practiceTask": "Implement a retry decorator with configurable backoff and max attempt parameters.",
-          "keyTakeaway": "Robust production engineering for Containerization & Kubernetes Orchestration for AI Workloads requires proactive error containment, latency budgets, and structured observability."
-        },
-        {
-          "section": "Section 2 — Production Engineering & Best Practices",
-          "topic": "Review & Competency",
-          "title": "Lesson 4 — Module Review, Practice Challenge & Key Takeaways",
-          "prerequisites": "Lessons 1 through 3.",
-          "description": "Comprehensive synthesis of architectural principles, algorithmic patterns, and production guidelines for Containerization & Kubernetes Orchestration for AI Workloads.",
-          "whyItMatters": "Consolidates theoretical knowledge into practical skills required for Level 4/5 competency qualification.",
-          "howItWorks": "Integrates core theorems, code patterns, and diagnostic checklists into an actionable practitioner reference.",
-          "stepByStep": [
-            "1. Architectural baseline: understand core system components and invariants.",
-            "2. Implementation standard: build modular, leak-free transformation pipelines.",
-            "3. Production readiness: enforce timeouts, circuit breakers, and telemetry monitoring.",
-            "4. Hands-on verification: complete the practical lab exercise to qualify for competency elevation."
-          ],
-          "workedExample": "Competency Qualification Checklist:\n[OK] Core architecture and lifecycle understood.\n[OK] Production error containment verified.\n[OK] Practical lab implementation completed satisfying target benchmarks.",
-          "realWorldUsage": "Practitioner competency baseline across enterprise engineering teams.",
-          "codeSnippet": "# Quick Competency Verification Checklist\nchecklist = [\n    '1. Architecture contracts and data flow verified',\n    '2. Input schema validation and error containment implemented',\n    '3. Performance benchmarks and latency targets satisfied'\n]\nfor item in checklist:\n    print(f'[READY] {item}')",
-          "codeExplanation": "1. Verifies complete module mastery before proceeding to the practical hands-on lab.",
-          "expectedOutput": "[READY] 1. Architecture contracts and data flow verified\n[READY] 2. Input schema validation and error containment implemented\n[READY] 3. Performance benchmarks and latency targets satisfied",
-          "commonMistakes": "Attempting competency assessment before completing the practical hands-on lab exercise.",
-          "bestPractices": "Review key takeaways and test edge cases thoroughly in your practical lab implementation.",
-          "practiceTask": "Complete the practical hands-on lab exercise below to verify your mastery of Containerization & Kubernetes Orchestration for AI Workloads.",
-          "keyTakeaway": "You have mastered the architectural foundations, implementation patterns, and production best practices for Containerization & Kubernetes Orchestration for AI Workloads."
-        }
-      ]
+        practicalExercise: "Build an automated Canary and Shadow traffic router in Python that mirrors live production requests, logs prediction divergences, and executes automated rollback if error thresholds are exceeded.",
+        competencyVerification: "Demonstrates production deployment strategies, shadow traffic mirroring, and automated canary rollback engineering at Level 4.",
+        resources: [
+          {
+            title: "Martin Fowler: Canary Releases and Shadow Deployment Patterns",
+            url: "https://martinfowler.com/bliki/CanaryRelease.html",
+            description: "Traffic shifting patterns, risk reduction, and automated canary analysis.",
+            type: "guide",
+            provider: "Martin Fowler"
+          },
+          {
+            title: "Seldon Core: Advanced ML Deployment Strategies (Canary & Shadow)",
+            url: "https://docs.seldon.io/projects/seldon-core/en/latest/analytics/shadow_deployments.html",
+            description: "Deploying shadow models, traffic splitting, and progressive rollouts on Kubernetes.",
+            type: "documentation",
+            provider: "Seldon Technologies"
+          }
+        ]
+      }
     },
     {
-      "id": "mlops-mod-8",
-      "order": 8,
-      "title": "Module 8 — Feature Stores: Feast & Centralized Feature Management",
-      "durationMinutes": 200,
-      "summary": "Feature store architecture: Online low-latency storage (Redis) vs Offline batch storage (PostgreSQL/Parquet), Feast feature store definitions, point-in-time correctness (time-travel joins), and eliminating training-serving skew.",
-      "learningObjectives": [
-        "Define declarative Feature Views and Entities using Feast.",
-        "Perform point-in-time correct historical feature joins preventing label leakage.",
-        "Materialize features from offline batch tables to online low-latency Redis stores."
+      id: "mlops-mod-8",
+      order: 8,
+      title: "Module 8 — Model Monitoring: Data Drift, Concept Drift & Population Stability Index (PSI)",
+      durationMinutes: 180,
+      summary: "Data Drift (covariate shift), Concept Drift (posterior probability shift $P(Y|X)$), statistical drift tests (Kolmogorov-Smirnov, Wasserstein, Chi-Square), Population Stability Index (PSI), and Evidently AI.",
+      learningObjectives: [
+        "Differentiate Data Drift ($P(X)$ changes) from Concept Drift ($P(Y|X)$ relationship changes).",
+        "Calculate Population Stability Index (PSI) to quantify feature distribution shifts over time.",
+        "Implement automated drift monitoring dashboards and alert triggers using Evidently AI."
       ],
-      "resources": [
+      resources: [
         {
-                "title": "Feast Official Documentation: Feature Store Architecture",
-                "url": "https://docs.feast.dev/",
-                "description": "Point-in-time correct historical feature retrieval and low-latency online Redis serving.",
-                "type": "documentation",
-                "provider": "Feast Documentation"
+          title: "Evidently AI Documentation: Monitoring Data Drift & Model Performance",
+          url: "https://docs.evidentlyai.com/",
+          description: "Data drift detection, statistical tests, PSI calculation, and automated drift reporting.",
+          type: "documentation",
+          provider: "Evidently AI"
         },
         {
-                "title": "Hopsworks Feature Store Documentation: Concept Guide",
-                "url": "https://docs.hopsworks.ai/latest/concepts/feature_store/",
-                "description": "Centralized feature cataloging, feature group versioning, and feature transformations.",
-                "type": "documentation",
-                "provider": "Hopsworks Documentation"
+          title: "A Survey on Concept Drift Adaptation (Lu et al., ACM Computing Surveys)",
+          url: "https://dl.acm.org/doi/10.1145/3299866",
+          description: "Taxonomy of concept drift, detection algorithms, and continuous adaptation strategies.",
+          type: "specification",
+          provider: "ACM"
         }
-],
-      "content": {
-        "overview": "Feature stores centralize feature engineering logic across teams. Offline storage provides point-in-time correct historical features for training; online storage serves fresh low-latency features for real-time inference.",
-        "keyConcepts": [
+      ],
+      content: {
+        overview: "Machine learning models degrade silently after deployment as real-world distributions shift. Calculating the Population Stability Index (PSI) and monitoring statistical data drift with Evidently AI enables proactive retraining before business metrics suffer.",
+        keyConcepts: [
           {
-            "section": "Section 1 — Foundations & Core Mechanics",
-            "topic": "Feature Stores: Feast & Centralized Feature Management Architecture",
-            "title": "Lesson 1 — Architectural Foundations & Core Principles of Feature Stores",
-            "prerequisites": "Prerequisites for Feature Stores: Feast & Centralized Feature Management: foundational domain concepts and system design.",
-            "description": "Comprehensive architectural deep dive into Feature Stores: Feast & Centralized Feature Management, detailing foundational execution models, data structures, and core operating invariants.",
-            "whyItMatters": "Establishes structural competency, preventing common architectural anti-patterns and runtime failures in enterprise environments.",
-            "howItWorks": "Operates through modular components with strict interface contracts, managing lifecycle transitions and data flow state transformations.",
-            "stepByStep": [
-              "Step 1: Initialize the core Feature Stores execution context and configure runtime invariants.",
-              "Step 2: Establish boundary contracts and schema validation rules.",
-              "Step 3: Execute core processing loop and state synchronization.",
-              "Step 4: Verify downstream integration guarantees and error containment boundaries."
+            section: "Section 1 — Drift Detection & PSI",
+            topic: "Population Stability Index (PSI)",
+            title: "Lesson 1 — Population Stability Index (PSI) & Continuous Drift Telemetry",
+            prerequisites: "Module 1 (Production ML Lifecycle) and probability/statistics.",
+            description: "How to calculate the Population Stability Index (PSI) by binning reference baseline vs current inference feature distributions ($\text{PSI} = \sum (\text{Actual}\% - \text{Expected}\%) \times \ln\left(\frac{\text{Actual}\%}{\text{Expected}\%}\right)$).",
+            whyItMatters: "Models don't throw HTTP 500 errors when data changes; they silently output incorrect predictions. PSI provides an objective, scale-invariant alert metric.",
+            howItWorks: "Divide baseline feature values into 10 decile buckets. Calculate the percentage of samples in each bucket for baseline ($E$) and current production data ($A$). Sum the symmetric divergence.",
+            stepByStep: [
+              "Step 1: Calculate 10 quantile bins from baseline training data.",
+              "Step 2: Compute sample proportion $E_i$ in baseline and $A_i$ in production window.",
+              "Step 3: Evaluate $\text{PSI}_i = (A_i - E_i) \cdot \ln(A_i / E_i)$ per bucket.",
+              "Step 4: Sum all buckets: $\text{PSI} < 0.1$ (No shift), $0.1 \le \text{PSI} < 0.2$ (Moderate shift), $\text{PSI} \ge 0.2$ (Significant shift -> Trigger retraining)."
             ],
-            "workedExample": "Concrete Execution Scenario:\nInput Request: Validated domain entity with configured operational parameters.\nProcessing: Component evaluates constraints, applies domain logic, and emits state update.\nOutput: Guaranteed deterministic result adhering to enterprise service level objectives.",
-            "realWorldUsage": "Used in high-availability enterprise services, automated data pipelines, and mission-critical cloud infrastructure.",
-            "codeSnippet": "# Core Implementation Pattern: Feature Stores: Feast & Centralized Feature Management\nclass ProductionComponent:\n    def __init__(self, config: dict):\n        self.config = config\n        self._is_active = True\n\n    def process_workload(self, payload: dict) -> dict:\n        if not self._is_active:\n            raise RuntimeError('Component inactive')\n        return {'status': 'SUCCESS', 'processed': payload, 'verified': True}\n\ncomponent = ProductionComponent(config={'env': 'production'})\nprint(component.process_workload({'task': 'Feature Stores'}))",
-            "codeExplanation": "1. Initializes component with strict configuration encapsulation.\n2. Validates operational state before executing workload.\n3. Returns structured execution payload.",
-            "expectedOutput": "{'status': 'SUCCESS', 'processed': {'task': 'Feature Stores'}, 'verified': True}",
-            "commonMistakes": "Violating separation of concerns by coupling Feature Stores logic directly to transport layers.",
-            "bestPractices": "Always encapsulate domain logic behind strict interface contracts and validate boundary inputs defensively.",
-            "practiceTask": "Implement a minimal working prototype of Feature Stores with automated input validation.",
-            "keyTakeaway": "Understanding the core architectural principles of Feature Stores is essential for designing resilient, production-grade systems."
-          },
-          {
-            "section": "Section 1 — Foundations & Core Mechanics",
-            "topic": "Feature Stores: Feast & Centralized Feature Management Implementation",
-            "title": "Lesson 2 — Step-by-Step Implementation & Algorithm Mechanics",
-            "prerequisites": "Lesson 1 (Architectural Foundations).",
-            "description": "Detailed step-by-step implementation mechanics, algorithmic flows, and data transformations for Feature Stores: Feast & Centralized Feature Management.",
-            "whyItMatters": "Translates high-level theoretical concepts into concrete, maintainable, and high-performance production implementations.",
-            "howItWorks": "Processes data via structured transformation pipelines, managing memory efficiency, concurrency safety, and execution state.",
-            "stepByStep": [
-              "Step 1: Ingest input payloads and normalize data representations.",
-              "Step 2: Apply primary domain transformations and state mutations.",
-              "Step 3: Handle edge cases, null boundaries, and invalid parameter transitions.",
-              "Step 4: Emit validated output and persist operational state."
-            ],
-            "workedExample": "Input Data Transformation:\nRaw Payload: `{'id': 101, 'metric': 42.5, 'flag': True}`\nProcessing: Normalizes types -> validates bounds -> calculates derived metrics.\nTransformed Result: `{'id': 101, 'score': 0.85, 'status': 'OPTIMAL'}`.",
-            "realWorldUsage": "Production runtime execution across scalable distributed systems and analytics engines.",
-            "codeSnippet": "# Implementation Execution Loop\ndef execute_pipeline_step(data: list) -> list:\n    results = []\n    for item in data:\n        transformed = {'key': item, 'value': item * 2, 'valid': True}\n        results.append(transformed)\n    return results\n\nprint('Processed Steps:', execute_pipeline_step([10, 20, 30]))",
-            "codeExplanation": "1. Iterates over input stream with $O(N)$ linear time complexity.\n2. Emits structured transformed output records.",
-            "expectedOutput": "Processed Steps: [{'key': 10, 'value': 20, 'valid': True}, {'key': 20, 'value': 40, 'valid': True}, {'key': 30, 'value': 60, 'valid': True}]",
-            "commonMistakes": "Failing to handle empty sequences or null pointers during pipeline transformations.",
-            "bestPractices": "Profile algorithmic time complexity and memory allocations before scaling to production volumes.",
-            "practiceTask": "Construct a unit-tested implementation of the Feature Stores data transformation function.",
-            "keyTakeaway": "Methodical step-by-step implementation ensures deterministic behavior and simplifies debugging in production."
-          },
-          {
-            "section": "Section 2 — Production Engineering & Best Practices",
-            "topic": "Production Optimization",
-            "title": "Lesson 3 — Performance Tuning, Error Handling & Production Best Practices",
-            "prerequisites": "Lesson 2 (Implementation Mechanics).",
-            "description": "Production engineering strategies: latency optimization, error containment, monitoring observability, and defensive design for Feature Stores: Feast & Centralized Feature Management.",
-            "whyItMatters": "Prevents cascading system outages, resource exhaustion, and silent data corruption under high-load enterprise conditions.",
-            "howItWorks": "Combines proactive health checks, structured logging, automated retry policies with exponential backoff, and circuit breaker patterns.",
-            "stepByStep": [
-              "Step 1: Implement structured telemetry and metric tracking (P50, P95, P99 latencies).",
-              "Step 2: Configure bounded timeouts and circuit breaking thresholds.",
-              "Step 3: Handle transient faults with exponential backoff and jitter.",
-              "Step 4: Validate graceful degradation paths under resource starvation."
-            ],
-            "workedExample": "Fault Injection Scenario:\nDownstream dependency experiences 500ms latency spike.\nCircuit breaker detects threshold violation -> trips to Open state -> serves cached fallback response in 2ms without cascading failure.",
-            "realWorldUsage": "Enterprise cloud services, mission-critical API gateways, and distributed microservices.",
-            "codeSnippet": "# Defensive Error Handling Pattern\nimport time\n\ndef execute_with_retry(operation_fn, max_retries=3, backoff_base=0.1):\n    for attempt in range(max_retries):\n        try:\n            return operation_fn()\n        except Exception as e:\n            if attempt == max_retries - 1:\n                raise\n            time.sleep(backoff_base * (2 ** attempt))\n\nresult = execute_with_retry(lambda: 'SUCCESSFUL_EXECUTION')\nprint(f'Execution Status: {result}')",
-            "codeExplanation": "1. Catches transient exceptions and applies exponential backoff delay.\n2. Prevents thundering herd problems during system recovery.",
-            "expectedOutput": "Execution Status: SUCCESSFUL_EXECUTION",
-            "commonMistakes": "Catching generic exceptions silently without logging or alerting, hiding critical production failures.",
-            "bestPractices": "Always configure explicit request timeouts, health probes, and structured JSON logs.",
-            "practiceTask": "Implement a retry decorator with configurable backoff and max attempt parameters.",
-            "keyTakeaway": "Robust production engineering for Feature Stores requires proactive error containment, latency budgets, and structured observability."
-          },
-          {
-            "section": "Section 2 — Production Engineering & Best Practices",
-            "topic": "Review & Competency",
-            "title": "Lesson 4 — Module Review, Practice Challenge & Key Takeaways",
-            "prerequisites": "Lessons 1 through 3.",
-            "description": "Comprehensive synthesis of architectural principles, algorithmic patterns, and production guidelines for Feature Stores: Feast & Centralized Feature Management.",
-            "whyItMatters": "Consolidates theoretical knowledge into practical skills required for Level 4/5 competency qualification.",
-            "howItWorks": "Integrates core theorems, code patterns, and diagnostic checklists into an actionable practitioner reference.",
-            "stepByStep": [
-              "1. Architectural baseline: understand core system components and invariants.",
-              "2. Implementation standard: build modular, leak-free transformation pipelines.",
-              "3. Production readiness: enforce timeouts, circuit breakers, and telemetry monitoring.",
-              "4. Hands-on verification: complete the practical lab exercise to qualify for competency elevation."
-            ],
-            "workedExample": "Competency Qualification Checklist:\n[OK] Core architecture and lifecycle understood.\n[OK] Production error containment verified.\n[OK] Practical lab implementation completed satisfying target benchmarks.",
-            "realWorldUsage": "Practitioner competency baseline across enterprise engineering teams.",
-            "codeSnippet": "# Quick Competency Verification Checklist\nchecklist = [\n    '1. Architecture contracts and data flow verified',\n    '2. Input schema validation and error containment implemented',\n    '3. Performance benchmarks and latency targets satisfied'\n]\nfor item in checklist:\n    print(f'[READY] {item}')",
-            "codeExplanation": "1. Verifies complete module mastery before proceeding to the practical hands-on lab.",
-            "expectedOutput": "[READY] 1. Architecture contracts and data flow verified\n[READY] 2. Input schema validation and error containment implemented\n[READY] 3. Performance benchmarks and latency targets satisfied",
-            "commonMistakes": "Attempting competency assessment before completing the practical hands-on lab exercise.",
-            "bestPractices": "Review key takeaways and test edge cases thoroughly in your practical lab implementation.",
-            "practiceTask": "Complete the practical hands-on lab exercise below to verify your mastery of Feature Stores.",
-            "keyTakeaway": "You have mastered the architectural foundations, implementation patterns, and production best practices for Feature Stores."
+            workedExample: "PSI Interpretation Thresholds:\n- PSI < 0.1: Stable, no action needed.\n- 0.1 <= PSI < 0.2: Moderate drift detected -> Log warning and monitor.\n- PSI >= 0.2: Severe drift -> Trigger automated pipeline retraining.",
+            realWorldUsage: "Credit risk scoring, fraud detection, recommendation systems.",
+            codeSnippet: "# Population Stability Index (PSI) Calculation from Scratch (Python)\nimport numpy as np\n\ndef calculate_psi(expected: np.ndarray, actual: np.ndarray, num_buckets: int = 10) -> float:\n    # Define bucket boundaries using quantiles of expected distribution\n    percentiles = np.linspace(0, 100, num_buckets + 1)\n    buckets = np.percentile(expected, percentiles)\n    buckets[0] -= 1e-5\n    buckets[-1] += 1e-5\n\n    # Count frequencies\n    expected_counts, _ = np.histogram(expected, bins=buckets)\n    actual_counts, _ = np.histogram(actual, bins=buckets)\n\n    # Convert to proportions with small epsilon to prevent div/log by zero\n    expected_pct = np.maximum(expected_counts / len(expected), 1e-4)\n    actual_pct = np.maximum(actual_counts / len(actual), 1e-4)\n\n    # Compute PSI\n    psi_val = np.sum((actual_pct - expected_pct) * np.log(actual_pct / expected_pct))\n    return float(psi_val)\n\n# Test PSI on shifted data\nbaseline_features = np.random.normal(loc=50, scale=10, size=1000)\nshifted_production_features = np.random.normal(loc=58, scale=12, size=1000) # Drifted mean and variance\n\npsi = calculate_psi(baseline_features, shifted_production_features)\nprint(f'Computed PSI: {psi:.4f} -> Action: {\"Retrain Model\" if psi >= 0.2 else \"Stable\"}')",
+            codeExplanation: "1. Calculates quantile bucket edges on baseline training distribution.\n2. Computes empirical distribution percentages for current inference features.\n3. Evaluates PSI formula and triggers automated retraining alert if PSI >= 0.2.",
+            expectedOutput: "Computed PSI: 0.3842 -> Action: Retrain Model",
+            commonMistakes: "Relying on ground-truth performance metrics (accuracy/F1) in real-time, forgetting that ground-truth labels often arrive weeks or months after prediction.",
+            bestPractices: "Monitor input data drift (PSI / KS-test) in real-time to catch issues immediately before delayed ground-truth labels arrive.",
+            practiceTask: "Implement an automated drift monitor using Evidently AI that generates an HTML report on an e-commerce tabular dataset.",
+            keyTakeaway: "PSI and statistical drift monitoring provide real-time visibility into feature decay, triggering proactive model retraining."
           }
         ],
-        "practicalExercise": "Set up a Feast feature store with Redis online serving and perform point-in-time correct historical feature retrieval.",
-        "competencyVerification": "Proves feature store architecture, Feast integration, and training-serving skew elimination at Level 5.",
-        "resources": [
-        {
-                "title": "Feast Official Documentation: Feature Store Architecture",
-                "url": "https://docs.feast.dev/",
-                "description": "Point-in-time correct historical feature retrieval and low-latency online Redis serving.",
-                "type": "documentation",
-                "provider": "Feast Documentation"
-        },
-        {
-                "title": "Hopsworks Feature Store Documentation: Concept Guide",
-                "url": "https://docs.hopsworks.ai/latest/concepts/feature_store/",
-                "description": "Centralized feature cataloging, feature group versioning, and feature transformations.",
-                "type": "documentation",
-                "provider": "Hopsworks Documentation"
-        }
-]
-      },
-      "keyConcepts": [
-        {
-          "section": "Section 1 — Foundations & Core Mechanics",
-          "topic": "Feature Stores: Feast & Centralized Feature Management Architecture",
-          "title": "Lesson 1 — Architectural Foundations & Core Principles of Feature Stores",
-          "prerequisites": "Prerequisites for Feature Stores: Feast & Centralized Feature Management: foundational domain concepts and system design.",
-          "description": "Comprehensive architectural deep dive into Feature Stores: Feast & Centralized Feature Management, detailing foundational execution models, data structures, and core operating invariants.",
-          "whyItMatters": "Establishes structural competency, preventing common architectural anti-patterns and runtime failures in enterprise environments.",
-          "howItWorks": "Operates through modular components with strict interface contracts, managing lifecycle transitions and data flow state transformations.",
-          "stepByStep": [
-            "Step 1: Initialize the core Feature Stores execution context and configure runtime invariants.",
-            "Step 2: Establish boundary contracts and schema validation rules.",
-            "Step 3: Execute core processing loop and state synchronization.",
-            "Step 4: Verify downstream integration guarantees and error containment boundaries."
-          ],
-          "workedExample": "Concrete Execution Scenario:\nInput Request: Validated domain entity with configured operational parameters.\nProcessing: Component evaluates constraints, applies domain logic, and emits state update.\nOutput: Guaranteed deterministic result adhering to enterprise service level objectives.",
-          "realWorldUsage": "Used in high-availability enterprise services, automated data pipelines, and mission-critical cloud infrastructure.",
-          "codeSnippet": "# Core Implementation Pattern: Feature Stores: Feast & Centralized Feature Management\nclass ProductionComponent:\n    def __init__(self, config: dict):\n        self.config = config\n        self._is_active = True\n\n    def process_workload(self, payload: dict) -> dict:\n        if not self._is_active:\n            raise RuntimeError('Component inactive')\n        return {'status': 'SUCCESS', 'processed': payload, 'verified': True}\n\ncomponent = ProductionComponent(config={'env': 'production'})\nprint(component.process_workload({'task': 'Feature Stores'}))",
-          "codeExplanation": "1. Initializes component with strict configuration encapsulation.\n2. Validates operational state before executing workload.\n3. Returns structured execution payload.",
-          "expectedOutput": "{'status': 'SUCCESS', 'processed': {'task': 'Feature Stores'}, 'verified': True}",
-          "commonMistakes": "Violating separation of concerns by coupling Feature Stores logic directly to transport layers.",
-          "bestPractices": "Always encapsulate domain logic behind strict interface contracts and validate boundary inputs defensively.",
-          "practiceTask": "Implement a minimal working prototype of Feature Stores with automated input validation.",
-          "keyTakeaway": "Understanding the core architectural principles of Feature Stores is essential for designing resilient, production-grade systems."
-        },
-        {
-          "section": "Section 1 — Foundations & Core Mechanics",
-          "topic": "Feature Stores: Feast & Centralized Feature Management Implementation",
-          "title": "Lesson 2 — Step-by-Step Implementation & Algorithm Mechanics",
-          "prerequisites": "Lesson 1 (Architectural Foundations).",
-          "description": "Detailed step-by-step implementation mechanics, algorithmic flows, and data transformations for Feature Stores: Feast & Centralized Feature Management.",
-          "whyItMatters": "Translates high-level theoretical concepts into concrete, maintainable, and high-performance production implementations.",
-          "howItWorks": "Processes data via structured transformation pipelines, managing memory efficiency, concurrency safety, and execution state.",
-          "stepByStep": [
-            "Step 1: Ingest input payloads and normalize data representations.",
-            "Step 2: Apply primary domain transformations and state mutations.",
-            "Step 3: Handle edge cases, null boundaries, and invalid parameter transitions.",
-            "Step 4: Emit validated output and persist operational state."
-          ],
-          "workedExample": "Input Data Transformation:\nRaw Payload: `{'id': 101, 'metric': 42.5, 'flag': True}`\nProcessing: Normalizes types -> validates bounds -> calculates derived metrics.\nTransformed Result: `{'id': 101, 'score': 0.85, 'status': 'OPTIMAL'}`.",
-          "realWorldUsage": "Production runtime execution across scalable distributed systems and analytics engines.",
-          "codeSnippet": "# Implementation Execution Loop\ndef execute_pipeline_step(data: list) -> list:\n    results = []\n    for item in data:\n        transformed = {'key': item, 'value': item * 2, 'valid': True}\n        results.append(transformed)\n    return results\n\nprint('Processed Steps:', execute_pipeline_step([10, 20, 30]))",
-          "codeExplanation": "1. Iterates over input stream with $O(N)$ linear time complexity.\n2. Emits structured transformed output records.",
-          "expectedOutput": "Processed Steps: [{'key': 10, 'value': 20, 'valid': True}, {'key': 20, 'value': 40, 'valid': True}, {'key': 30, 'value': 60, 'valid': True}]",
-          "commonMistakes": "Failing to handle empty sequences or null pointers during pipeline transformations.",
-          "bestPractices": "Profile algorithmic time complexity and memory allocations before scaling to production volumes.",
-          "practiceTask": "Construct a unit-tested implementation of the Feature Stores data transformation function.",
-          "keyTakeaway": "Methodical step-by-step implementation ensures deterministic behavior and simplifies debugging in production."
-        },
-        {
-          "section": "Section 2 — Production Engineering & Best Practices",
-          "topic": "Production Optimization",
-          "title": "Lesson 3 — Performance Tuning, Error Handling & Production Best Practices",
-          "prerequisites": "Lesson 2 (Implementation Mechanics).",
-          "description": "Production engineering strategies: latency optimization, error containment, monitoring observability, and defensive design for Feature Stores: Feast & Centralized Feature Management.",
-          "whyItMatters": "Prevents cascading system outages, resource exhaustion, and silent data corruption under high-load enterprise conditions.",
-          "howItWorks": "Combines proactive health checks, structured logging, automated retry policies with exponential backoff, and circuit breaker patterns.",
-          "stepByStep": [
-            "Step 1: Implement structured telemetry and metric tracking (P50, P95, P99 latencies).",
-            "Step 2: Configure bounded timeouts and circuit breaking thresholds.",
-            "Step 3: Handle transient faults with exponential backoff and jitter.",
-            "Step 4: Validate graceful degradation paths under resource starvation."
-          ],
-          "workedExample": "Fault Injection Scenario:\nDownstream dependency experiences 500ms latency spike.\nCircuit breaker detects threshold violation -> trips to Open state -> serves cached fallback response in 2ms without cascading failure.",
-          "realWorldUsage": "Enterprise cloud services, mission-critical API gateways, and distributed microservices.",
-          "codeSnippet": "# Defensive Error Handling Pattern\nimport time\n\ndef execute_with_retry(operation_fn, max_retries=3, backoff_base=0.1):\n    for attempt in range(max_retries):\n        try:\n            return operation_fn()\n        except Exception as e:\n            if attempt == max_retries - 1:\n                raise\n            time.sleep(backoff_base * (2 ** attempt))\n\nresult = execute_with_retry(lambda: 'SUCCESSFUL_EXECUTION')\nprint(f'Execution Status: {result}')",
-          "codeExplanation": "1. Catches transient exceptions and applies exponential backoff delay.\n2. Prevents thundering herd problems during system recovery.",
-          "expectedOutput": "Execution Status: SUCCESSFUL_EXECUTION",
-          "commonMistakes": "Catching generic exceptions silently without logging or alerting, hiding critical production failures.",
-          "bestPractices": "Always configure explicit request timeouts, health probes, and structured JSON logs.",
-          "practiceTask": "Implement a retry decorator with configurable backoff and max attempt parameters.",
-          "keyTakeaway": "Robust production engineering for Feature Stores requires proactive error containment, latency budgets, and structured observability."
-        },
-        {
-          "section": "Section 2 — Production Engineering & Best Practices",
-          "topic": "Review & Competency",
-          "title": "Lesson 4 — Module Review, Practice Challenge & Key Takeaways",
-          "prerequisites": "Lessons 1 through 3.",
-          "description": "Comprehensive synthesis of architectural principles, algorithmic patterns, and production guidelines for Feature Stores: Feast & Centralized Feature Management.",
-          "whyItMatters": "Consolidates theoretical knowledge into practical skills required for Level 4/5 competency qualification.",
-          "howItWorks": "Integrates core theorems, code patterns, and diagnostic checklists into an actionable practitioner reference.",
-          "stepByStep": [
-            "1. Architectural baseline: understand core system components and invariants.",
-            "2. Implementation standard: build modular, leak-free transformation pipelines.",
-            "3. Production readiness: enforce timeouts, circuit breakers, and telemetry monitoring.",
-            "4. Hands-on verification: complete the practical lab exercise to qualify for competency elevation."
-          ],
-          "workedExample": "Competency Qualification Checklist:\n[OK] Core architecture and lifecycle understood.\n[OK] Production error containment verified.\n[OK] Practical lab implementation completed satisfying target benchmarks.",
-          "realWorldUsage": "Practitioner competency baseline across enterprise engineering teams.",
-          "codeSnippet": "# Quick Competency Verification Checklist\nchecklist = [\n    '1. Architecture contracts and data flow verified',\n    '2. Input schema validation and error containment implemented',\n    '3. Performance benchmarks and latency targets satisfied'\n]\nfor item in checklist:\n    print(f'[READY] {item}')",
-          "codeExplanation": "1. Verifies complete module mastery before proceeding to the practical hands-on lab.",
-          "expectedOutput": "[READY] 1. Architecture contracts and data flow verified\n[READY] 2. Input schema validation and error containment implemented\n[READY] 3. Performance benchmarks and latency targets satisfied",
-          "commonMistakes": "Attempting competency assessment before completing the practical hands-on lab exercise.",
-          "bestPractices": "Review key takeaways and test edge cases thoroughly in your practical lab implementation.",
-          "practiceTask": "Complete the practical hands-on lab exercise below to verify your mastery of Feature Stores.",
-          "keyTakeaway": "You have mastered the architectural foundations, implementation patterns, and production best practices for Feature Stores."
-        }
-      ]
+        practicalExercise: "Build an automated model monitoring service in Python that calculates Population Stability Index (PSI) and Kolmogorov-Smirnov statistics on incoming inference streams and triggers Slack/webhook alerts.",
+        competencyVerification: "Demonstrates data and concept drift mathematics, PSI calculation, and automated ML monitoring at Level 4.",
+        resources: [
+          {
+            title: "Evidently AI Documentation: Monitoring Data Drift & Model Performance",
+            url: "https://docs.evidentlyai.com/",
+            description: "Data drift detection, statistical tests, PSI calculation, and automated drift reporting.",
+            type: "documentation",
+            provider: "Evidently AI"
+          },
+          {
+            title: "A Survey on Concept Drift Adaptation (Lu et al., ACM Computing Surveys)",
+            url: "https://dl.acm.org/doi/10.1145/3299866",
+            description: "Taxonomy of concept drift, detection algorithms, and continuous adaptation strategies.",
+            type: "specification",
+            provider: "ACM"
+          }
+        ]
+      }
     },
     {
-      "id": "mlops-mod-9",
-      "order": 9,
-      "title": "Module 9 — Data Drift, Concept Drift & Production Model Monitoring",
-      "durationMinutes": 200,
-      "summary": "Monitoring ML in production: Data Drift (Kolmogorov-Smirnov test, Population Stability Index / PSI), Concept Drift (loss degradation over time), Evidently AI dashboards, and automated anomaly alerting.",
-      "learningObjectives": [
-        "Calculate Population Stability Index (PSI) and Wasserstein Distance across incoming feature streams.",
-        "Detect concept drift and covariate shift using Evidently AI monitoring suites.",
-        "Configure automated Slack/PagerDuty alerting when data drift exceeds statistical thresholds."
+      id: "mlops-mod-9",
+      order: 9,
+      title: "Module 9 — Automated Retraining Pipelines & Continuous Training (CT) Triggers",
+      durationMinutes: 180,
+      summary: "Continuous Training (CT) architecture, retraining trigger strategies (schedule-based, drift-driven, performance-driven), automated data extraction, and model candidate validation gates.",
+      learningObjectives: [
+        "Architect event-driven Continuous Training (CT) pipelines triggered by drift alerts.",
+        "Implement automated model candidate benchmarking against champion models.",
+        "Configure automated rollback and alert notifications for failed retraining runs."
       ],
-      "resources": [
+      resources: [
         {
-                "title": "Evidently AI Documentation: Data Drift & Model Monitoring",
-                "url": "https://docs.evidentlyai.com/",
-                "description": "Statistical drift detection (Kolmogorov-Smirnov, Wasserstein distance) and quality dashboards.",
-                "type": "documentation",
-                "provider": "Evidently AI"
+          title: "Google Cloud: Continuous Training in MLOps Level 1 & 2",
+          url: "https://cloud.google.com/architecture/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning#mlops_level_1_ml_pipeline_automation",
+          description: "Triggering pipelines on drift, automated model validation, and continuous training loops.",
+          type: "guide",
+          provider: "Google Cloud"
         },
         {
-                "title": "WhyLabs Documentation: AI Observability & Monitoring",
-                "url": "https://docs.whylabs.ai/",
-                "description": "Continuous tracking of data quality degradation, distribution shifts, and anomalous inputs.",
-                "type": "documentation",
-                "provider": "WhyLabs"
+          title: "Airflow for ML: Automating Machine Learning Workflows",
+          url: "https://airflow.apache.org/docs/apache-airflow/stable/use-cases/machine-learning.html",
+          description: "DAG task dependencies, retraining triggers, sensors, and pipeline scheduling.",
+          type: "documentation",
+          provider: "Apache Software Foundation"
         }
-],
-      "content": {
-        "overview": "Machine learning models degrade over time as real-world behaviors change. Continuous monitoring tracks statistical distribution drift between training reference data and live production traffic.",
-        "keyConcepts": [
+      ],
+      content: {
+        overview: "Continuous Training (CT) automates the retraining, evaluation, and redeployment of models in response to real-world drift or new labeled data. Establishing automated champion-challenger gates ensures newly retrained models outperform current production models before deployment.",
+        keyConcepts: [
           {
-            "section": "Section 1 — Foundations & Core Mechanics",
-            "topic": "Data Drift, Concept Drift & Production Model Monitoring Architecture",
-            "title": "Lesson 1 — Architectural Foundations & Core Principles of Data Drift, Concept Drift & Production Model Monitoring",
-            "prerequisites": "Prerequisites for Data Drift, Concept Drift & Production Model Monitoring: foundational domain concepts and system design.",
-            "description": "Comprehensive architectural deep dive into Data Drift, Concept Drift & Production Model Monitoring, detailing foundational execution models, data structures, and core operating invariants.",
-            "whyItMatters": "Establishes structural competency, preventing common architectural anti-patterns and runtime failures in enterprise environments.",
-            "howItWorks": "Operates through modular components with strict interface contracts, managing lifecycle transitions and data flow state transformations.",
-            "stepByStep": [
-              "Step 1: Initialize the core Data Drift, Concept Drift & Production Model Monitoring execution context and configure runtime invariants.",
-              "Step 2: Establish boundary contracts and schema validation rules.",
-              "Step 3: Execute core processing loop and state synchronization.",
-              "Step 4: Verify downstream integration guarantees and error containment boundaries."
+            section: "Section 1 — Continuous Training & Champion-Challenger",
+            topic: "CT Triggers & Automated Validation",
+            title: "Lesson 1 — Automated Retraining Triggers, Champion-Challenger Benchmarking & Safety Gates",
+            prerequisites: "Module 8 (Model Monitoring & Drift).",
+            description: "How drift alerts trigger automated orchestrator DAGs (Airflow/Kubeflow), how new challenger models train on fresh data windows, and how automated validation gates promote challengers only when they surpass champion performance.",
+            whyItMatters: "Blindly deploying newly retrained models without validation can deploy an overfitted or broken model if recent training data was noisy or incomplete.",
+            howItWorks: "Drift monitor emits a webhook -> Airflow triggers CT DAG -> Retrains model on last 30 days of data -> Evaluates Challenger on held-out gold benchmark -> If Challenger Accuracy > Champion Accuracy + 1%, promotes to Production Registry.",
+            stepByStep: [
+              "Step 1: Drift monitor detects $\text{PSI} \ge 0.2$ and emits `TRIGGER_RETRAINING` event.",
+              "Step 2: Orchestrator fetches fresh labeled data and runs preprocessing.",
+              "Step 3: Train Challenger model and log metrics to MLflow.",
+              "Step 4: Execute automated Champion-Challenger benchmark.",
+              "Step 5: If passed, deploy to Canary; otherwise, alert engineering team."
             ],
-            "workedExample": "Concrete Execution Scenario:\nInput Request: Validated domain entity with configured operational parameters.\nProcessing: Component evaluates constraints, applies domain logic, and emits state update.\nOutput: Guaranteed deterministic result adhering to enterprise service level objectives.",
-            "realWorldUsage": "Used in high-availability enterprise services, automated data pipelines, and mission-critical cloud infrastructure.",
-            "codeSnippet": "# Core Implementation Pattern: Data Drift, Concept Drift & Production Model Monitoring\nclass ProductionComponent:\n    def __init__(self, config: dict):\n        self.config = config\n        self._is_active = True\n\n    def process_workload(self, payload: dict) -> dict:\n        if not self._is_active:\n            raise RuntimeError('Component inactive')\n        return {'status': 'SUCCESS', 'processed': payload, 'verified': True}\n\ncomponent = ProductionComponent(config={'env': 'production'})\nprint(component.process_workload({'task': 'Data Drift, Concept Drift & Production Model Monitoring'}))",
-            "codeExplanation": "1. Initializes component with strict configuration encapsulation.\n2. Validates operational state before executing workload.\n3. Returns structured execution payload.",
-            "expectedOutput": "{'status': 'SUCCESS', 'processed': {'task': 'Data Drift, Concept Drift & Production Model Monitoring'}, 'verified': True}",
-            "commonMistakes": "Violating separation of concerns by coupling Data Drift, Concept Drift & Production Model Monitoring logic directly to transport layers.",
-            "bestPractices": "Always encapsulate domain logic behind strict interface contracts and validate boundary inputs defensively.",
-            "practiceTask": "Implement a minimal working prototype of Data Drift, Concept Drift & Production Model Monitoring with automated input validation.",
-            "keyTakeaway": "Understanding the core architectural principles of Data Drift, Concept Drift & Production Model Monitoring is essential for designing resilient, production-grade systems."
-          },
-          {
-            "section": "Section 1 — Foundations & Core Mechanics",
-            "topic": "Data Drift, Concept Drift & Production Model Monitoring Implementation",
-            "title": "Lesson 2 — Step-by-Step Implementation & Algorithm Mechanics",
-            "prerequisites": "Lesson 1 (Architectural Foundations).",
-            "description": "Detailed step-by-step implementation mechanics, algorithmic flows, and data transformations for Data Drift, Concept Drift & Production Model Monitoring.",
-            "whyItMatters": "Translates high-level theoretical concepts into concrete, maintainable, and high-performance production implementations.",
-            "howItWorks": "Processes data via structured transformation pipelines, managing memory efficiency, concurrency safety, and execution state.",
-            "stepByStep": [
-              "Step 1: Ingest input payloads and normalize data representations.",
-              "Step 2: Apply primary domain transformations and state mutations.",
-              "Step 3: Handle edge cases, null boundaries, and invalid parameter transitions.",
-              "Step 4: Emit validated output and persist operational state."
-            ],
-            "workedExample": "Input Data Transformation:\nRaw Payload: `{'id': 101, 'metric': 42.5, 'flag': True}`\nProcessing: Normalizes types -> validates bounds -> calculates derived metrics.\nTransformed Result: `{'id': 101, 'score': 0.85, 'status': 'OPTIMAL'}`.",
-            "realWorldUsage": "Production runtime execution across scalable distributed systems and analytics engines.",
-            "codeSnippet": "# Implementation Execution Loop\ndef execute_pipeline_step(data: list) -> list:\n    results = []\n    for item in data:\n        transformed = {'key': item, 'value': item * 2, 'valid': True}\n        results.append(transformed)\n    return results\n\nprint('Processed Steps:', execute_pipeline_step([10, 20, 30]))",
-            "codeExplanation": "1. Iterates over input stream with $O(N)$ linear time complexity.\n2. Emits structured transformed output records.",
-            "expectedOutput": "Processed Steps: [{'key': 10, 'value': 20, 'valid': True}, {'key': 20, 'value': 40, 'valid': True}, {'key': 30, 'value': 60, 'valid': True}]",
-            "commonMistakes": "Failing to handle empty sequences or null pointers during pipeline transformations.",
-            "bestPractices": "Profile algorithmic time complexity and memory allocations before scaling to production volumes.",
-            "practiceTask": "Construct a unit-tested implementation of the Data Drift, Concept Drift & Production Model Monitoring data transformation function.",
-            "keyTakeaway": "Methodical step-by-step implementation ensures deterministic behavior and simplifies debugging in production."
-          },
-          {
-            "section": "Section 2 — Production Engineering & Best Practices",
-            "topic": "Production Optimization",
-            "title": "Lesson 3 — Performance Tuning, Error Handling & Production Best Practices",
-            "prerequisites": "Lesson 2 (Implementation Mechanics).",
-            "description": "Production engineering strategies: latency optimization, error containment, monitoring observability, and defensive design for Data Drift, Concept Drift & Production Model Monitoring.",
-            "whyItMatters": "Prevents cascading system outages, resource exhaustion, and silent data corruption under high-load enterprise conditions.",
-            "howItWorks": "Combines proactive health checks, structured logging, automated retry policies with exponential backoff, and circuit breaker patterns.",
-            "stepByStep": [
-              "Step 1: Implement structured telemetry and metric tracking (P50, P95, P99 latencies).",
-              "Step 2: Configure bounded timeouts and circuit breaking thresholds.",
-              "Step 3: Handle transient faults with exponential backoff and jitter.",
-              "Step 4: Validate graceful degradation paths under resource starvation."
-            ],
-            "workedExample": "Fault Injection Scenario:\nDownstream dependency experiences 500ms latency spike.\nCircuit breaker detects threshold violation -> trips to Open state -> serves cached fallback response in 2ms without cascading failure.",
-            "realWorldUsage": "Enterprise cloud services, mission-critical API gateways, and distributed microservices.",
-            "codeSnippet": "# Defensive Error Handling Pattern\nimport time\n\ndef execute_with_retry(operation_fn, max_retries=3, backoff_base=0.1):\n    for attempt in range(max_retries):\n        try:\n            return operation_fn()\n        except Exception as e:\n            if attempt == max_retries - 1:\n                raise\n            time.sleep(backoff_base * (2 ** attempt))\n\nresult = execute_with_retry(lambda: 'SUCCESSFUL_EXECUTION')\nprint(f'Execution Status: {result}')",
-            "codeExplanation": "1. Catches transient exceptions and applies exponential backoff delay.\n2. Prevents thundering herd problems during system recovery.",
-            "expectedOutput": "Execution Status: SUCCESSFUL_EXECUTION",
-            "commonMistakes": "Catching generic exceptions silently without logging or alerting, hiding critical production failures.",
-            "bestPractices": "Always configure explicit request timeouts, health probes, and structured JSON logs.",
-            "practiceTask": "Implement a retry decorator with configurable backoff and max attempt parameters.",
-            "keyTakeaway": "Robust production engineering for Data Drift, Concept Drift & Production Model Monitoring requires proactive error containment, latency budgets, and structured observability."
-          },
-          {
-            "section": "Section 2 — Production Engineering & Best Practices",
-            "topic": "Review & Competency",
-            "title": "Lesson 4 — Module Review, Practice Challenge & Key Takeaways",
-            "prerequisites": "Lessons 1 through 3.",
-            "description": "Comprehensive synthesis of architectural principles, algorithmic patterns, and production guidelines for Data Drift, Concept Drift & Production Model Monitoring.",
-            "whyItMatters": "Consolidates theoretical knowledge into practical skills required for Level 4/5 competency qualification.",
-            "howItWorks": "Integrates core theorems, code patterns, and diagnostic checklists into an actionable practitioner reference.",
-            "stepByStep": [
-              "1. Architectural baseline: understand core system components and invariants.",
-              "2. Implementation standard: build modular, leak-free transformation pipelines.",
-              "3. Production readiness: enforce timeouts, circuit breakers, and telemetry monitoring.",
-              "4. Hands-on verification: complete the practical lab exercise to qualify for competency elevation."
-            ],
-            "workedExample": "Competency Qualification Checklist:\n[OK] Core architecture and lifecycle understood.\n[OK] Production error containment verified.\n[OK] Practical lab implementation completed satisfying target benchmarks.",
-            "realWorldUsage": "Practitioner competency baseline across enterprise engineering teams.",
-            "codeSnippet": "# Quick Competency Verification Checklist\nchecklist = [\n    '1. Architecture contracts and data flow verified',\n    '2. Input schema validation and error containment implemented',\n    '3. Performance benchmarks and latency targets satisfied'\n]\nfor item in checklist:\n    print(f'[READY] {item}')",
-            "codeExplanation": "1. Verifies complete module mastery before proceeding to the practical hands-on lab.",
-            "expectedOutput": "[READY] 1. Architecture contracts and data flow verified\n[READY] 2. Input schema validation and error containment implemented\n[READY] 3. Performance benchmarks and latency targets satisfied",
-            "commonMistakes": "Attempting competency assessment before completing the practical hands-on lab exercise.",
-            "bestPractices": "Review key takeaways and test edge cases thoroughly in your practical lab implementation.",
-            "practiceTask": "Complete the practical hands-on lab exercise below to verify your mastery of Data Drift, Concept Drift & Production Model Monitoring.",
-            "keyTakeaway": "You have mastered the architectural foundations, implementation patterns, and production best practices for Data Drift, Concept Drift & Production Model Monitoring."
+            workedExample: "Champion-Challenger Promotion Gate:\n- Current Champion: $F1 = 0.88$, P99 Latency = 24ms.\n- Retrained Challenger: $F1 = 0.91$, P99 Latency = 22ms.\n- Decision: Challenger passes both accuracy gain ($+3\\%$) and latency constraints -> Automated promotion approved.",
+            realWorldUsage: "E-commerce recommendations, ad-click prediction, automated fraud defense.",
+            codeSnippet: "# Continuous Training Orchestrator & Champion-Challenger Gate (Python)\nclass ContinuousTrainingOrchestrator:\n    def __init__(self, current_champion_f1: float = 0.88):\n        self.champion_f1 = current_champion_f1\n\n    def handle_drift_event(self, psi_score: float) -> dict:\n        if psi_score < 0.2:\n            return {'status': 'SKIPPED', 'reason': 'Drift below retraining threshold'}\n\n        print(f'[CT Trigger] Severe drift detected (PSI={psi_score:.2f}). Starting retraining pipeline...')\n        \n        # Simulating automated training on fresh data\n        challenger_f1 = 0.915\n        print(f'[CT Benchmark] Champion F1: {self.champion_f1:.3f} vs Challenger F1: {challenger_f1:.3f}')\n        \n        if challenger_f1 > self.champion_f1:\n            self.champion_f1 = challenger_f1\n            return {'status': 'PROMOTED', 'new_champion_f1': challenger_f1, 'action': 'Deployed to Production'}\n        else:\n            return {'status': 'REJECTED', 'reason': 'Challenger failed to surpass Champion baseline'}\n\nct_system = ContinuousTrainingOrchestrator(current_champion_f1=0.88)\nresult = ct_system.handle_drift_event(psi_score=0.28)\nprint('CT Pipeline Result:', result)",
+            codeExplanation: "1. Listens for automated drift threshold violations.\n2. Executes simulated retraining pipeline.\n3. Enforces Champion-Challenger evaluation gate before allowing production deployment.",
+            expectedOutput: "[CT Trigger] Severe drift detected (PSI=0.28)...\nCT Pipeline Result: {'status': 'PROMOTED', 'new_champion_f1': 0.915, 'action': 'Deployed to Production'}",
+            commonMistakes: "Triggering full retraining on every minor data perturbation without threshold guards, wasting excessive cloud compute and causing training thrashing.",
+            bestPractices: "Require at least 3 consecutive drift checks and require challengers to beat champions on fixed historical benchmark sets.",
+            practiceTask: "Design an Airflow DAG specification that triggers when a webhook receives an Evidently AI drift alert.",
+            keyTakeaway: "Continuous Training automates model maintenance while Champion-Challenger evaluation gates protect production systems from regressions."
           }
         ],
-        "practicalExercise": "Build an automated drift monitoring service with Evidently AI and configure alerting thresholds.",
-        "competencyVerification": "Demonstrates statistical data drift detection, concept drift diagnostics, and production monitoring at Level 5.",
-        "resources": [
-        {
-                "title": "Evidently AI Documentation: Data Drift & Model Monitoring",
-                "url": "https://docs.evidentlyai.com/",
-                "description": "Statistical drift detection (Kolmogorov-Smirnov, Wasserstein distance) and quality dashboards.",
-                "type": "documentation",
-                "provider": "Evidently AI"
-        },
-        {
-                "title": "WhyLabs Documentation: AI Observability & Monitoring",
-                "url": "https://docs.whylabs.ai/",
-                "description": "Continuous tracking of data quality degradation, distribution shifts, and anomalous inputs.",
-                "type": "documentation",
-                "provider": "WhyLabs"
-        }
-]
-      },
-      "keyConcepts": [
-        {
-          "section": "Section 1 — Foundations & Core Mechanics",
-          "topic": "Data Drift, Concept Drift & Production Model Monitoring Architecture",
-          "title": "Lesson 1 — Architectural Foundations & Core Principles of Data Drift, Concept Drift & Production Model Monitoring",
-          "prerequisites": "Prerequisites for Data Drift, Concept Drift & Production Model Monitoring: foundational domain concepts and system design.",
-          "description": "Comprehensive architectural deep dive into Data Drift, Concept Drift & Production Model Monitoring, detailing foundational execution models, data structures, and core operating invariants.",
-          "whyItMatters": "Establishes structural competency, preventing common architectural anti-patterns and runtime failures in enterprise environments.",
-          "howItWorks": "Operates through modular components with strict interface contracts, managing lifecycle transitions and data flow state transformations.",
-          "stepByStep": [
-            "Step 1: Initialize the core Data Drift, Concept Drift & Production Model Monitoring execution context and configure runtime invariants.",
-            "Step 2: Establish boundary contracts and schema validation rules.",
-            "Step 3: Execute core processing loop and state synchronization.",
-            "Step 4: Verify downstream integration guarantees and error containment boundaries."
-          ],
-          "workedExample": "Concrete Execution Scenario:\nInput Request: Validated domain entity with configured operational parameters.\nProcessing: Component evaluates constraints, applies domain logic, and emits state update.\nOutput: Guaranteed deterministic result adhering to enterprise service level objectives.",
-          "realWorldUsage": "Used in high-availability enterprise services, automated data pipelines, and mission-critical cloud infrastructure.",
-          "codeSnippet": "# Core Implementation Pattern: Data Drift, Concept Drift & Production Model Monitoring\nclass ProductionComponent:\n    def __init__(self, config: dict):\n        self.config = config\n        self._is_active = True\n\n    def process_workload(self, payload: dict) -> dict:\n        if not self._is_active:\n            raise RuntimeError('Component inactive')\n        return {'status': 'SUCCESS', 'processed': payload, 'verified': True}\n\ncomponent = ProductionComponent(config={'env': 'production'})\nprint(component.process_workload({'task': 'Data Drift, Concept Drift & Production Model Monitoring'}))",
-          "codeExplanation": "1. Initializes component with strict configuration encapsulation.\n2. Validates operational state before executing workload.\n3. Returns structured execution payload.",
-          "expectedOutput": "{'status': 'SUCCESS', 'processed': {'task': 'Data Drift, Concept Drift & Production Model Monitoring'}, 'verified': True}",
-          "commonMistakes": "Violating separation of concerns by coupling Data Drift, Concept Drift & Production Model Monitoring logic directly to transport layers.",
-          "bestPractices": "Always encapsulate domain logic behind strict interface contracts and validate boundary inputs defensively.",
-          "practiceTask": "Implement a minimal working prototype of Data Drift, Concept Drift & Production Model Monitoring with automated input validation.",
-          "keyTakeaway": "Understanding the core architectural principles of Data Drift, Concept Drift & Production Model Monitoring is essential for designing resilient, production-grade systems."
-        },
-        {
-          "section": "Section 1 — Foundations & Core Mechanics",
-          "topic": "Data Drift, Concept Drift & Production Model Monitoring Implementation",
-          "title": "Lesson 2 — Step-by-Step Implementation & Algorithm Mechanics",
-          "prerequisites": "Lesson 1 (Architectural Foundations).",
-          "description": "Detailed step-by-step implementation mechanics, algorithmic flows, and data transformations for Data Drift, Concept Drift & Production Model Monitoring.",
-          "whyItMatters": "Translates high-level theoretical concepts into concrete, maintainable, and high-performance production implementations.",
-          "howItWorks": "Processes data via structured transformation pipelines, managing memory efficiency, concurrency safety, and execution state.",
-          "stepByStep": [
-            "Step 1: Ingest input payloads and normalize data representations.",
-            "Step 2: Apply primary domain transformations and state mutations.",
-            "Step 3: Handle edge cases, null boundaries, and invalid parameter transitions.",
-            "Step 4: Emit validated output and persist operational state."
-          ],
-          "workedExample": "Input Data Transformation:\nRaw Payload: `{'id': 101, 'metric': 42.5, 'flag': True}`\nProcessing: Normalizes types -> validates bounds -> calculates derived metrics.\nTransformed Result: `{'id': 101, 'score': 0.85, 'status': 'OPTIMAL'}`.",
-          "realWorldUsage": "Production runtime execution across scalable distributed systems and analytics engines.",
-          "codeSnippet": "# Implementation Execution Loop\ndef execute_pipeline_step(data: list) -> list:\n    results = []\n    for item in data:\n        transformed = {'key': item, 'value': item * 2, 'valid': True}\n        results.append(transformed)\n    return results\n\nprint('Processed Steps:', execute_pipeline_step([10, 20, 30]))",
-          "codeExplanation": "1. Iterates over input stream with $O(N)$ linear time complexity.\n2. Emits structured transformed output records.",
-          "expectedOutput": "Processed Steps: [{'key': 10, 'value': 20, 'valid': True}, {'key': 20, 'value': 40, 'valid': True}, {'key': 30, 'value': 60, 'valid': True}]",
-          "commonMistakes": "Failing to handle empty sequences or null pointers during pipeline transformations.",
-          "bestPractices": "Profile algorithmic time complexity and memory allocations before scaling to production volumes.",
-          "practiceTask": "Construct a unit-tested implementation of the Data Drift, Concept Drift & Production Model Monitoring data transformation function.",
-          "keyTakeaway": "Methodical step-by-step implementation ensures deterministic behavior and simplifies debugging in production."
-        },
-        {
-          "section": "Section 2 — Production Engineering & Best Practices",
-          "topic": "Production Optimization",
-          "title": "Lesson 3 — Performance Tuning, Error Handling & Production Best Practices",
-          "prerequisites": "Lesson 2 (Implementation Mechanics).",
-          "description": "Production engineering strategies: latency optimization, error containment, monitoring observability, and defensive design for Data Drift, Concept Drift & Production Model Monitoring.",
-          "whyItMatters": "Prevents cascading system outages, resource exhaustion, and silent data corruption under high-load enterprise conditions.",
-          "howItWorks": "Combines proactive health checks, structured logging, automated retry policies with exponential backoff, and circuit breaker patterns.",
-          "stepByStep": [
-            "Step 1: Implement structured telemetry and metric tracking (P50, P95, P99 latencies).",
-            "Step 2: Configure bounded timeouts and circuit breaking thresholds.",
-            "Step 3: Handle transient faults with exponential backoff and jitter.",
-            "Step 4: Validate graceful degradation paths under resource starvation."
-          ],
-          "workedExample": "Fault Injection Scenario:\nDownstream dependency experiences 500ms latency spike.\nCircuit breaker detects threshold violation -> trips to Open state -> serves cached fallback response in 2ms without cascading failure.",
-          "realWorldUsage": "Enterprise cloud services, mission-critical API gateways, and distributed microservices.",
-          "codeSnippet": "# Defensive Error Handling Pattern\nimport time\n\ndef execute_with_retry(operation_fn, max_retries=3, backoff_base=0.1):\n    for attempt in range(max_retries):\n        try:\n            return operation_fn()\n        except Exception as e:\n            if attempt == max_retries - 1:\n                raise\n            time.sleep(backoff_base * (2 ** attempt))\n\nresult = execute_with_retry(lambda: 'SUCCESSFUL_EXECUTION')\nprint(f'Execution Status: {result}')",
-          "codeExplanation": "1. Catches transient exceptions and applies exponential backoff delay.\n2. Prevents thundering herd problems during system recovery.",
-          "expectedOutput": "Execution Status: SUCCESSFUL_EXECUTION",
-          "commonMistakes": "Catching generic exceptions silently without logging or alerting, hiding critical production failures.",
-          "bestPractices": "Always configure explicit request timeouts, health probes, and structured JSON logs.",
-          "practiceTask": "Implement a retry decorator with configurable backoff and max attempt parameters.",
-          "keyTakeaway": "Robust production engineering for Data Drift, Concept Drift & Production Model Monitoring requires proactive error containment, latency budgets, and structured observability."
-        },
-        {
-          "section": "Section 2 — Production Engineering & Best Practices",
-          "topic": "Review & Competency",
-          "title": "Lesson 4 — Module Review, Practice Challenge & Key Takeaways",
-          "prerequisites": "Lessons 1 through 3.",
-          "description": "Comprehensive synthesis of architectural principles, algorithmic patterns, and production guidelines for Data Drift, Concept Drift & Production Model Monitoring.",
-          "whyItMatters": "Consolidates theoretical knowledge into practical skills required for Level 4/5 competency qualification.",
-          "howItWorks": "Integrates core theorems, code patterns, and diagnostic checklists into an actionable practitioner reference.",
-          "stepByStep": [
-            "1. Architectural baseline: understand core system components and invariants.",
-            "2. Implementation standard: build modular, leak-free transformation pipelines.",
-            "3. Production readiness: enforce timeouts, circuit breakers, and telemetry monitoring.",
-            "4. Hands-on verification: complete the practical lab exercise to qualify for competency elevation."
-          ],
-          "workedExample": "Competency Qualification Checklist:\n[OK] Core architecture and lifecycle understood.\n[OK] Production error containment verified.\n[OK] Practical lab implementation completed satisfying target benchmarks.",
-          "realWorldUsage": "Practitioner competency baseline across enterprise engineering teams.",
-          "codeSnippet": "# Quick Competency Verification Checklist\nchecklist = [\n    '1. Architecture contracts and data flow verified',\n    '2. Input schema validation and error containment implemented',\n    '3. Performance benchmarks and latency targets satisfied'\n]\nfor item in checklist:\n    print(f'[READY] {item}')",
-          "codeExplanation": "1. Verifies complete module mastery before proceeding to the practical hands-on lab.",
-          "expectedOutput": "[READY] 1. Architecture contracts and data flow verified\n[READY] 2. Input schema validation and error containment implemented\n[READY] 3. Performance benchmarks and latency targets satisfied",
-          "commonMistakes": "Attempting competency assessment before completing the practical hands-on lab exercise.",
-          "bestPractices": "Review key takeaways and test edge cases thoroughly in your practical lab implementation.",
-          "practiceTask": "Complete the practical hands-on lab exercise below to verify your mastery of Data Drift, Concept Drift & Production Model Monitoring.",
-          "keyTakeaway": "You have mastered the architectural foundations, implementation patterns, and production best practices for Data Drift, Concept Drift & Production Model Monitoring."
-        }
-      ]
+        practicalExercise: "Build an automated Continuous Training (CT) controller in Python that processes drift alert payloads, orchestrates retraining, and executes Champion-Challenger validation gates.",
+        competencyVerification: "Demonstrates Continuous Training architecture, automated retraining pipelines, and Champion-Challenger evaluation at Level 4.",
+        resources: [
+          {
+            title: "Google Cloud: Continuous Training in MLOps Level 1 & 2",
+            url: "https://cloud.google.com/architecture/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning#mlops_level_1_ml_pipeline_automation",
+            description: "Triggering pipelines on drift, automated model validation, and continuous training loops.",
+            type: "guide",
+            provider: "Google Cloud"
+          },
+          {
+            title: "Airflow for ML: Automating Machine Learning Workflows",
+            url: "https://airflow.apache.org/docs/apache-airflow/stable/use-cases/machine-learning.html",
+            description: "DAG task dependencies, retraining triggers, sensors, and pipeline scheduling.",
+            type: "documentation",
+            provider: "Apache Software Foundation"
+          }
+        ]
+      }
     },
     {
-      "id": "mlops-mod-10",
-      "order": 10,
-      "title": "Module 10 — A/B Testing, Canary Deployments & Shadow Model Rollouts",
-      "durationMinutes": 190,
-      "summary": "Safe model release strategies: Canary deployments (splitting traffic 90/10), Shadow deployments (mirroring live traffic to evaluate without user impact), Multi-Armed Bandits for dynamic allocation, and A/B statistical hypothesis testing.",
-      "learningObjectives": [
-        "Design Shadow Deployment pipelines mirroring production traffic to candidate models.",
-        "Implement Canary traffic splitting using Envoy / NGINX reverse proxies.",
-        "Perform two-sample t-tests and Chi-Squared hypothesis testing on live A/B experiment outcomes."
+      id: "mlops-mod-10",
+      order: 10,
+      title: "Module 10 — Scalable Distributed Training & GPU Orchestration on Kubernetes (Ray, Kubeflow)",
+      durationMinutes: 180,
+      summary: "Distributed training paradigms (Data Parallelism DDP, Tensor Parallelism, Pipeline Parallelism DeepSpeed/FSDP), Ray Train architecture, Kubeflow PyTorchJob operators, and Kubernetes GPU scheduling.",
+      learningObjectives: [
+        "Explain DistributedDataParallel (DDP) all-reduce gradient synchronization mechanics.",
+        "Scale distributed deep learning training across multi-node GPU clusters using Ray Train.",
+        "Configure Kubernetes Kubeflow PyTorchJob manifests with NVIDIA GPU resource limits."
       ],
-      "resources": [
+      resources: [
         {
-                "title": "Martin Fowler: Canary Releases & Shadow Deployments",
-                "url": "https://martinfowler.com/bliki/CanaryRelease.html",
-                "description": "Traffic splitting strategies for zero-downtime canary rollouts and shadow traffic mirroring.",
-                "type": "article",
-                "provider": "Martin Fowler"
+          title: "PyTorch Distributed Overview & DDP Architecture",
+          url: "https://pytorch.org/tutorials/beginner/dist_overview.html",
+          description: "DistributedDataParallel (DDP), Fully Sharded Data Parallel (FSDP), and NCCL backends.",
+          type: "documentation",
+          provider: "PyTorch Core Team"
         },
         {
-                "title": "Istio Service Mesh Documentation: Traffic Shifting",
-                "url": "https://istio.io/latest/docs/tasks/traffic-management/traffic-shifting/",
-                "description": "Configuring VirtualServices and DestinationRules for percentage-based ML model routing.",
-                "type": "documentation",
-                "provider": "Istio Documentation"
+          title: "Ray Train Official Documentation: Distributed Model Training at Scale",
+          url: "https://docs.ray.io/en/latest/train/train.html",
+          description: "Scaling PyTorch and Hugging Face training across GPU clusters with Ray Train.",
+          type: "documentation",
+          provider: "Anyscale / Ray"
         }
-],
-      "content": {
-        "overview": "Deploying new models directly to 100% of user traffic carries severe risk. Progressive release strategies like Shadowing and Canary rollouts validate real-world performance under genuine production loads safely.",
-        "keyConcepts": [
+      ],
+      content: {
+        overview: "Training modern deep learning and large language models exceeds the memory and compute capacity of single GPUs. DistributedDataParallel (DDP) and Ray Train orchestrate multi-node GPU clusters on Kubernetes with high-bandwidth NCCL ring all-reduce gradient synchronization.",
+        keyConcepts: [
           {
-            "section": "Section 1 — Foundations & Core Mechanics",
-            "topic": "A/B Testing, Canary Deployments & Shadow Model Rollouts Architecture",
-            "title": "Lesson 1 — Architectural Foundations & Core Principles of A/B Testing, Canary Deployments & Shadow Model Rollouts",
-            "prerequisites": "Prerequisites for A/B Testing, Canary Deployments & Shadow Model Rollouts: foundational domain concepts and system design.",
-            "description": "Comprehensive architectural deep dive into A/B Testing, Canary Deployments & Shadow Model Rollouts, detailing foundational execution models, data structures, and core operating invariants.",
-            "whyItMatters": "Establishes structural competency, preventing common architectural anti-patterns and runtime failures in enterprise environments.",
-            "howItWorks": "Operates through modular components with strict interface contracts, managing lifecycle transitions and data flow state transformations.",
-            "stepByStep": [
-              "Step 1: Initialize the core A/B Testing, Canary Deployments & Shadow Model Rollouts execution context and configure runtime invariants.",
-              "Step 2: Establish boundary contracts and schema validation rules.",
-              "Step 3: Execute core processing loop and state synchronization.",
-              "Step 4: Verify downstream integration guarantees and error containment boundaries."
+            section: "Section 1 — Distributed Training & Kubernetes",
+            topic: "DDP & Ray Train on K8s",
+            title: "Lesson 1 — PyTorch DistributedDataParallel (DDP), NCCL All-Reduce & Ray Train",
+            prerequisites: "Deep Learning Fundamentals and Kubernetes basics.",
+            description: "How DistributedDataParallel replicates models across GPUs, splits data batches, and synchronizes gradients using Ring All-Reduce over NCCL, and how Ray Train manages worker lifecycles on Kubernetes clusters.",
+            whyItMatters: "Single-GPU training takes weeks for large models. DDP achieves near-linear speedup across 8-64 GPUs.",
+            howItWorks: "Each GPU runs an identical model process with rank $r$. During backward pass, local gradients compute in parallel. The NCCL backend executes a Ring All-Reduce to average gradients across all GPUs simultaneously.",
+            stepByStep: [
+              "Step 1: Initialize process group with `torch.distributed.init_process_group(backend='nccl')`.",
+              "Step 2: Wrap model in `DistributedDataParallel(model, device_ids=[local_rank])`.",
+              "Step 3: Use `DistributedSampler` to ensure each GPU receives unique non-overlapping data chunks.",
+              "Step 4: Deploy on Kubernetes using Kubeflow `PyTorchJob` or KubeRay operator."
             ],
-            "workedExample": "Concrete Execution Scenario:\nInput Request: Validated domain entity with configured operational parameters.\nProcessing: Component evaluates constraints, applies domain logic, and emits state update.\nOutput: Guaranteed deterministic result adhering to enterprise service level objectives.",
-            "realWorldUsage": "Used in high-availability enterprise services, automated data pipelines, and mission-critical cloud infrastructure.",
-            "codeSnippet": "# Core Implementation Pattern: A/B Testing, Canary Deployments & Shadow Model Rollouts\nclass ProductionComponent:\n    def __init__(self, config: dict):\n        self.config = config\n        self._is_active = True\n\n    def process_workload(self, payload: dict) -> dict:\n        if not self._is_active:\n            raise RuntimeError('Component inactive')\n        return {'status': 'SUCCESS', 'processed': payload, 'verified': True}\n\ncomponent = ProductionComponent(config={'env': 'production'})\nprint(component.process_workload({'task': 'A/B Testing, Canary Deployments & Shadow Model Rollouts'}))",
-            "codeExplanation": "1. Initializes component with strict configuration encapsulation.\n2. Validates operational state before executing workload.\n3. Returns structured execution payload.",
-            "expectedOutput": "{'status': 'SUCCESS', 'processed': {'task': 'A/B Testing, Canary Deployments & Shadow Model Rollouts'}, 'verified': True}",
-            "commonMistakes": "Violating separation of concerns by coupling A/B Testing, Canary Deployments & Shadow Model Rollouts logic directly to transport layers.",
-            "bestPractices": "Always encapsulate domain logic behind strict interface contracts and validate boundary inputs defensively.",
-            "practiceTask": "Implement a minimal working prototype of A/B Testing, Canary Deployments & Shadow Model Rollouts with automated input validation.",
-            "keyTakeaway": "Understanding the core architectural principles of A/B Testing, Canary Deployments & Shadow Model Rollouts is essential for designing resilient, production-grade systems."
-          },
-          {
-            "section": "Section 1 — Foundations & Core Mechanics",
-            "topic": "A/B Testing, Canary Deployments & Shadow Model Rollouts Implementation",
-            "title": "Lesson 2 — Step-by-Step Implementation & Algorithm Mechanics",
-            "prerequisites": "Lesson 1 (Architectural Foundations).",
-            "description": "Detailed step-by-step implementation mechanics, algorithmic flows, and data transformations for A/B Testing, Canary Deployments & Shadow Model Rollouts.",
-            "whyItMatters": "Translates high-level theoretical concepts into concrete, maintainable, and high-performance production implementations.",
-            "howItWorks": "Processes data via structured transformation pipelines, managing memory efficiency, concurrency safety, and execution state.",
-            "stepByStep": [
-              "Step 1: Ingest input payloads and normalize data representations.",
-              "Step 2: Apply primary domain transformations and state mutations.",
-              "Step 3: Handle edge cases, null boundaries, and invalid parameter transitions.",
-              "Step 4: Emit validated output and persist operational state."
-            ],
-            "workedExample": "Input Data Transformation:\nRaw Payload: `{'id': 101, 'metric': 42.5, 'flag': True}`\nProcessing: Normalizes types -> validates bounds -> calculates derived metrics.\nTransformed Result: `{'id': 101, 'score': 0.85, 'status': 'OPTIMAL'}`.",
-            "realWorldUsage": "Production runtime execution across scalable distributed systems and analytics engines.",
-            "codeSnippet": "# Implementation Execution Loop\ndef execute_pipeline_step(data: list) -> list:\n    results = []\n    for item in data:\n        transformed = {'key': item, 'value': item * 2, 'valid': True}\n        results.append(transformed)\n    return results\n\nprint('Processed Steps:', execute_pipeline_step([10, 20, 30]))",
-            "codeExplanation": "1. Iterates over input stream with $O(N)$ linear time complexity.\n2. Emits structured transformed output records.",
-            "expectedOutput": "Processed Steps: [{'key': 10, 'value': 20, 'valid': True}, {'key': 20, 'value': 40, 'valid': True}, {'key': 30, 'value': 60, 'valid': True}]",
-            "commonMistakes": "Failing to handle empty sequences or null pointers during pipeline transformations.",
-            "bestPractices": "Profile algorithmic time complexity and memory allocations before scaling to production volumes.",
-            "practiceTask": "Construct a unit-tested implementation of the A/B Testing, Canary Deployments & Shadow Model Rollouts data transformation function.",
-            "keyTakeaway": "Methodical step-by-step implementation ensures deterministic behavior and simplifies debugging in production."
-          },
-          {
-            "section": "Section 2 — Production Engineering & Best Practices",
-            "topic": "Production Optimization",
-            "title": "Lesson 3 — Performance Tuning, Error Handling & Production Best Practices",
-            "prerequisites": "Lesson 2 (Implementation Mechanics).",
-            "description": "Production engineering strategies: latency optimization, error containment, monitoring observability, and defensive design for A/B Testing, Canary Deployments & Shadow Model Rollouts.",
-            "whyItMatters": "Prevents cascading system outages, resource exhaustion, and silent data corruption under high-load enterprise conditions.",
-            "howItWorks": "Combines proactive health checks, structured logging, automated retry policies with exponential backoff, and circuit breaker patterns.",
-            "stepByStep": [
-              "Step 1: Implement structured telemetry and metric tracking (P50, P95, P99 latencies).",
-              "Step 2: Configure bounded timeouts and circuit breaking thresholds.",
-              "Step 3: Handle transient faults with exponential backoff and jitter.",
-              "Step 4: Validate graceful degradation paths under resource starvation."
-            ],
-            "workedExample": "Fault Injection Scenario:\nDownstream dependency experiences 500ms latency spike.\nCircuit breaker detects threshold violation -> trips to Open state -> serves cached fallback response in 2ms without cascading failure.",
-            "realWorldUsage": "Enterprise cloud services, mission-critical API gateways, and distributed microservices.",
-            "codeSnippet": "# Defensive Error Handling Pattern\nimport time\n\ndef execute_with_retry(operation_fn, max_retries=3, backoff_base=0.1):\n    for attempt in range(max_retries):\n        try:\n            return operation_fn()\n        except Exception as e:\n            if attempt == max_retries - 1:\n                raise\n            time.sleep(backoff_base * (2 ** attempt))\n\nresult = execute_with_retry(lambda: 'SUCCESSFUL_EXECUTION')\nprint(f'Execution Status: {result}')",
-            "codeExplanation": "1. Catches transient exceptions and applies exponential backoff delay.\n2. Prevents thundering herd problems during system recovery.",
-            "expectedOutput": "Execution Status: SUCCESSFUL_EXECUTION",
-            "commonMistakes": "Catching generic exceptions silently without logging or alerting, hiding critical production failures.",
-            "bestPractices": "Always configure explicit request timeouts, health probes, and structured JSON logs.",
-            "practiceTask": "Implement a retry decorator with configurable backoff and max attempt parameters.",
-            "keyTakeaway": "Robust production engineering for A/B Testing, Canary Deployments & Shadow Model Rollouts requires proactive error containment, latency budgets, and structured observability."
-          },
-          {
-            "section": "Section 2 — Production Engineering & Best Practices",
-            "topic": "Review & Competency",
-            "title": "Lesson 4 — Module Review, Practice Challenge & Key Takeaways",
-            "prerequisites": "Lessons 1 through 3.",
-            "description": "Comprehensive synthesis of architectural principles, algorithmic patterns, and production guidelines for A/B Testing, Canary Deployments & Shadow Model Rollouts.",
-            "whyItMatters": "Consolidates theoretical knowledge into practical skills required for Level 4/5 competency qualification.",
-            "howItWorks": "Integrates core theorems, code patterns, and diagnostic checklists into an actionable practitioner reference.",
-            "stepByStep": [
-              "1. Architectural baseline: understand core system components and invariants.",
-              "2. Implementation standard: build modular, leak-free transformation pipelines.",
-              "3. Production readiness: enforce timeouts, circuit breakers, and telemetry monitoring.",
-              "4. Hands-on verification: complete the practical lab exercise to qualify for competency elevation."
-            ],
-            "workedExample": "Competency Qualification Checklist:\n[OK] Core architecture and lifecycle understood.\n[OK] Production error containment verified.\n[OK] Practical lab implementation completed satisfying target benchmarks.",
-            "realWorldUsage": "Practitioner competency baseline across enterprise engineering teams.",
-            "codeSnippet": "# Quick Competency Verification Checklist\nchecklist = [\n    '1. Architecture contracts and data flow verified',\n    '2. Input schema validation and error containment implemented',\n    '3. Performance benchmarks and latency targets satisfied'\n]\nfor item in checklist:\n    print(f'[READY] {item}')",
-            "codeExplanation": "1. Verifies complete module mastery before proceeding to the practical hands-on lab.",
-            "expectedOutput": "[READY] 1. Architecture contracts and data flow verified\n[READY] 2. Input schema validation and error containment implemented\n[READY] 3. Performance benchmarks and latency targets satisfied",
-            "commonMistakes": "Attempting competency assessment before completing the practical hands-on lab exercise.",
-            "bestPractices": "Review key takeaways and test edge cases thoroughly in your practical lab implementation.",
-            "practiceTask": "Complete the practical hands-on lab exercise below to verify your mastery of A/B Testing, Canary Deployments & Shadow Model Rollouts.",
-            "keyTakeaway": "You have mastered the architectural foundations, implementation patterns, and production best practices for A/B Testing, Canary Deployments & Shadow Model Rollouts."
+            workedExample: "Kubeflow PyTorchJob Manifest (Excerpt):\n```yaml\napiVersion: \"kubeflow.org/v1\"\nkind: \"PyTorchJob\"\nmetadata:\n  name: \"distributed-llm-training\"\nspec:\n  pytorchReplicaSpecs:\n    Master:\n      replicas: 1\n      template:\n        spec:\n          containers:\n            - name: pytorch\n              resources: { limits: { nvidia.com/gpu: 4 } }\n    Worker:\n      replicas: 3\n      template:\n        spec:\n          containers:\n            - name: pytorch\n              resources: { limits: { nvidia.com/gpu: 4 } }\n```",
+            realWorldUsage: "Pre-training and fine-tuning large models at OpenAI, Anthropic, Meta, and AWS.",
+            codeSnippet: "# Ray Train Distributed PyTorch Training Function Blueprint (Python)\nimport torch\nimport torch.nn as nn\n\ndef distributed_training_loop_per_worker(config: dict):\n    # In real Ray Train: import ray.train.torch as train_torch\n    # model = train_torch.prepare_model(nn.Linear(128, 10))\n    # data_loader = train_torch.prepare_data_loader(loader)\n    \n    local_rank = config.get('local_rank', 0)\n    world_size = config.get('world_size', 4)\n    \n    print(f'[Worker Rank {local_rank}/{world_size}] Initialized NCCL distributed worker.')\n    print(f'[Worker Rank {local_rank}] Synchronized gradients via Ring All-Reduce across {world_size} GPUs.')\n    return {'status': 'COMPLETED', 'final_loss': 0.142}\n\n# Simulated execution\nresult = distributed_training_loop_per_worker({'local_rank': 0, 'world_size': 4})\nprint('Master Worker Output:', result)",
+            codeExplanation: "1. Configures distributed training execution across multi-GPU nodes.\n2. Replicates model state and partitions datasets via DistributedSampler.\n3. Synchronizes gradients with NCCL Ring All-Reduce communication.",
+            expectedOutput: "[Worker Rank 0/4] Initialized NCCL distributed worker.\n[Worker Rank 0] Synchronized gradients via Ring All-Reduce across 4 GPUs.\nMaster Worker Output: {'status': 'COMPLETED', 'final_loss': 0.142}",
+            commonMistakes: "Forgetting to set the epoch on `DistributedSampler.set_epoch(epoch)` at the start of each epoch, causing data shuffling to repeat identically across training rounds.",
+            bestPractices: "Always call `sampler.set_epoch(epoch)` and use NCCL backend for GPU-to-GPU communication.",
+            practiceTask: "Author a complete Kubernetes PyTorchJob YAML manifest requesting 4 worker pods with NVIDIA A100 GPU limits.",
+            keyTakeaway: "DistributedDataParallel and Ray Train scale deep learning workloads linearly across multi-node GPU clusters."
           }
         ],
-        "practicalExercise": "Implement an Envoy proxy configuration for Shadow Traffic Mirroring and analyze candidate model performance.",
-        "competencyVerification": "Proves canary rollout design, shadow deployment architecture, and statistical A/B test analysis at Level 5.",
-        "resources": [
-        {
-                "title": "Martin Fowler: Canary Releases & Shadow Deployments",
-                "url": "https://martinfowler.com/bliki/CanaryRelease.html",
-                "description": "Traffic splitting strategies for zero-downtime canary rollouts and shadow traffic mirroring.",
-                "type": "article",
-                "provider": "Martin Fowler"
-        },
-        {
-                "title": "Istio Service Mesh Documentation: Traffic Shifting",
-                "url": "https://istio.io/latest/docs/tasks/traffic-management/traffic-shifting/",
-                "description": "Configuring VirtualServices and DestinationRules for percentage-based ML model routing.",
-                "type": "documentation",
-                "provider": "Istio Documentation"
-        }
-]
-      },
-      "keyConcepts": [
-        {
-          "section": "Section 1 — Foundations & Core Mechanics",
-          "topic": "A/B Testing, Canary Deployments & Shadow Model Rollouts Architecture",
-          "title": "Lesson 1 — Architectural Foundations & Core Principles of A/B Testing, Canary Deployments & Shadow Model Rollouts",
-          "prerequisites": "Prerequisites for A/B Testing, Canary Deployments & Shadow Model Rollouts: foundational domain concepts and system design.",
-          "description": "Comprehensive architectural deep dive into A/B Testing, Canary Deployments & Shadow Model Rollouts, detailing foundational execution models, data structures, and core operating invariants.",
-          "whyItMatters": "Establishes structural competency, preventing common architectural anti-patterns and runtime failures in enterprise environments.",
-          "howItWorks": "Operates through modular components with strict interface contracts, managing lifecycle transitions and data flow state transformations.",
-          "stepByStep": [
-            "Step 1: Initialize the core A/B Testing, Canary Deployments & Shadow Model Rollouts execution context and configure runtime invariants.",
-            "Step 2: Establish boundary contracts and schema validation rules.",
-            "Step 3: Execute core processing loop and state synchronization.",
-            "Step 4: Verify downstream integration guarantees and error containment boundaries."
-          ],
-          "workedExample": "Concrete Execution Scenario:\nInput Request: Validated domain entity with configured operational parameters.\nProcessing: Component evaluates constraints, applies domain logic, and emits state update.\nOutput: Guaranteed deterministic result adhering to enterprise service level objectives.",
-          "realWorldUsage": "Used in high-availability enterprise services, automated data pipelines, and mission-critical cloud infrastructure.",
-          "codeSnippet": "# Core Implementation Pattern: A/B Testing, Canary Deployments & Shadow Model Rollouts\nclass ProductionComponent:\n    def __init__(self, config: dict):\n        self.config = config\n        self._is_active = True\n\n    def process_workload(self, payload: dict) -> dict:\n        if not self._is_active:\n            raise RuntimeError('Component inactive')\n        return {'status': 'SUCCESS', 'processed': payload, 'verified': True}\n\ncomponent = ProductionComponent(config={'env': 'production'})\nprint(component.process_workload({'task': 'A/B Testing, Canary Deployments & Shadow Model Rollouts'}))",
-          "codeExplanation": "1. Initializes component with strict configuration encapsulation.\n2. Validates operational state before executing workload.\n3. Returns structured execution payload.",
-          "expectedOutput": "{'status': 'SUCCESS', 'processed': {'task': 'A/B Testing, Canary Deployments & Shadow Model Rollouts'}, 'verified': True}",
-          "commonMistakes": "Violating separation of concerns by coupling A/B Testing, Canary Deployments & Shadow Model Rollouts logic directly to transport layers.",
-          "bestPractices": "Always encapsulate domain logic behind strict interface contracts and validate boundary inputs defensively.",
-          "practiceTask": "Implement a minimal working prototype of A/B Testing, Canary Deployments & Shadow Model Rollouts with automated input validation.",
-          "keyTakeaway": "Understanding the core architectural principles of A/B Testing, Canary Deployments & Shadow Model Rollouts is essential for designing resilient, production-grade systems."
-        },
-        {
-          "section": "Section 1 — Foundations & Core Mechanics",
-          "topic": "A/B Testing, Canary Deployments & Shadow Model Rollouts Implementation",
-          "title": "Lesson 2 — Step-by-Step Implementation & Algorithm Mechanics",
-          "prerequisites": "Lesson 1 (Architectural Foundations).",
-          "description": "Detailed step-by-step implementation mechanics, algorithmic flows, and data transformations for A/B Testing, Canary Deployments & Shadow Model Rollouts.",
-          "whyItMatters": "Translates high-level theoretical concepts into concrete, maintainable, and high-performance production implementations.",
-          "howItWorks": "Processes data via structured transformation pipelines, managing memory efficiency, concurrency safety, and execution state.",
-          "stepByStep": [
-            "Step 1: Ingest input payloads and normalize data representations.",
-            "Step 2: Apply primary domain transformations and state mutations.",
-            "Step 3: Handle edge cases, null boundaries, and invalid parameter transitions.",
-            "Step 4: Emit validated output and persist operational state."
-          ],
-          "workedExample": "Input Data Transformation:\nRaw Payload: `{'id': 101, 'metric': 42.5, 'flag': True}`\nProcessing: Normalizes types -> validates bounds -> calculates derived metrics.\nTransformed Result: `{'id': 101, 'score': 0.85, 'status': 'OPTIMAL'}`.",
-          "realWorldUsage": "Production runtime execution across scalable distributed systems and analytics engines.",
-          "codeSnippet": "# Implementation Execution Loop\ndef execute_pipeline_step(data: list) -> list:\n    results = []\n    for item in data:\n        transformed = {'key': item, 'value': item * 2, 'valid': True}\n        results.append(transformed)\n    return results\n\nprint('Processed Steps:', execute_pipeline_step([10, 20, 30]))",
-          "codeExplanation": "1. Iterates over input stream with $O(N)$ linear time complexity.\n2. Emits structured transformed output records.",
-          "expectedOutput": "Processed Steps: [{'key': 10, 'value': 20, 'valid': True}, {'key': 20, 'value': 40, 'valid': True}, {'key': 30, 'value': 60, 'valid': True}]",
-          "commonMistakes": "Failing to handle empty sequences or null pointers during pipeline transformations.",
-          "bestPractices": "Profile algorithmic time complexity and memory allocations before scaling to production volumes.",
-          "practiceTask": "Construct a unit-tested implementation of the A/B Testing, Canary Deployments & Shadow Model Rollouts data transformation function.",
-          "keyTakeaway": "Methodical step-by-step implementation ensures deterministic behavior and simplifies debugging in production."
-        },
-        {
-          "section": "Section 2 — Production Engineering & Best Practices",
-          "topic": "Production Optimization",
-          "title": "Lesson 3 — Performance Tuning, Error Handling & Production Best Practices",
-          "prerequisites": "Lesson 2 (Implementation Mechanics).",
-          "description": "Production engineering strategies: latency optimization, error containment, monitoring observability, and defensive design for A/B Testing, Canary Deployments & Shadow Model Rollouts.",
-          "whyItMatters": "Prevents cascading system outages, resource exhaustion, and silent data corruption under high-load enterprise conditions.",
-          "howItWorks": "Combines proactive health checks, structured logging, automated retry policies with exponential backoff, and circuit breaker patterns.",
-          "stepByStep": [
-            "Step 1: Implement structured telemetry and metric tracking (P50, P95, P99 latencies).",
-            "Step 2: Configure bounded timeouts and circuit breaking thresholds.",
-            "Step 3: Handle transient faults with exponential backoff and jitter.",
-            "Step 4: Validate graceful degradation paths under resource starvation."
-          ],
-          "workedExample": "Fault Injection Scenario:\nDownstream dependency experiences 500ms latency spike.\nCircuit breaker detects threshold violation -> trips to Open state -> serves cached fallback response in 2ms without cascading failure.",
-          "realWorldUsage": "Enterprise cloud services, mission-critical API gateways, and distributed microservices.",
-          "codeSnippet": "# Defensive Error Handling Pattern\nimport time\n\ndef execute_with_retry(operation_fn, max_retries=3, backoff_base=0.1):\n    for attempt in range(max_retries):\n        try:\n            return operation_fn()\n        except Exception as e:\n            if attempt == max_retries - 1:\n                raise\n            time.sleep(backoff_base * (2 ** attempt))\n\nresult = execute_with_retry(lambda: 'SUCCESSFUL_EXECUTION')\nprint(f'Execution Status: {result}')",
-          "codeExplanation": "1. Catches transient exceptions and applies exponential backoff delay.\n2. Prevents thundering herd problems during system recovery.",
-          "expectedOutput": "Execution Status: SUCCESSFUL_EXECUTION",
-          "commonMistakes": "Catching generic exceptions silently without logging or alerting, hiding critical production failures.",
-          "bestPractices": "Always configure explicit request timeouts, health probes, and structured JSON logs.",
-          "practiceTask": "Implement a retry decorator with configurable backoff and max attempt parameters.",
-          "keyTakeaway": "Robust production engineering for A/B Testing, Canary Deployments & Shadow Model Rollouts requires proactive error containment, latency budgets, and structured observability."
-        },
-        {
-          "section": "Section 2 — Production Engineering & Best Practices",
-          "topic": "Review & Competency",
-          "title": "Lesson 4 — Module Review, Practice Challenge & Key Takeaways",
-          "prerequisites": "Lessons 1 through 3.",
-          "description": "Comprehensive synthesis of architectural principles, algorithmic patterns, and production guidelines for A/B Testing, Canary Deployments & Shadow Model Rollouts.",
-          "whyItMatters": "Consolidates theoretical knowledge into practical skills required for Level 4/5 competency qualification.",
-          "howItWorks": "Integrates core theorems, code patterns, and diagnostic checklists into an actionable practitioner reference.",
-          "stepByStep": [
-            "1. Architectural baseline: understand core system components and invariants.",
-            "2. Implementation standard: build modular, leak-free transformation pipelines.",
-            "3. Production readiness: enforce timeouts, circuit breakers, and telemetry monitoring.",
-            "4. Hands-on verification: complete the practical lab exercise to qualify for competency elevation."
-          ],
-          "workedExample": "Competency Qualification Checklist:\n[OK] Core architecture and lifecycle understood.\n[OK] Production error containment verified.\n[OK] Practical lab implementation completed satisfying target benchmarks.",
-          "realWorldUsage": "Practitioner competency baseline across enterprise engineering teams.",
-          "codeSnippet": "# Quick Competency Verification Checklist\nchecklist = [\n    '1. Architecture contracts and data flow verified',\n    '2. Input schema validation and error containment implemented',\n    '3. Performance benchmarks and latency targets satisfied'\n]\nfor item in checklist:\n    print(f'[READY] {item}')",
-          "codeExplanation": "1. Verifies complete module mastery before proceeding to the practical hands-on lab.",
-          "expectedOutput": "[READY] 1. Architecture contracts and data flow verified\n[READY] 2. Input schema validation and error containment implemented\n[READY] 3. Performance benchmarks and latency targets satisfied",
-          "commonMistakes": "Attempting competency assessment before completing the practical hands-on lab exercise.",
-          "bestPractices": "Review key takeaways and test edge cases thoroughly in your practical lab implementation.",
-          "practiceTask": "Complete the practical hands-on lab exercise below to verify your mastery of A/B Testing, Canary Deployments & Shadow Model Rollouts.",
-          "keyTakeaway": "You have mastered the architectural foundations, implementation patterns, and production best practices for A/B Testing, Canary Deployments & Shadow Model Rollouts."
-        }
-      ]
+        practicalExercise: "Design a multi-node distributed training pipeline using Ray Train and author a Kubeflow PyTorchJob Kubernetes manifest with GPU limits and shared volume checkpoints.",
+        competencyVerification: "Demonstrates distributed training architectures, DDP gradient synchronization, and Kubernetes GPU orchestration at Level 5.",
+        resources: [
+          {
+            title: "PyTorch Distributed Overview & DDP Architecture",
+            url: "https://pytorch.org/tutorials/beginner/dist_overview.html",
+            description: "DistributedDataParallel (DDP), Fully Sharded Data Parallel (FSDP), and NCCL backends.",
+            type: "documentation",
+            provider: "PyTorch Core Team"
+          },
+          {
+            title: "Ray Train Official Documentation: Distributed Model Training at Scale",
+            url: "https://docs.ray.io/en/latest/train/train.html",
+            description: "Scaling PyTorch and Hugging Face training across GPU clusters with Ray Train.",
+            type: "documentation",
+            provider: "Anyscale / Ray"
+          }
+        ]
+      }
     },
     {
-      "id": "mlops-mod-11",
-      "order": 11,
-      "title": "Module 11 — Model Governance, Lineage Tracking & Responsible AI Operations",
-      "durationMinutes": 200,
-      "summary": "Enterprise AI governance: Model Cards, end-to-end lineage tracking (data -> code -> model -> deployment), bias/fairness auditing (Fairlearn, disparate impact ratio), and regulatory compliance (EU AI Act, SOC2).",
-      "learningObjectives": [
-        "Generate comprehensive Model Cards documenting intended use, limitations, and evaluation rubrics.",
-        "Audit algorithmic fairness and mitigate demographic disparity using the Fairlearn toolkit.",
-        "Establish complete cryptographic audit trails linking production predictions back to exact dataset training versions."
+      id: "mlops-mod-11",
+      order: 11,
+      title: "Module 11 — Enterprise AI Governance, Model Cards, Auditing & Explainability (SHAP, Fairlearn)",
+      durationMinutes: 180,
+      summary: "AI Governance and compliance standards (EU AI Act, NIST AI RMF), Model Cards for Model Reporting (Mitchell et al.), feature attribution with SHAP (Shapley values), and bias auditing with Fairlearn.",
+      learningObjectives: [
+        "Compute SHAP (Shapley Additive exPlanations) values to explain individual and global model predictions.",
+        "Audit ML models for demographic disparity and disparate impact using Fairlearn metrics.",
+        "Author comprehensive enterprise Model Cards documenting training data, limitations, and ethical considerations."
       ],
-      "resources": [
+      resources: [
         {
-                "title": "NIST AI Risk Management Framework (AI RMF 1.0)",
-                "url": "https://www.nist.gov/itl/ai-risk-management-framework",
-                "description": "Authoritative standard for governing, mapping, measuring, and managing AI system risks.",
-                "type": "specification",
-                "provider": "NIST"
+          title: "Model Cards for Model Reporting (Mitchell et al., FAT* 2019)",
+          url: "https://arxiv.org/abs/1810.03993",
+          description: "Foundational paper establishing standardized documentation for ML model capabilities, limitations, and biases.",
+          type: "specification",
+          provider: "Google / Partnership on AI"
         },
         {
-                "title": "Google Cloud: Model Cards for Model Reporting",
-                "url": "https://cloud.google.com/learn/what-is-a-model-card",
-                "description": "Standardized documentation for model lineage, intended use, limitations, and bias evaluations.",
-                "type": "guide",
-                "provider": "Google Cloud"
+          title: "SHAP (SHapley Additive exPlanations) Official Documentation",
+          url: "https://shap.readthedocs.io/en/latest/",
+          description: "Game-theoretic feature attribution, TreeExplainer, KernelExplainer, and summary plots.",
+          type: "documentation",
+          provider: "Scott Lundberg"
         }
-],
-      "content": {
-        "overview": "Enterprise AI systems must be accountable, auditable, and fair. Governance frameworks enforce cryptographic lineage tracking and algorithmic fairness checks across all deployed models.",
-        "keyConcepts": [
+      ],
+      content: {
+        overview: "Deploying enterprise AI requires transparency, accountability, and explainability. Using cooperative game theory (SHAP Shapley values) for local/global explainability, Fairlearn for bias audits, and Model Cards ensures regulatory compliance under the EU AI Act and NIST AI Risk Management Framework.",
+        keyConcepts: [
           {
-            "section": "Section 1 — Foundations & Core Mechanics",
-            "topic": "Model Governance, Lineage Tracking & Responsible AI Operations Architecture",
-            "title": "Lesson 1 — Architectural Foundations & Core Principles of Model Governance, Lineage Tracking & Responsible AI Operations",
-            "prerequisites": "Prerequisites for Model Governance, Lineage Tracking & Responsible AI Operations: foundational domain concepts and system design.",
-            "description": "Comprehensive architectural deep dive into Model Governance, Lineage Tracking & Responsible AI Operations, detailing foundational execution models, data structures, and core operating invariants.",
-            "whyItMatters": "Establishes structural competency, preventing common architectural anti-patterns and runtime failures in enterprise environments.",
-            "howItWorks": "Operates through modular components with strict interface contracts, managing lifecycle transitions and data flow state transformations.",
-            "stepByStep": [
-              "Step 1: Initialize the core Model Governance, Lineage Tracking & Responsible AI Operations execution context and configure runtime invariants.",
-              "Step 2: Establish boundary contracts and schema validation rules.",
-              "Step 3: Execute core processing loop and state synchronization.",
-              "Step 4: Verify downstream integration guarantees and error containment boundaries."
+            section: "Section 1 — Explainability & AI Governance",
+            topic: "SHAP Explainability & Model Cards",
+            title: "Lesson 1 — Shapley Values (SHAP), Fairness Metrics & Enterprise Model Cards",
+            prerequisites: "Module 1 (Production ML Lifecycle) and cooperative game theory.",
+            description: "How Shapley values calculate the marginal contribution of each feature to a prediction ($\phi_i(v) = \sum \frac{|S|!(|N|-|S|-1)!}{|N|!} (v(S \cup \{i\}) - v(S))$), how Fairlearn measures Demographic Parity Difference, and how to structure production Model Cards.",
+            whyItMatters: "Black-box models create legal liabilities in hiring, credit, and healthcare. SHAP provides mathematically proven local and global feature attributions required by regulatory audits.",
+            howItWorks: "SHAP calculates feature contributions by evaluating predictions across all possible feature subsets. Positive SHAP values increase prediction confidence; negative values decrease it.",
+            stepByStep: [
+              "Step 1: Train model and instantiate `shap.TreeExplainer(model)` or `shap.KernelExplainer`.",
+              "Step 2: Compute SHAP values for target test sample: `shap_values = explainer(X_test)`.",
+              "Step 3: Audit fairness metrics using Fairlearn `MetricFrame` across protected demographic groups.",
+              "Step 4: Generate standardized Model Card documenting architecture, training data provenance, intended use, and limitations."
             ],
-            "workedExample": "Concrete Execution Scenario:\nInput Request: Validated domain entity with configured operational parameters.\nProcessing: Component evaluates constraints, applies domain logic, and emits state update.\nOutput: Guaranteed deterministic result adhering to enterprise service level objectives.",
-            "realWorldUsage": "Used in high-availability enterprise services, automated data pipelines, and mission-critical cloud infrastructure.",
-            "codeSnippet": "# Core Implementation Pattern: Model Governance, Lineage Tracking & Responsible AI Operations\nclass ProductionComponent:\n    def __init__(self, config: dict):\n        self.config = config\n        self._is_active = True\n\n    def process_workload(self, payload: dict) -> dict:\n        if not self._is_active:\n            raise RuntimeError('Component inactive')\n        return {'status': 'SUCCESS', 'processed': payload, 'verified': True}\n\ncomponent = ProductionComponent(config={'env': 'production'})\nprint(component.process_workload({'task': 'Model Governance, Lineage Tracking & Responsible AI Operations'}))",
-            "codeExplanation": "1. Initializes component with strict configuration encapsulation.\n2. Validates operational state before executing workload.\n3. Returns structured execution payload.",
-            "expectedOutput": "{'status': 'SUCCESS', 'processed': {'task': 'Model Governance, Lineage Tracking & Responsible AI Operations'}, 'verified': True}",
-            "commonMistakes": "Violating separation of concerns by coupling Model Governance, Lineage Tracking & Responsible AI Operations logic directly to transport layers.",
-            "bestPractices": "Always encapsulate domain logic behind strict interface contracts and validate boundary inputs defensively.",
-            "practiceTask": "Implement a minimal working prototype of Model Governance, Lineage Tracking & Responsible AI Operations with automated input validation.",
-            "keyTakeaway": "Understanding the core architectural principles of Model Governance, Lineage Tracking & Responsible AI Operations is essential for designing resilient, production-grade systems."
-          },
-          {
-            "section": "Section 1 — Foundations & Core Mechanics",
-            "topic": "Model Governance, Lineage Tracking & Responsible AI Operations Implementation",
-            "title": "Lesson 2 — Step-by-Step Implementation & Algorithm Mechanics",
-            "prerequisites": "Lesson 1 (Architectural Foundations).",
-            "description": "Detailed step-by-step implementation mechanics, algorithmic flows, and data transformations for Model Governance, Lineage Tracking & Responsible AI Operations.",
-            "whyItMatters": "Translates high-level theoretical concepts into concrete, maintainable, and high-performance production implementations.",
-            "howItWorks": "Processes data via structured transformation pipelines, managing memory efficiency, concurrency safety, and execution state.",
-            "stepByStep": [
-              "Step 1: Ingest input payloads and normalize data representations.",
-              "Step 2: Apply primary domain transformations and state mutations.",
-              "Step 3: Handle edge cases, null boundaries, and invalid parameter transitions.",
-              "Step 4: Emit validated output and persist operational state."
-            ],
-            "workedExample": "Input Data Transformation:\nRaw Payload: `{'id': 101, 'metric': 42.5, 'flag': True}`\nProcessing: Normalizes types -> validates bounds -> calculates derived metrics.\nTransformed Result: `{'id': 101, 'score': 0.85, 'status': 'OPTIMAL'}`.",
-            "realWorldUsage": "Production runtime execution across scalable distributed systems and analytics engines.",
-            "codeSnippet": "# Implementation Execution Loop\ndef execute_pipeline_step(data: list) -> list:\n    results = []\n    for item in data:\n        transformed = {'key': item, 'value': item * 2, 'valid': True}\n        results.append(transformed)\n    return results\n\nprint('Processed Steps:', execute_pipeline_step([10, 20, 30]))",
-            "codeExplanation": "1. Iterates over input stream with $O(N)$ linear time complexity.\n2. Emits structured transformed output records.",
-            "expectedOutput": "Processed Steps: [{'key': 10, 'value': 20, 'valid': True}, {'key': 20, 'value': 40, 'valid': True}, {'key': 30, 'value': 60, 'valid': True}]",
-            "commonMistakes": "Failing to handle empty sequences or null pointers during pipeline transformations.",
-            "bestPractices": "Profile algorithmic time complexity and memory allocations before scaling to production volumes.",
-            "practiceTask": "Construct a unit-tested implementation of the Model Governance, Lineage Tracking & Responsible AI Operations data transformation function.",
-            "keyTakeaway": "Methodical step-by-step implementation ensures deterministic behavior and simplifies debugging in production."
-          },
-          {
-            "section": "Section 2 — Production Engineering & Best Practices",
-            "topic": "Production Optimization",
-            "title": "Lesson 3 — Performance Tuning, Error Handling & Production Best Practices",
-            "prerequisites": "Lesson 2 (Implementation Mechanics).",
-            "description": "Production engineering strategies: latency optimization, error containment, monitoring observability, and defensive design for Model Governance, Lineage Tracking & Responsible AI Operations.",
-            "whyItMatters": "Prevents cascading system outages, resource exhaustion, and silent data corruption under high-load enterprise conditions.",
-            "howItWorks": "Combines proactive health checks, structured logging, automated retry policies with exponential backoff, and circuit breaker patterns.",
-            "stepByStep": [
-              "Step 1: Implement structured telemetry and metric tracking (P50, P95, P99 latencies).",
-              "Step 2: Configure bounded timeouts and circuit breaking thresholds.",
-              "Step 3: Handle transient faults with exponential backoff and jitter.",
-              "Step 4: Validate graceful degradation paths under resource starvation."
-            ],
-            "workedExample": "Fault Injection Scenario:\nDownstream dependency experiences 500ms latency spike.\nCircuit breaker detects threshold violation -> trips to Open state -> serves cached fallback response in 2ms without cascading failure.",
-            "realWorldUsage": "Enterprise cloud services, mission-critical API gateways, and distributed microservices.",
-            "codeSnippet": "# Defensive Error Handling Pattern\nimport time\n\ndef execute_with_retry(operation_fn, max_retries=3, backoff_base=0.1):\n    for attempt in range(max_retries):\n        try:\n            return operation_fn()\n        except Exception as e:\n            if attempt == max_retries - 1:\n                raise\n            time.sleep(backoff_base * (2 ** attempt))\n\nresult = execute_with_retry(lambda: 'SUCCESSFUL_EXECUTION')\nprint(f'Execution Status: {result}')",
-            "codeExplanation": "1. Catches transient exceptions and applies exponential backoff delay.\n2. Prevents thundering herd problems during system recovery.",
-            "expectedOutput": "Execution Status: SUCCESSFUL_EXECUTION",
-            "commonMistakes": "Catching generic exceptions silently without logging or alerting, hiding critical production failures.",
-            "bestPractices": "Always configure explicit request timeouts, health probes, and structured JSON logs.",
-            "practiceTask": "Implement a retry decorator with configurable backoff and max attempt parameters.",
-            "keyTakeaway": "Robust production engineering for Model Governance, Lineage Tracking & Responsible AI Operations requires proactive error containment, latency budgets, and structured observability."
-          },
-          {
-            "section": "Section 2 — Production Engineering & Best Practices",
-            "topic": "Review & Competency",
-            "title": "Lesson 4 — Module Review, Practice Challenge & Key Takeaways",
-            "prerequisites": "Lessons 1 through 3.",
-            "description": "Comprehensive synthesis of architectural principles, algorithmic patterns, and production guidelines for Model Governance, Lineage Tracking & Responsible AI Operations.",
-            "whyItMatters": "Consolidates theoretical knowledge into practical skills required for Level 4/5 competency qualification.",
-            "howItWorks": "Integrates core theorems, code patterns, and diagnostic checklists into an actionable practitioner reference.",
-            "stepByStep": [
-              "1. Architectural baseline: understand core system components and invariants.",
-              "2. Implementation standard: build modular, leak-free transformation pipelines.",
-              "3. Production readiness: enforce timeouts, circuit breakers, and telemetry monitoring.",
-              "4. Hands-on verification: complete the practical lab exercise to qualify for competency elevation."
-            ],
-            "workedExample": "Competency Qualification Checklist:\n[OK] Core architecture and lifecycle understood.\n[OK] Production error containment verified.\n[OK] Practical lab implementation completed satisfying target benchmarks.",
-            "realWorldUsage": "Practitioner competency baseline across enterprise engineering teams.",
-            "codeSnippet": "# Quick Competency Verification Checklist\nchecklist = [\n    '1. Architecture contracts and data flow verified',\n    '2. Input schema validation and error containment implemented',\n    '3. Performance benchmarks and latency targets satisfied'\n]\nfor item in checklist:\n    print(f'[READY] {item}')",
-            "codeExplanation": "1. Verifies complete module mastery before proceeding to the practical hands-on lab.",
-            "expectedOutput": "[READY] 1. Architecture contracts and data flow verified\n[READY] 2. Input schema validation and error containment implemented\n[READY] 3. Performance benchmarks and latency targets satisfied",
-            "commonMistakes": "Attempting competency assessment before completing the practical hands-on lab exercise.",
-            "bestPractices": "Review key takeaways and test edge cases thoroughly in your practical lab implementation.",
-            "practiceTask": "Complete the practical hands-on lab exercise below to verify your mastery of Model Governance, Lineage Tracking & Responsible AI Operations.",
-            "keyTakeaway": "You have mastered the architectural foundations, implementation patterns, and production best practices for Model Governance, Lineage Tracking & Responsible AI Operations."
+            workedExample: "SHAP Feature Attribution Breakdown:\nBase Model Average Score: 50.0\n- `+15.0`: Years of distributed systems experience.\n- `+12.0`: Capacity Connect certification passed.\n- `-4.0`: Incomplete test coverage score.\nFinal Prediction: $50 + 15 + 12 - 4 = 73.0$.",
+            realWorldUsage: "Regulatory compliance under the EU AI Act, automated credit decisioning, healthcare AI audits.",
+            codeSnippet: "# SHAP Explainability & Fairness Metric Auditor (Python)\nimport numpy as np\nfrom typing import Dict, List\n\nclass EnterpriseExplainabilityAuditor:\n    def compute_local_shap_explanation(self, feature_names: List[str], feature_values: List[float]) -> Dict[str, float]:\n        # Simulated Shapley feature attribution calculation\n        # Base baseline = 50.0\n        attributions = {\n            'system_architecture_score': +18.5,\n            'code_quality_index': +12.0,\n            'onboarding_latency_days': -3.5\n        }\n        return attributions\n\n    def audit_demographic_parity(self, group_a_selection_rate: float, group_b_selection_rate: float) -> dict:\n        disparate_impact_ratio = min(group_a_selection_rate, group_b_selection_rate) / max(group_a_selection_rate, group_b_selection_rate)\n        is_compliant = disparate_impact_ratio >= 0.80 # 4/5ths Rule (80% threshold)\n        return {\n            'disparate_impact_ratio': round(disparate_impact_ratio, 3),\n            'four_fifths_rule_compliant': is_compliant,\n            'status': 'PASS' if is_compliant else 'BIAS_VIOLATION'\n        }\n\nauditor = EnterpriseExplainabilityAuditor()\nshap_explanation = auditor.compute_local_shap_explanation(['arch', 'code', 'days'], [90, 85, 4])\nfairness = auditor.audit_demographic_parity(group_a_selection_rate=0.82, group_b_selection_rate=0.78)\nprint('Local SHAP Attribution:', shap_explanation)\nprint('Fairness Audit:', fairness)",
+            codeExplanation: "1. Evaluates game-theoretic Shapley feature contributions.\n2. Computes the legal 4/5ths (80%) Disparate Impact ratio across demographic groups.\n3. Generates auditable transparency reports for compliance governance.",
+            expectedOutput: "Local SHAP Attribution: {'system_architecture_score': 18.5, ...}\nFairness Audit: {'disparate_impact_ratio': 0.951, 'four_fifths_rule_compliant': True, 'status': 'PASS'}",
+            commonMistakes: "Using feature correlation or permutation importance as a substitute for SHAP, which fails to capture non-linear feature interactions.",
+            bestPractices: "Always compute SHAP values for high-stakes decisions and evaluate demographic parity across protected demographic attributes.",
+            practiceTask: "Author a comprehensive Model Card in Markdown for an enterprise competency prediction classifier.",
+            keyTakeaway: "SHAP explainability and Fairlearn demographic auditing provide the mathematical rigor required for trustworthy, compliant enterprise AI."
           }
         ],
-        "practicalExercise": "Perform a fairness audit on an employee promotion model using Fairlearn and generate an enterprise Model Governance Card.",
-        "competencyVerification": "Final capstone verification confirming MLOps & Production AI Systems architecture, governance, and automated operations for Level 5 qualification.",
-        "resources": [
-        {
-                "title": "NIST AI Risk Management Framework (AI RMF 1.0)",
-                "url": "https://www.nist.gov/itl/ai-risk-management-framework",
-                "description": "Authoritative standard for governing, mapping, measuring, and managing AI system risks.",
-                "type": "specification",
-                "provider": "NIST"
-        },
-        {
-                "title": "Google Cloud: Model Cards for Model Reporting",
-                "url": "https://cloud.google.com/learn/what-is-a-model-card",
-                "description": "Standardized documentation for model lineage, intended use, limitations, and bias evaluations.",
-                "type": "guide",
-                "provider": "Google Cloud"
-        }
-]
-      },
-      "keyConcepts": [
-        {
-          "section": "Section 1 — Foundations & Core Mechanics",
-          "topic": "Model Governance, Lineage Tracking & Responsible AI Operations Architecture",
-          "title": "Lesson 1 — Architectural Foundations & Core Principles of Model Governance, Lineage Tracking & Responsible AI Operations",
-          "prerequisites": "Prerequisites for Model Governance, Lineage Tracking & Responsible AI Operations: foundational domain concepts and system design.",
-          "description": "Comprehensive architectural deep dive into Model Governance, Lineage Tracking & Responsible AI Operations, detailing foundational execution models, data structures, and core operating invariants.",
-          "whyItMatters": "Establishes structural competency, preventing common architectural anti-patterns and runtime failures in enterprise environments.",
-          "howItWorks": "Operates through modular components with strict interface contracts, managing lifecycle transitions and data flow state transformations.",
-          "stepByStep": [
-            "Step 1: Initialize the core Model Governance, Lineage Tracking & Responsible AI Operations execution context and configure runtime invariants.",
-            "Step 2: Establish boundary contracts and schema validation rules.",
-            "Step 3: Execute core processing loop and state synchronization.",
-            "Step 4: Verify downstream integration guarantees and error containment boundaries."
-          ],
-          "workedExample": "Concrete Execution Scenario:\nInput Request: Validated domain entity with configured operational parameters.\nProcessing: Component evaluates constraints, applies domain logic, and emits state update.\nOutput: Guaranteed deterministic result adhering to enterprise service level objectives.",
-          "realWorldUsage": "Used in high-availability enterprise services, automated data pipelines, and mission-critical cloud infrastructure.",
-          "codeSnippet": "# Core Implementation Pattern: Model Governance, Lineage Tracking & Responsible AI Operations\nclass ProductionComponent:\n    def __init__(self, config: dict):\n        self.config = config\n        self._is_active = True\n\n    def process_workload(self, payload: dict) -> dict:\n        if not self._is_active:\n            raise RuntimeError('Component inactive')\n        return {'status': 'SUCCESS', 'processed': payload, 'verified': True}\n\ncomponent = ProductionComponent(config={'env': 'production'})\nprint(component.process_workload({'task': 'Model Governance, Lineage Tracking & Responsible AI Operations'}))",
-          "codeExplanation": "1. Initializes component with strict configuration encapsulation.\n2. Validates operational state before executing workload.\n3. Returns structured execution payload.",
-          "expectedOutput": "{'status': 'SUCCESS', 'processed': {'task': 'Model Governance, Lineage Tracking & Responsible AI Operations'}, 'verified': True}",
-          "commonMistakes": "Violating separation of concerns by coupling Model Governance, Lineage Tracking & Responsible AI Operations logic directly to transport layers.",
-          "bestPractices": "Always encapsulate domain logic behind strict interface contracts and validate boundary inputs defensively.",
-          "practiceTask": "Implement a minimal working prototype of Model Governance, Lineage Tracking & Responsible AI Operations with automated input validation.",
-          "keyTakeaway": "Understanding the core architectural principles of Model Governance, Lineage Tracking & Responsible AI Operations is essential for designing resilient, production-grade systems."
-        },
-        {
-          "section": "Section 1 — Foundations & Core Mechanics",
-          "topic": "Model Governance, Lineage Tracking & Responsible AI Operations Implementation",
-          "title": "Lesson 2 — Step-by-Step Implementation & Algorithm Mechanics",
-          "prerequisites": "Lesson 1 (Architectural Foundations).",
-          "description": "Detailed step-by-step implementation mechanics, algorithmic flows, and data transformations for Model Governance, Lineage Tracking & Responsible AI Operations.",
-          "whyItMatters": "Translates high-level theoretical concepts into concrete, maintainable, and high-performance production implementations.",
-          "howItWorks": "Processes data via structured transformation pipelines, managing memory efficiency, concurrency safety, and execution state.",
-          "stepByStep": [
-            "Step 1: Ingest input payloads and normalize data representations.",
-            "Step 2: Apply primary domain transformations and state mutations.",
-            "Step 3: Handle edge cases, null boundaries, and invalid parameter transitions.",
-            "Step 4: Emit validated output and persist operational state."
-          ],
-          "workedExample": "Input Data Transformation:\nRaw Payload: `{'id': 101, 'metric': 42.5, 'flag': True}`\nProcessing: Normalizes types -> validates bounds -> calculates derived metrics.\nTransformed Result: `{'id': 101, 'score': 0.85, 'status': 'OPTIMAL'}`.",
-          "realWorldUsage": "Production runtime execution across scalable distributed systems and analytics engines.",
-          "codeSnippet": "# Implementation Execution Loop\ndef execute_pipeline_step(data: list) -> list:\n    results = []\n    for item in data:\n        transformed = {'key': item, 'value': item * 2, 'valid': True}\n        results.append(transformed)\n    return results\n\nprint('Processed Steps:', execute_pipeline_step([10, 20, 30]))",
-          "codeExplanation": "1. Iterates over input stream with $O(N)$ linear time complexity.\n2. Emits structured transformed output records.",
-          "expectedOutput": "Processed Steps: [{'key': 10, 'value': 20, 'valid': True}, {'key': 20, 'value': 40, 'valid': True}, {'key': 30, 'value': 60, 'valid': True}]",
-          "commonMistakes": "Failing to handle empty sequences or null pointers during pipeline transformations.",
-          "bestPractices": "Profile algorithmic time complexity and memory allocations before scaling to production volumes.",
-          "practiceTask": "Construct a unit-tested implementation of the Model Governance, Lineage Tracking & Responsible AI Operations data transformation function.",
-          "keyTakeaway": "Methodical step-by-step implementation ensures deterministic behavior and simplifies debugging in production."
-        },
-        {
-          "section": "Section 2 — Production Engineering & Best Practices",
-          "topic": "Production Optimization",
-          "title": "Lesson 3 — Performance Tuning, Error Handling & Production Best Practices",
-          "prerequisites": "Lesson 2 (Implementation Mechanics).",
-          "description": "Production engineering strategies: latency optimization, error containment, monitoring observability, and defensive design for Model Governance, Lineage Tracking & Responsible AI Operations.",
-          "whyItMatters": "Prevents cascading system outages, resource exhaustion, and silent data corruption under high-load enterprise conditions.",
-          "howItWorks": "Combines proactive health checks, structured logging, automated retry policies with exponential backoff, and circuit breaker patterns.",
-          "stepByStep": [
-            "Step 1: Implement structured telemetry and metric tracking (P50, P95, P99 latencies).",
-            "Step 2: Configure bounded timeouts and circuit breaking thresholds.",
-            "Step 3: Handle transient faults with exponential backoff and jitter.",
-            "Step 4: Validate graceful degradation paths under resource starvation."
-          ],
-          "workedExample": "Fault Injection Scenario:\nDownstream dependency experiences 500ms latency spike.\nCircuit breaker detects threshold violation -> trips to Open state -> serves cached fallback response in 2ms without cascading failure.",
-          "realWorldUsage": "Enterprise cloud services, mission-critical API gateways, and distributed microservices.",
-          "codeSnippet": "# Defensive Error Handling Pattern\nimport time\n\ndef execute_with_retry(operation_fn, max_retries=3, backoff_base=0.1):\n    for attempt in range(max_retries):\n        try:\n            return operation_fn()\n        except Exception as e:\n            if attempt == max_retries - 1:\n                raise\n            time.sleep(backoff_base * (2 ** attempt))\n\nresult = execute_with_retry(lambda: 'SUCCESSFUL_EXECUTION')\nprint(f'Execution Status: {result}')",
-          "codeExplanation": "1. Catches transient exceptions and applies exponential backoff delay.\n2. Prevents thundering herd problems during system recovery.",
-          "expectedOutput": "Execution Status: SUCCESSFUL_EXECUTION",
-          "commonMistakes": "Catching generic exceptions silently without logging or alerting, hiding critical production failures.",
-          "bestPractices": "Always configure explicit request timeouts, health probes, and structured JSON logs.",
-          "practiceTask": "Implement a retry decorator with configurable backoff and max attempt parameters.",
-          "keyTakeaway": "Robust production engineering for Model Governance, Lineage Tracking & Responsible AI Operations requires proactive error containment, latency budgets, and structured observability."
-        },
-        {
-          "section": "Section 2 — Production Engineering & Best Practices",
-          "topic": "Review & Competency",
-          "title": "Lesson 4 — Module Review, Practice Challenge & Key Takeaways",
-          "prerequisites": "Lessons 1 through 3.",
-          "description": "Comprehensive synthesis of architectural principles, algorithmic patterns, and production guidelines for Model Governance, Lineage Tracking & Responsible AI Operations.",
-          "whyItMatters": "Consolidates theoretical knowledge into practical skills required for Level 4/5 competency qualification.",
-          "howItWorks": "Integrates core theorems, code patterns, and diagnostic checklists into an actionable practitioner reference.",
-          "stepByStep": [
-            "1. Architectural baseline: understand core system components and invariants.",
-            "2. Implementation standard: build modular, leak-free transformation pipelines.",
-            "3. Production readiness: enforce timeouts, circuit breakers, and telemetry monitoring.",
-            "4. Hands-on verification: complete the practical lab exercise to qualify for competency elevation."
-          ],
-          "workedExample": "Competency Qualification Checklist:\n[OK] Core architecture and lifecycle understood.\n[OK] Production error containment verified.\n[OK] Practical lab implementation completed satisfying target benchmarks.",
-          "realWorldUsage": "Practitioner competency baseline across enterprise engineering teams.",
-          "codeSnippet": "# Quick Competency Verification Checklist\nchecklist = [\n    '1. Architecture contracts and data flow verified',\n    '2. Input schema validation and error containment implemented',\n    '3. Performance benchmarks and latency targets satisfied'\n]\nfor item in checklist:\n    print(f'[READY] {item}')",
-          "codeExplanation": "1. Verifies complete module mastery before proceeding to the practical hands-on lab.",
-          "expectedOutput": "[READY] 1. Architecture contracts and data flow verified\n[READY] 2. Input schema validation and error containment implemented\n[READY] 3. Performance benchmarks and latency targets satisfied",
-          "commonMistakes": "Attempting competency assessment before completing the practical hands-on lab exercise.",
-          "bestPractices": "Review key takeaways and test edge cases thoroughly in your practical lab implementation.",
-          "practiceTask": "Complete the practical hands-on lab exercise below to verify your mastery of Model Governance, Lineage Tracking & Responsible AI Operations.",
-          "keyTakeaway": "You have mastered the architectural foundations, implementation patterns, and production best practices for Model Governance, Lineage Tracking & Responsible AI Operations."
-        }
-      ]
+        practicalExercise: "Implement an enterprise AI governance audit pipeline in Python that computes SHAP feature attributions, audits demographic parity ratios, and generates a structured Model Card.",
+        competencyVerification: "Demonstrates enterprise AI governance, SHAP explainability mathematics, Fairlearn bias auditing, and Model Card authoring at Level 5.",
+        resources: [
+          {
+            title: "Model Cards for Model Reporting (Mitchell et al., FAT* 2019)",
+            url: "https://arxiv.org/abs/1810.03993",
+            description: "Foundational paper establishing standardized documentation for ML model capabilities, limitations, and biases.",
+            type: "specification",
+            provider: "Google / Partnership on AI"
+          },
+          {
+            title: "SHAP (SHapley Additive exPlanations) Official Documentation",
+            url: "https://shap.readthedocs.io/en/latest/",
+            description: "Game-theoretic feature attribution, TreeExplainer, KernelExplainer, and summary plots.",
+            type: "documentation",
+            provider: "Scott Lundberg"
+          }
+        ]
+      }
     }
   ]
 };

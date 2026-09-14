@@ -11,6 +11,8 @@ import {
   CompetencyGapResult,
 } from "@/lib/skill-gap/calculateSkillGap";
 import { EmployeeStatus } from "@prisma/client";
+import { RoleLearningService } from "./role-learning.service";
+import { AuditService } from "./audit.service";
 
 export class EmployeeServiceError extends Error {
   statusCode: number;
@@ -393,49 +395,61 @@ export class EmployeeService {
     }
 
     // Atomic creation via transaction
-    const createdEmployee = await prisma.$transaction(async (tx) => {
-      const emp = await tx.employee.create({
-        data: {
-          organizationId,
-          name: data.name.trim(),
-          email,
-          employeeCode,
-          department: data.department?.trim() || null,
-          designationId: data.designationId || null,
-          joiningDate: data.joiningDate ? new Date(data.joiningDate) : new Date(),
-          status: (data.status as EmployeeStatus) || EmployeeStatus.ACTIVE,
-        },
-      });
+    const createdEmployee = await prisma.$transaction(
+      async (tx) => {
+        const emp = await tx.employee.create({
+          data: {
+            organizationId,
+            name: data.name.trim(),
+            email,
+            employeeCode,
+            department: data.department?.trim() || null,
+            designationId: data.designationId || null,
+            joiningDate: data.joiningDate ? new Date(data.joiningDate) : new Date(),
+            status: (data.status as EmployeeStatus) || EmployeeStatus.ACTIVE,
+          },
+        });
 
-      if (data.competencies && data.competencies.length > 0) {
-        for (const comp of data.competencies) {
-          await tx.employeeCompetency.create({
-            data: {
-              organizationId,
-              employeeId: emp.id,
-              competencyId: comp.competencyId,
-              currentLevel: comp.currentLevel,
-              assessedAt: new Date(),
-              assessedBy,
-            },
-          });
+        if (data.competencies && data.competencies.length > 0) {
+          for (const comp of data.competencies) {
+            await tx.employeeCompetency.create({
+              data: {
+                organizationId,
+                employeeId: emp.id,
+                competencyId: comp.competencyId,
+                currentLevel: comp.currentLevel,
+                assessedAt: new Date(),
+                assessedBy,
+              },
+            });
 
-          await tx.competencyAssessmentHistory.create({
-            data: {
-              employeeId: emp.id,
-              competencyId: comp.competencyId,
-              previousLevel: null,
-              newLevel: comp.currentLevel,
-              assessedAt: new Date(),
-              assessedBy,
-              reason: "Initial onboarding baseline evaluation",
-            },
-          });
+            await tx.competencyAssessmentHistory.create({
+              data: {
+                employeeId: emp.id,
+                competencyId: comp.competencyId,
+                previousLevel: null,
+                newLevel: comp.currentLevel,
+                assessedAt: new Date(),
+                assessedBy,
+                reason: "Initial onboarding baseline evaluation",
+              },
+            });
+          }
         }
-      }
 
-      return emp;
-    });
+        if (emp.designationId) {
+          await RoleLearningService.syncEmployeeRoleCourseEnrollments(
+            organizationId,
+            emp.id,
+            emp.designationId,
+            tx
+          );
+        }
+
+        return emp;
+      },
+      { maxWait: 15000, timeout: 30000 }
+    );
 
     const fullRecord = await this.getEmployeeById(organizationId, createdEmployee.id);
     if (!fullRecord) {
@@ -452,12 +466,17 @@ export class EmployeeService {
     organizationId: string,
     employeeId: string,
     data: UpdateEmployeeInput,
-    updatedBy = "Administrator"
+    updatedBy = "Administrator",
+    actorUserId?: string | null,
+    actorRole?: any | null
   ): Promise<EmployeeDetailResponse> {
     const existing = await prisma.employee.findFirst({
       where: {
         id: employeeId,
         organizationId,
+      },
+      include: {
+        user: true,
       },
     });
 
@@ -465,11 +484,21 @@ export class EmployeeService {
       throw new EmployeeServiceError("Employee not found.", 404, "NOT_FOUND");
     }
 
-    // If email is changing, check uniqueness
+    const newName = data.name !== undefined ? data.name.trim() : undefined;
+    if (newName !== undefined && newName.length < 2) {
+      throw new EmployeeServiceError("Full Name must be at least 2 characters.", 400, "INVALID_NAME");
+    }
+
+    let normalizedEmail: string | undefined = undefined;
     if (data.email) {
-      const normalizedEmail = data.email.trim().toLowerCase();
+      normalizedEmail = data.email.trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+        throw new EmployeeServiceError("Enter a valid email address.", 400, "INVALID_EMAIL");
+      }
+
       if (normalizedEmail !== existing.email.toLowerCase()) {
-        const duplicate = await prisma.employee.findFirst({
+        // Check duplicate email in Employee records
+        const duplicateEmployee = await prisma.employee.findFirst({
           where: {
             organizationId,
             email: { equals: normalizedEmail, mode: "insensitive" },
@@ -477,9 +506,27 @@ export class EmployeeService {
           },
         });
 
-        if (duplicate) {
+        if (duplicateEmployee) {
           throw new EmployeeServiceError(
-            `Email "${normalizedEmail}" is already in use by another employee.`,
+            `Email "${normalizedEmail}" is already in use by another employee in this organization.`,
+            409,
+            "DUPLICATE_EMAIL"
+          );
+        }
+
+        // Check duplicate email in User records (excluding the user linked to this employee)
+        const duplicateUser = await prisma.user.findFirst({
+          where: {
+            organizationId,
+            email: { equals: normalizedEmail, mode: "insensitive" },
+            id: existing.user ? { not: existing.user.id } : undefined,
+            employeeId: { not: employeeId },
+          },
+        });
+
+        if (duplicateUser) {
+          throw new EmployeeServiceError(
+            `An account with email "${normalizedEmail}" already exists in this organization.`,
             409,
             "DUPLICATE_EMAIL"
           );
@@ -506,70 +553,121 @@ export class EmployeeService {
     }
 
     // Atomic update
-    await prisma.$transaction(async (tx) => {
-      await tx.employee.update({
-        where: { id: employeeId },
-        data: {
-          name: data.name?.trim() || undefined,
-          email: data.email?.trim().toLowerCase() || undefined,
-          department: data.department !== undefined ? (data.department?.trim() || null) : undefined,
-          designationId: data.designationId !== undefined ? data.designationId : undefined,
-          joiningDate: data.joiningDate ? new Date(data.joiningDate) : undefined,
-          status: (data.status as EmployeeStatus) || undefined,
-        },
-      });
+    await prisma.$transaction(
+      async (tx) => {
+        await tx.employee.update({
+          where: { id: employeeId },
+          data: {
+            name: newName,
+            email: normalizedEmail,
+            department: data.department !== undefined ? (data.department?.trim() || null) : undefined,
+            designationId: data.designationId !== undefined ? data.designationId : undefined,
+            joiningDate: data.joiningDate ? new Date(data.joiningDate) : undefined,
+            status: (data.status as EmployeeStatus) || undefined,
+          },
+        });
 
-      if (data.competencies && data.competencies.length > 0) {
-        for (const comp of data.competencies) {
-          const currentComp = await tx.employeeCompetency.findUnique({
+        // Synchronize linked User account if present
+        if (existing.user || newName || normalizedEmail) {
+          await tx.user.updateMany({
             where: {
-              employeeId_competencyId: {
-                employeeId,
-                competencyId: comp.competencyId,
-              },
+              organizationId,
+              OR: [
+                { employeeId: employeeId },
+                { email: existing.email },
+              ],
+            },
+            data: {
+              name: newName || undefined,
+              email: normalizedEmail || undefined,
             },
           });
+        }
 
-          const previousLevel = currentComp?.currentLevel ?? null;
-
-          await tx.employeeCompetency.upsert({
-            where: {
-              employeeId_competencyId: {
-                employeeId,
-                competencyId: comp.competencyId,
-              },
-            },
-            update: {
-              currentLevel: comp.currentLevel,
-              assessedAt: new Date(),
-              assessedBy: updatedBy,
-              organizationId,
-            },
-            create: {
-              employeeId,
-              competencyId: comp.competencyId,
-              currentLevel: comp.currentLevel,
-              assessedAt: new Date(),
-              assessedBy: updatedBy,
-              organizationId,
-            },
-          });
-
-          if (previousLevel !== comp.currentLevel) {
-            await tx.competencyAssessmentHistory.create({
-              data: {
-                employeeId,
-                competencyId: comp.competencyId,
-                previousLevel,
-                newLevel: comp.currentLevel,
-                assessedAt: new Date(),
-                assessedBy: updatedBy,
-                reason: "Direct competency level adjustment",
+        if (data.competencies && data.competencies.length > 0) {
+          for (const comp of data.competencies) {
+            const currentComp = await tx.employeeCompetency.findUnique({
+              where: {
+                employeeId_competencyId: {
+                  employeeId,
+                  competencyId: comp.competencyId,
+                },
               },
             });
+
+            const previousLevel = currentComp?.currentLevel ?? null;
+
+            await tx.employeeCompetency.upsert({
+              where: {
+                employeeId_competencyId: {
+                  employeeId,
+                  competencyId: comp.competencyId,
+                },
+              },
+              update: {
+                currentLevel: comp.currentLevel,
+                assessedAt: new Date(),
+                assessedBy: updatedBy,
+                organizationId,
+              },
+              create: {
+                employeeId,
+                competencyId: comp.competencyId,
+                currentLevel: comp.currentLevel,
+                assessedAt: new Date(),
+                assessedBy: updatedBy,
+                organizationId,
+              },
+            });
+
+            if (previousLevel !== comp.currentLevel) {
+              await tx.competencyAssessmentHistory.create({
+                data: {
+                  employeeId,
+                  competencyId: comp.competencyId,
+                  previousLevel,
+                  newLevel: comp.currentLevel,
+                  assessedAt: new Date(),
+                  assessedBy: updatedBy,
+                  reason: "Direct competency level adjustment",
+                },
+              });
+            }
           }
         }
-      }
+
+        // If designation changed, auto-assign newly required role courses
+        const targetDesignationId = data.designationId !== undefined ? data.designationId : existing.designationId;
+        if (targetDesignationId) {
+          await RoleLearningService.syncEmployeeRoleCourseEnrollments(
+            organizationId,
+            employeeId,
+            targetDesignationId,
+            tx
+          );
+        }
+      },
+      { maxWait: 15000, timeout: 30000 }
+    );
+
+    await AuditService.log({
+      organizationId,
+      actorId: actorUserId ?? null,
+      actorName: updatedBy,
+      actorRole: actorRole ?? "ADMIN",
+      action: "USER_PROFILE_UPDATED",
+      category: "USER_MANAGEMENT",
+      targetId: existing.id,
+      targetName: newName || existing.name,
+      description: `Administrator ${updatedBy} updated profile information for ${existing.name} (${existing.employeeCode}).`,
+      metadata: {
+        employeeId: existing.id,
+        employeeCode: existing.employeeCode,
+        previousName: existing.name,
+        newName: newName || existing.name,
+        previousEmail: existing.email,
+        newEmail: normalizedEmail || existing.email,
+      },
     });
 
     const fullRecord = await this.getEmployeeById(organizationId, employeeId);
@@ -581,11 +679,15 @@ export class EmployeeService {
   }
 
   /**
-   * 5. Soft-delete / Deactivate employee.
+   * 5. Soft-delete / Deactivate employee (Step 1).
+   * Moves employee to Removed Employees while preserving all historical records.
    */
   static async deactivateEmployee(
     organizationId: string,
-    employeeId: string
+    employeeId: string,
+    actorUserId?: string | null,
+    actorName?: string | null,
+    actorRole?: any | null
   ): Promise<EmployeeDetailResponse> {
     const existing = await prisma.employee.findFirst({
       where: {
@@ -605,6 +707,24 @@ export class EmployeeService {
       },
     });
 
+    await AuditService.log({
+      organizationId,
+      actorId: actorUserId ?? null,
+      actorName: actorName ?? "Administrator",
+      actorRole: actorRole ?? "ADMIN",
+      action: "EMPLOYEE_REMOVED",
+      category: "USER_MANAGEMENT",
+      targetId: existing.id,
+      targetName: existing.name,
+      description: `Employee ${existing.name} (${existing.employeeCode}) was deactivated and moved to Removed Employees.`,
+      metadata: {
+        employeeCode: existing.employeeCode,
+        email: existing.email,
+        department: existing.department,
+        name: existing.name,
+      },
+    });
+
     const fullRecord = await this.getEmployeeById(organizationId, employeeId);
     if (!fullRecord) {
       throw new EmployeeServiceError("Failed to retrieve employee record", 500);
@@ -614,11 +734,15 @@ export class EmployeeService {
   }
 
   /**
-   * 6. Reactivate employee.
+   * 6. Reactivate / Restore employee.
+   * Restores employee back to ACTIVE without creating duplicate records.
    */
   static async reactivateEmployee(
     organizationId: string,
-    employeeId: string
+    employeeId: string,
+    actorUserId?: string | null,
+    actorName?: string | null,
+    actorRole?: any | null
   ): Promise<EmployeeDetailResponse> {
     const existing = await prisma.employee.findFirst({
       where: {
@@ -638,11 +762,142 @@ export class EmployeeService {
       },
     });
 
+    await AuditService.log({
+      organizationId,
+      actorId: actorUserId ?? null,
+      actorName: actorName ?? "Administrator",
+      actorRole: actorRole ?? "ADMIN",
+      action: "EMPLOYEE_RESTORED",
+      category: "USER_MANAGEMENT",
+      targetId: existing.id,
+      targetName: existing.name,
+      description: `Employee ${existing.name} (${existing.employeeCode}) was restored to active status.`,
+      metadata: {
+        employeeCode: existing.employeeCode,
+        email: existing.email,
+        department: existing.department,
+        name: existing.name,
+      },
+    });
+
     const fullRecord = await this.getEmployeeById(organizationId, employeeId);
     if (!fullRecord) {
       throw new EmployeeServiceError("Failed to retrieve employee record", 500);
     }
 
     return fullRecord;
+  }
+
+  /**
+   * 7. Permanently delete employee and employee-owned records (Step 2).
+   * Irreversible atomic transaction. Preserves all shared courses, modules, competencies, designations.
+   */
+  static async permanentlyDeleteEmployee(
+    organizationId: string,
+    employeeId: string,
+    actorUserId?: string | null,
+    actorName?: string | null,
+    actorRole?: any | null
+  ): Promise<{ success: boolean; deletedEmployee: { id: string; name: string; employeeCode: string; email: string } }> {
+    const existing = await prisma.employee.findFirst({
+      where: {
+        id: employeeId,
+        organizationId,
+      },
+    });
+
+    if (!existing) {
+      throw new EmployeeServiceError("Employee not found.", 404, "NOT_FOUND");
+    }
+
+    const employeeSnapshot = {
+      id: existing.id,
+      name: existing.name,
+      employeeCode: existing.employeeCode,
+      email: existing.email,
+      department: existing.department,
+    };
+
+    await prisma.$transaction(
+      async (tx) => {
+        // 1. Delete associated user login account(s) using the verified Prisma relation
+        await tx.user.deleteMany({
+          where: {
+            organizationId,
+            employeeId: existing.id,
+          },
+        });
+
+        // 2. Delete employee-owned learning recommendations
+        await tx.skillRecommendation.deleteMany({
+          where: { employeeId: existing.id },
+        });
+
+        // 3. Delete employee-owned skill assessments
+        await tx.skillAssessment.deleteMany({
+          where: { employeeId: existing.id },
+        });
+
+        // 4. Delete employee-owned reassessments
+        await tx.reassessment.deleteMany({
+          where: { employeeId: existing.id },
+        });
+
+        // 5. Delete employee-owned competency history
+        await tx.competencyAssessmentHistory.deleteMany({
+          where: { employeeId: existing.id },
+        });
+
+        // 6. Delete employee-owned competencies
+        await tx.employeeCompetency.deleteMany({
+          where: { employeeId: existing.id },
+        });
+
+        // 7. Delete employee course enrollments (cascades to moduleProgress)
+        const enrollments = await tx.courseEnrollment.findMany({
+          where: { employeeId: existing.id },
+          select: { id: true },
+        });
+        const enrollmentIds = enrollments.map((e) => e.id);
+        if (enrollmentIds.length > 0) {
+          await tx.moduleProgress.deleteMany({
+            where: { enrollmentId: { in: enrollmentIds } },
+          });
+        }
+        await tx.courseEnrollment.deleteMany({
+          where: { employeeId: existing.id },
+        });
+
+        // 8. Delete the employee record itself
+        await tx.employee.delete({
+          where: { id: existing.id },
+        });
+      },
+      { maxWait: 15000, timeout: 30000 }
+    );
+
+    // 9. Log audit event (metadata safely preserved without passwords/secrets)
+    await AuditService.log({
+      organizationId,
+      actorId: actorUserId ?? null,
+      actorName: actorName ?? "Administrator",
+      actorRole: actorRole ?? "ADMIN",
+      action: "EMPLOYEE_PERMANENTLY_DELETED",
+      category: "USER_MANAGEMENT",
+      targetId: employeeSnapshot.id,
+      targetName: employeeSnapshot.name,
+      description: `Employee ${employeeSnapshot.name} (${employeeSnapshot.employeeCode}) and employee-owned records were permanently deleted.`,
+      metadata: {
+        employeeCode: employeeSnapshot.employeeCode,
+        email: employeeSnapshot.email,
+        department: employeeSnapshot.department,
+        name: employeeSnapshot.name,
+      },
+    });
+
+    return {
+      success: true,
+      deletedEmployee: employeeSnapshot,
+    };
   }
 }

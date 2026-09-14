@@ -22,11 +22,7 @@ import { cn } from "@/lib/utils";
 import { useDemoStore } from "@/lib/demo/demo-store";
 import { Badge } from "@/components/ui/badge";
 
-export interface SidebarProps {
-  role: "ADMIN" | "MANAGER" | "EMPLOYEE";
-}
-
-interface NavItem {
+export interface NavItem {
   label: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -34,7 +30,10 @@ interface NavItem {
   badgeKey?: "reassessments";
 }
 
-const navItems: NavItem[] = [
+/**
+ * Single source of truth for all role-based navigation across desktop and mobile.
+ */
+export const navItems: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "My Skill Development", href: "/my-development", icon: Compass, roles: ["EMPLOYEE"] },
   { label: "Employees", href: "/employees", icon: Users, roles: ["ADMIN", "MANAGER"] },
@@ -56,7 +55,12 @@ const navItems: NavItem[] = [
   { label: "Settings", href: "/settings", icon: Settings, roles: ["ADMIN"] },
 ];
 
-export function Sidebar({ role }: SidebarProps) {
+export interface NavLinksProps {
+  role: "ADMIN" | "MANAGER" | "EMPLOYEE";
+  onNavigate?: () => void;
+}
+
+export function NavLinks({ role, onNavigate }: NavLinksProps) {
   const pathname = usePathname();
   const { reassessments } = useDemoStore();
 
@@ -67,10 +71,58 @@ export function Sidebar({ role }: SidebarProps) {
   const visibleItems = navItems.filter((item) => !item.roles || item.roles.includes(role));
 
   return (
+    <nav className="space-y-1">
+      {visibleItems.map((item) => {
+        const isActive =
+          pathname === item.href ||
+          (item.href !== "/dashboard" && pathname.startsWith(item.href));
+
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={onNavigate}
+            className={cn(
+              "group flex items-center justify-between rounded-lg px-3 py-2 text-xs font-medium transition-all duration-150",
+              isActive
+                ? "bg-primary text-primary-foreground font-semibold shadow-sm shadow-primary/20"
+                : "text-muted-foreground hover:bg-slate-100 hover:text-foreground"
+            )}
+          >
+            <div className="flex items-center gap-2.5">
+              <item.icon
+                className={cn(
+                  "h-4 w-4 shrink-0 transition-transform duration-150 group-hover:scale-105",
+                  isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground"
+                )}
+              />
+              <span>{item.label}</span>
+            </div>
+            {item.badgeKey === "reassessments" && pendingCount > 0 && (
+              <Badge
+                variant={isActive ? "secondary" : "warning"}
+                className="text-[10px] py-0 px-1.5 font-mono h-4 font-bold rounded-full shadow-xs"
+              >
+                {pendingCount}
+              </Badge>
+            )}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+export interface SidebarProps {
+  role: "ADMIN" | "MANAGER" | "EMPLOYEE";
+}
+
+export function Sidebar({ role }: SidebarProps) {
+  return (
     <aside className="hidden w-64 shrink-0 border-r border-border bg-card/95 backdrop-blur-sm md:flex md:flex-col justify-between shadow-[1px_0_4px_rgba(0,0,0,0.02)]">
-      <div>
+      <div className="flex-1 overflow-y-auto">
         {/* Brand Logo & Name */}
-        <div className="flex h-16 items-center gap-3 border-b border-border/80 px-5">
+        <div className="flex h-16 items-center gap-3 border-b border-border/80 px-5 sticky top-0 bg-card/95 backdrop-blur-sm z-10">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-900 via-indigo-800 to-indigo-600 text-white shadow-sm shadow-indigo-950/20">
             <Layers className="h-5 w-5" />
           </div>
@@ -89,44 +141,7 @@ export function Sidebar({ role }: SidebarProps) {
           <div className="px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">
             Main Menu
           </div>
-          <nav className="space-y-1">
-            {visibleItems.map((item) => {
-              const isActive =
-                pathname === item.href ||
-                (item.href !== "/dashboard" && pathname.startsWith(item.href));
-
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "group flex items-center justify-between rounded-lg px-3 py-2 text-xs font-medium transition-all duration-150",
-                    isActive
-                      ? "bg-primary text-primary-foreground font-semibold shadow-sm shadow-primary/20"
-                      : "text-muted-foreground hover:bg-slate-100 hover:text-foreground"
-                  )}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <item.icon
-                      className={cn(
-                        "h-4 w-4 shrink-0 transition-transform duration-150 group-hover:scale-105",
-                        isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground"
-                      )}
-                    />
-                    <span>{item.label}</span>
-                  </div>
-                  {item.badgeKey === "reassessments" && pendingCount > 0 && (
-                    <Badge
-                      variant={isActive ? "secondary" : "warning"}
-                      className="text-[10px] py-0 px-1.5 font-mono h-4 font-bold rounded-full shadow-xs"
-                    >
-                      {pendingCount}
-                    </Badge>
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
+          <NavLinks role={role} />
         </div>
       </div>
 

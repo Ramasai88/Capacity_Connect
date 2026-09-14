@@ -47,11 +47,43 @@ export async function POST(request: Request) {
       );
     }
 
-    const { name, email, password, role } = parsed.data;
+    const { name, email, password, role, designationId } = parsed.data;
     const normalizedEmail = email.toLowerCase().trim();
 
     // -----------------------------------------------------------------------
-    // Step 2: Check for duplicate email within the organization
+    // Step 2: Validate designation if provided or creating an EMPLOYEE
+    // -----------------------------------------------------------------------
+    let validatedDesignationId: string | null = null;
+    if (designationId) {
+      const designation = await prisma.designation.findFirst({
+        where: {
+          id: designationId,
+          organizationId: organizationId!,
+        },
+      });
+
+      if (!designation) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "INVALID_DESIGNATION",
+              message: "The specified designation does not exist in your organization.",
+            },
+          },
+          { status: 400 }
+        );
+      }
+      validatedDesignationId = designation.id;
+    } else if (role === "EMPLOYEE") {
+      const defaultDesig = await prisma.designation.findFirst({
+        where: { organizationId: organizationId! },
+        orderBy: { title: "asc" },
+      });
+      validatedDesignationId = defaultDesig?.id ?? null;
+    }
+
+    // -----------------------------------------------------------------------
+    // Step 3: Check for duplicate email within the organization
     // -----------------------------------------------------------------------
     const existingUser = await prisma.user.findFirst({
       where: {
@@ -73,7 +105,7 @@ export async function POST(request: Request) {
     }
 
     // -----------------------------------------------------------------------
-    // Step 3: Hash password and execute atomic creation transaction
+    // Step 4: Hash password and execute atomic creation transaction
     // -----------------------------------------------------------------------
     const passwordHash = await bcrypt.hash(password, 10);
 
@@ -108,12 +140,59 @@ export async function POST(request: Request) {
               employeeCode,
               name: name.trim(),
               email: normalizedEmail,
+              designationId: validatedDesignationId,
               status: "ACTIVE",
             },
+          });
+        } else if (validatedDesignationId && employee.designationId !== validatedDesignationId) {
+          employee = await tx.employee.update({
+            where: { id: employee.id },
+            data: { designationId: validatedDesignationId },
           });
         }
 
         employeeId = employee.id;
+
+        // Auto-assign role-relevant courses into CourseEnrollment
+        if (employee.designationId) {
+          const designation = await tx.designation.findFirst({
+            where: { id: employee.designationId, organizationId: organizationId! },
+            include: { requirements: true },
+          });
+
+          if (designation && designation.requirements.length > 0) {
+            const reqCompIds = designation.requirements.map((r) => r.competencyId);
+            const roleCourses = await tx.course.findMany({
+              where: {
+                organizationId: organizationId!,
+                status: "PUBLISHED",
+                competencyId: { in: reqCompIds },
+              },
+              include: { _count: { select: { modules: true } } },
+            });
+
+            const existingEnrs = await tx.courseEnrollment.findMany({
+              where: { employeeId: employee.id },
+              select: { courseId: true },
+            });
+            const enrolledIds = new Set(existingEnrs.map((e) => e.courseId));
+
+            for (const course of roleCourses) {
+              if (!enrolledIds.has(course.id)) {
+                await tx.courseEnrollment.create({
+                  data: {
+                    employeeId: employee.id,
+                    courseId: course.id,
+                    progressPercent: 0,
+                    completedLessons: 0,
+                    totalLessons: course._count.modules,
+                    status: "IN_PROGRESS",
+                  },
+                });
+              }
+            }
+          }
+        }
       }
 
       const newUser = await tx.user.create({
@@ -150,7 +229,7 @@ export async function POST(request: Request) {
       targetId: user.id,
       targetName: `${user.name} (${user.email})`,
       description: `Administrator ${auth.user.name || auth.user.email} provisioned new ${role} account for ${user.name} (${user.email}).`,
-      metadata: { role, email: user.email },
+      metadata: { role, email: user.email, designationId: validatedDesignationId },
     });
 
     return NextResponse.json(

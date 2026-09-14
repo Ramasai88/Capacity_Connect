@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -41,14 +41,39 @@ interface CreateCourseDialogProps {
 }
 
 export function CreateCourseDialog({ onSuccess }: CreateCourseDialogProps = {}) {
-  const { competencies, addCourse } = useDemoStore();
+  const { competencies: demoCompetencies, addCourse } = useDemoStore();
+  const [realCompetencies, setRealCompetencies] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isDemoMode() && open) {
+      apiClient.competencies
+        .list()
+        .then((res) => {
+          if (res.data && res.data.length > 0) {
+            setRealCompetencies(res.data);
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to load competencies for course authoring:", err);
+        });
+    }
+  }, [open]);
+
+  const availableCompetencies =
+    !isDemoMode() && realCompetencies.length > 0 ? realCompetencies : demoCompetencies;
 
   // Form State
   const [title, setTitle] = useState("");
   const [code, setCode] = useState("");
   const [category, setCategory] = useState("Technical / Programming");
-  const [competencyId, setCompetencyId] = useState(competencies[0]?.id || "comp-python");
+  const [competencyId, setCompetencyId] = useState(availableCompetencies[0]?.id || "comp-python");
+
+  useEffect(() => {
+    if (!competencyId && availableCompetencies.length > 0) {
+      setCompetencyId(availableCompetencies[0].id);
+    }
+  }, [competencyId, availableCompetencies]);
   const [targetLevel, setTargetLevel] = useState(4);
   const [durationHours, setDurationHours] = useState(20);
   const [description, setDescription] = useState("");
@@ -316,7 +341,7 @@ export function CreateCourseDialog({ onSuccess }: CreateCourseDialogProps = {}) 
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {competencies.map((c) => (
+                  {availableCompetencies.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
                       {c.name} ({c.category})
                     </SelectItem>

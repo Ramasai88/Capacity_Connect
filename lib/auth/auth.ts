@@ -129,6 +129,33 @@ export async function verifyUserCredentials(
       return null;
     }
 
+    // Check if user is associated with a deactivated/removed employee
+    if (user.role === "EMPLOYEE" || user.employeeId) {
+      const emp = user.employeeId
+        ? await prisma.employee.findUnique({ where: { id: user.employeeId } })
+        : await prisma.employee.findFirst({
+            where: {
+              email: { equals: normalizedEmail, mode: "insensitive" },
+              organizationId: user.organizationId,
+            },
+          });
+
+      if (emp && emp.status === "INACTIVE") {
+        await AuditService.log({
+          organizationId: user.organizationId,
+          actorId: user.id,
+          actorName: user.name,
+          actorRole: user.role,
+          action: "AUTH_LOGIN_FAILURE",
+          category: "AUTHENTICATION",
+          status: "FAILURE",
+          description: `Login rejected for user ${user.name} (${user.email}): Employee account is removed/deactivated.`,
+          metadata: { attemptedEmail: normalizedEmail, reason: "ACCOUNT_INACTIVE" },
+        });
+        return null;
+      }
+    }
+
     // Update last login timestamp upon successful authentication
     const now = new Date();
     await prisma.user.update({

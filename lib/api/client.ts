@@ -57,6 +57,18 @@ export const apiClient = {
       fetchJson<any>(`/api/employees/${id}`, {
         method: "DELETE",
       }),
+    remove: (id: string) =>
+      fetchJson<any>(`/api/employees/${id}`, {
+        method: "DELETE",
+      }),
+    permanentlyDelete: (id: string) =>
+      fetchJson<any>(`/api/employees/${id}?permanent=true`, {
+        method: "DELETE",
+      }),
+    restore: (id: string) =>
+      fetchJson<any>(`/api/employees/${id}/restore`, {
+        method: "POST",
+      }),
   },
 
   competencies: {

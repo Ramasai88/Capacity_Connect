@@ -41,14 +41,14 @@ export default async function ProtectedLayout({
   return (
     <div className="flex min-h-screen">
       <Sidebar role={role} />
-      <div className="flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col min-w-0 w-full overflow-hidden">
         <TopNav
           userName={session.user.name ?? session.user.email ?? "User"}
           role={role}
           organizationName={orgName}
           isDemo={demoActive}
         />
-        <main className="flex-1 bg-muted/20 p-6">{children}</main>
+        <main className="flex-1 bg-muted/20 p-3 sm:p-4 md:p-6 min-w-0 w-full overflow-x-hidden">{children}</main>
         <AssistantWidget />
       </div>
     </div>

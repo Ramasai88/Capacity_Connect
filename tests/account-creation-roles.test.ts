@@ -18,9 +18,12 @@ function trackEmail(email: string): string {
 }
 
 afterEach(async () => {
-  // Delete any test-created users
+  // Delete any test-created users and self-healed employees
   if (CLEANUP_EMAILS.length > 0) {
     await prisma.user.deleteMany({
+      where: { email: { in: CLEANUP_EMAILS }, organizationId: TEST_ORG_ID },
+    });
+    await prisma.employee.deleteMany({
       where: { email: { in: CLEANUP_EMAILS }, organizationId: TEST_ORG_ID },
     });
     CLEANUP_EMAILS.length = 0;
@@ -262,7 +265,7 @@ describe("Admin-Controlled Account Creation — PostgreSQL", () => {
   });
 
   it("creates EMPLOYEE account in PostgreSQL with correct role", async () => {
-    const email = trackEmail("test.employee.created@capacityconnect.internal");
+    const email = trackEmail(`test.employee.created.${Date.now()}@capacityconnect.internal`);
     const hash = await bcrypt.hash("Employee@Created1", 10);
 
     const user = await prisma.user.create({

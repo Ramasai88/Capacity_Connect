@@ -224,12 +224,72 @@ export const DEMO_COMPETENCIES: DemoCompetency[] = [
     description: "Exploratory data analysis, statistical methods, metric modeling, Pandas, data visualization, and reporting.",
     levels: DEFAULT_COMPETENCY_LEVELS,
   },
+  {
+    id: "comp-cloud",
+    name: "Cloud Computing",
+    code: "TECH-CLD-08",
+    category: "Technical / Programming",
+    description: "Cloud infrastructure architecture, virtualization, serverless computing, multi-cloud platforms (AWS/Azure/GCP), and cost optimization.",
+    levels: DEFAULT_COMPETENCY_LEVELS,
+  },
+  {
+    id: "comp-cloud-arch",
+    name: "Cloud Architecture",
+    code: "TECH-CLD-09",
+    category: "Technical / Programming",
+    description: "High-availability cloud architecture, resilient microservices topologies, VPC networking, and disaster recovery strategies.",
+    levels: DEFAULT_COMPETENCY_LEVELS,
+  },
+  {
+    id: "comp-devops",
+    name: "DevOps",
+    code: "TECH-OPS-10",
+    category: "Technical / Programming",
+    description: "Continuous Integration/Continuous Deployment (CI/CD), infrastructure as code (Terraform), container orchestration (Kubernetes), and observability.",
+    levels: DEFAULT_COMPETENCY_LEVELS,
+  },
 ];
 
 // --------------------------------------------------------------------------
 // 4. Designations & Required Competency Matrix
 // --------------------------------------------------------------------------
 export const DEMO_DESIGNATIONS: DemoDesignation[] = [
+  {
+    id: "desig-pfs",
+    title: "Python Full Stack Developer",
+    code: "PFS",
+    department: "Engineering",
+    description: "Builds modern full-stack web platforms using Python backend APIs, React/Next.js frontends, and relational databases.",
+    requirements: [
+      { competencyId: "comp-python", requiredLevel: 4 },
+      { competencyId: "comp-sql", requiredLevel: 3 },
+      { competencyId: "comp-communication", requiredLevel: 3 },
+    ],
+  },
+  {
+    id: "desig-mle",
+    title: "ML Engineer",
+    code: "MLE",
+    department: "Data & AI",
+    description: "Designs, trains, deploys, and monitors production machine learning pipelines, deep learning models, and MLOps architectures.",
+    requirements: [
+      { competencyId: "comp-python", requiredLevel: 4 },
+      { competencyId: "comp-ml", requiredLevel: 4 },
+      { competencyId: "comp-data-analysis", requiredLevel: 4 },
+    ],
+  },
+  {
+    id: "desig-jvd",
+    title: "Java Developer",
+    code: "JVD",
+    department: "Engineering",
+    description: "Engineers high-throughput backend services, Spring Boot microservices, and enterprise data persistence systems.",
+    requirements: [
+      { competencyId: "comp-java", requiredLevel: 4 },
+      { competencyId: "comp-sql", requiredLevel: 3 },
+      { competencyId: "comp-communication", requiredLevel: 3 },
+    ],
+  },
   {
     id: "desig-swe",
     title: "Software Engineer",
@@ -280,6 +340,18 @@ export const DEMO_DESIGNATIONS: DemoDesignation[] = [
       { competencyId: "comp-communication", requiredLevel: 5 },
       { competencyId: "comp-leadership", requiredLevel: 4 },
       { competencyId: "comp-data-analysis", requiredLevel: 3 },
+    ],
+  },
+  {
+    id: "desig-cld",
+    title: "Cloud Engineer",
+    code: "CLD",
+    department: "Engineering",
+    description: "Designs, provisions, secures, and automates scalable cloud infrastructure, Kubernetes clusters, and cloud-native application pipelines.",
+    requirements: [
+      { competencyId: "comp-cloud", requiredLevel: 4 },
+      { competencyId: "comp-devops", requiredLevel: 3 },
+      { competencyId: "comp-communication", requiredLevel: 3 },
     ],
   },
 ];

@@ -8,6 +8,15 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useDemoStore } from "@/lib/demo/demo-store";
 import { isDemoMode } from "@/lib/demo/config";
 import { apiClient } from "@/lib/api/client";
@@ -16,9 +25,12 @@ import {
   Database,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
   RotateCcw,
   Loader2,
   UserPlus,
+  UserX,
+  Trash2,
   Shield,
   Users,
   Activity,
@@ -131,22 +143,35 @@ function UserManagementSection() {
   const [newPassword, setNewPassword] = useState("");
   const [newConfirmPassword, setNewConfirmPassword] = useState("");
   const [newRole, setNewRole] = useState<UserRole>("EMPLOYEE");
+  const [newDesignationId, setNewDesignationId] = useState("");
+  const [designations, setDesignations] = useState<Array<{ id: string; title: string; department: string | null }>>([]);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const loadUsers = useCallback(async () => {
     try {
       setLoadingUsers(true);
-      const res = await fetch("/api/users");
-      if (res.ok) {
-        const data = await res.json();
+      const [usersRes, desigRes] = await Promise.all([
+        fetch("/api/users"),
+        fetch("/api/designations"),
+      ]);
+      if (usersRes.ok) {
+        const data = await usersRes.json();
         setUsers(data.users || []);
+      }
+      if (desigRes.ok) {
+        const desigData = await desigRes.json();
+        const list = desigData.data || desigData.designations || [];
+        setDesignations(list);
+        if (list.length > 0 && !newDesignationId) {
+          setNewDesignationId(list[0].id);
+        }
       }
     } catch {
       // ignore
     } finally {
       setLoadingUsers(false);
     }
-  }, []);
+  }, [newDesignationId]);
 
   useEffect(() => {
     if (!isDemoMode()) {
@@ -167,6 +192,7 @@ function UserManagementSection() {
     if (!newEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) errors.email = "Enter a valid email address";
     if (!newPassword || newPassword.length < 8) errors.password = "Password must be at least 8 characters";
     if (newPassword !== newConfirmPassword) errors.confirmPassword = "Passwords do not match";
+    if (newRole === "EMPLOYEE" && !newDesignationId) errors.designationId = "Please select a Job Role / Designation";
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -185,6 +211,7 @@ function UserManagementSection() {
           password: newPassword,
           confirmPassword: newConfirmPassword,
           role: newRole,
+          designationId: newRole === "EMPLOYEE" ? newDesignationId : undefined,
         }),
       });
 
@@ -197,7 +224,7 @@ function UserManagementSection() {
       }
 
       setCreateSuccess(
-        `${ROLE_LABELS[newRole]} account created for ${data.user?.name}. Credentials are active immediately.`
+        `${ROLE_LABELS[newRole]} account created for ${data.user?.name}. Role-specific learning scope established.`
       );
       setNewName("");
       setNewEmail("");
@@ -361,6 +388,37 @@ function UserManagementSection() {
                 {newRole === "EMPLOYEE" && "Employee accounts access personalized course pathways, modules, and diagnostic skill assessments."}
               </p>
             </div>
+
+            {/* Job Role / Designation for Employee */}
+            {newRole === "EMPLOYEE" && (
+              <div className="space-y-1.5 pt-1">
+                <Label htmlFor="new-user-designation" className="text-xs font-bold text-foreground">
+                  Job Role / Designation <span className="text-destructive">*</span>
+                </Label>
+                <select
+                  id="new-user-designation"
+                  value={newDesignationId}
+                  onChange={(e) => {
+                    setNewDesignationId(e.target.value);
+                    setFieldErrors((p) => ({ ...p, designationId: "" }));
+                  }}
+                  className="w-full h-8.5 text-xs rounded-md border border-input bg-background px-3 py-1 text-foreground shadow-2xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  <option value="" disabled>Select Job Role / Designation</option>
+                  {designations.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.title} ({d.department})
+                    </option>
+                  ))}
+                </select>
+                {fieldErrors.designationId && (
+                  <p className="text-xs text-destructive">{fieldErrors.designationId}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Determines required competencies, proficiency targets, diagnostic assessment scope, and automatic course enrollments.
+                </p>
+              </div>
+            )}
 
             <div className="flex items-center gap-2 pt-1">
               <Button
@@ -876,6 +934,387 @@ function ManagerMonitoringSection() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 4. Removed Employees Section (Admin-Only Two-Step Lifecycle Management)
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface RemovedEmployeeItem {
+  id: string;
+  name: string;
+  email: string;
+  employeeCode: string;
+  department: string | null;
+  designationTitle?: string;
+  designation?: { title: string } | null;
+  status: string;
+  createdAt: string;
+}
+
+function RemovedEmployeesSection() {
+  const demoStore = useDemoStore();
+  const demoActive = isDemoMode();
+
+  const [removedEmployees, setRemovedEmployees] = useState<RemovedEmployeeItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  // Deletion Confirmation Modal State
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedEmp, setSelectedEmp] = useState<RemovedEmployeeItem | null>(null);
+  const [confirmInput, setConfirmInput] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isRestoring, setIsRestoring] = useState<string | null>(null);
+
+  const loadRemoved = useCallback(async () => {
+    try {
+      setLoading(true);
+      if (demoActive) {
+        const list = demoStore.employees
+          .filter((e) => e.status === "INACTIVE")
+          .map((e) => ({
+            id: e.id,
+            name: e.name,
+            email: e.email,
+            employeeCode: e.employeeCode,
+            department: e.department,
+            designationTitle: e.designationTitle,
+            status: e.status,
+            createdAt: e.joiningDate || new Date().toISOString(),
+          }));
+        setRemovedEmployees(list);
+      } else {
+        const res = await apiClient.employees.list({ status: "INACTIVE", limit: 100 });
+        setRemovedEmployees(res.data || []);
+      }
+    } catch (err: any) {
+      console.error("Failed to load removed employees:", err);
+      setFeedback({ type: "error", message: "Failed to load removed employees." });
+    } finally {
+      setLoading(false);
+    }
+  }, [demoActive, demoStore.employees]);
+
+  useEffect(() => {
+    loadRemoved();
+  }, [loadRemoved]);
+
+  const filtered = removedEmployees.filter((emp) => {
+    const q = search.toLowerCase();
+    const desig = emp.designationTitle || emp.designation?.title || "";
+    return (
+      !q ||
+      emp.name.toLowerCase().includes(q) ||
+      emp.email.toLowerCase().includes(q) ||
+      emp.employeeCode.toLowerCase().includes(q) ||
+      (emp.department && emp.department.toLowerCase().includes(q)) ||
+      desig.toLowerCase().includes(q)
+    );
+  });
+
+  async function handleRestore(emp: RemovedEmployeeItem) {
+    try {
+      setIsRestoring(emp.id);
+      setFeedback(null);
+      if (demoActive) {
+        demoStore.reactivateEmployee(emp.id);
+      } else {
+        await apiClient.employees.restore(emp.id);
+      }
+      setFeedback({
+        type: "success",
+        message: `Employee "${emp.name}" (${emp.employeeCode}) was successfully restored to active status.`,
+      });
+      await loadRemoved();
+    } catch (err: any) {
+      setFeedback({
+        type: "error",
+        message: err.message || "Failed to restore employee.",
+      });
+    } finally {
+      setIsRestoring(null);
+      setTimeout(() => setFeedback(null), 4000);
+    }
+  }
+
+  function openPermanentDeleteModal(emp: RemovedEmployeeItem) {
+    setSelectedEmp(emp);
+    setConfirmInput("");
+    setDeleteModalOpen(true);
+  }
+
+  async function handleConfirmPermanentDelete() {
+    if (!selectedEmp) return;
+    try {
+      setIsDeleting(true);
+      setFeedback(null);
+      if (demoActive) {
+        demoStore.permanentlyDeleteEmployee(selectedEmp.id);
+      } else {
+        await apiClient.employees.permanentlyDelete(selectedEmp.id);
+      }
+      setFeedback({
+        type: "success",
+        message: `Employee "${selectedEmp.name}" (${selectedEmp.employeeCode}) and employee-owned records were permanently deleted.`,
+      });
+      setDeleteModalOpen(false);
+      setSelectedEmp(null);
+      await loadRemoved();
+    } catch (err: any) {
+      setFeedback({
+        type: "error",
+        message: err.message || "Failed to permanently delete employee.",
+      });
+    } finally {
+      setIsDeleting(false);
+      setTimeout(() => setFeedback(null), 4000);
+    }
+  }
+
+  return (
+    <Card className="shadow-xs">
+      <CardHeader className="pb-4 border-b border-border/60">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-100 text-rose-700">
+                <UserX className="h-3.5 w-3.5" />
+              </div>
+              <CardTitle className="text-base">Removed Employees</CardTitle>
+            </div>
+            <CardDescription className="text-xs mt-1">
+              Deactivated workforce members moved out of active directory. Historical learning and audit data remain intact.
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Search removed..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-8 pl-8 text-xs w-48 shadow-2xs"
+              />
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={loadRemoved}
+              disabled={loading}
+              className="h-8 text-xs gap-1.5 shadow-2xs font-semibold"
+            >
+              {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RotateCcw className="h-3 w-3" />}
+              Refresh
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent className="p-6 space-y-4">
+        {feedback && (
+          <div
+            className={`flex items-center gap-2 rounded-xl p-3.5 text-xs shadow-2xs ${
+              feedback.type === "success"
+                ? "bg-emerald-50 text-emerald-900 border border-emerald-200"
+                : "bg-rose-50 text-rose-900 border border-rose-200"
+            }`}
+          >
+            {feedback.type === "success" ? (
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+            ) : (
+              <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
+            )}
+            <span className="font-medium">{feedback.message}</span>
+          </div>
+        )}
+
+        {loading ? (
+          <div className="flex items-center justify-center py-12 text-xs text-muted-foreground gap-2">
+            <Loader2 className="h-4 w-4 animate-spin text-primary" /> Loading removed employee records...
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-12 border border-dashed rounded-xl bg-slate-50/50">
+            <UserX className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
+            <p className="text-xs font-semibold text-foreground">No Removed Employees Found</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Employees deactivated from the directory will appear here with options to restore or permanently delete.
+            </p>
+          </div>
+        ) : (
+          <div className="rounded-lg border border-border overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[100px]">Code</TableHead>
+                  <TableHead>Employee</TableHead>
+                  <TableHead>Designation</TableHead>
+                  <TableHead>Department</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((emp) => {
+                  const designationTitle = emp.designationTitle || emp.designation?.title || "Unassigned";
+                  const initials = emp.name
+                    .split(" ")
+                    .map((n: string) => n[0])
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .join("")
+                    .toUpperCase();
+
+                  return (
+                    <TableRow key={emp.id} className="bg-slate-50/40">
+                      <TableCell className="font-mono text-xs font-bold text-slate-700">
+                        {emp.employeeCode}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-700 border border-slate-300 shadow-2xs">
+                            {initials}
+                          </div>
+                          <div>
+                            <div className="font-semibold text-foreground text-xs">{emp.name}</div>
+                            <div className="text-[11px] text-muted-foreground">{emp.email}</div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="text-[11px] font-medium">
+                          {designationTitle}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{emp.department || "—"}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="text-[10px] font-mono bg-rose-50 text-rose-700 border-rose-200">
+                          REMOVED
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs px-2.5 gap-1 text-emerald-700 border-emerald-300 hover:bg-emerald-50 font-semibold"
+                            onClick={() => handleRestore(emp)}
+                            disabled={isRestoring === emp.id}
+                            title="Restore employee to active workforce"
+                          >
+                            {isRestoring === emp.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <RotateCcw className="h-3 w-3" />
+                            )}
+                            Restore
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs px-2.5 gap-1 text-rose-700 border-rose-300 hover:bg-rose-50 font-semibold"
+                            onClick={() => openPermanentDeleteModal(emp)}
+                            title="Permanently and irreversibly delete employee"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            Permanently Delete
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+
+      {/* Explicit Permanent Deletion Confirmation Modal */}
+      {selectedEmp && (
+        <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <div className="flex items-center gap-2 text-rose-600">
+                <AlertTriangle className="h-5 w-5" />
+                <DialogTitle className="text-base text-rose-900">Permanent Employee Deletion</DialogTitle>
+              </div>
+              <DialogDescription className="text-xs text-muted-foreground pt-1">
+                You are about to permanently delete <strong className="text-foreground">{selectedEmp.name}</strong> ({selectedEmp.employeeCode}).
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-3.5 py-2">
+              <div className="rounded-xl border border-rose-200 bg-rose-50/80 p-3.5 text-xs text-rose-950 space-y-2">
+                <div className="font-bold flex items-center gap-1.5 text-rose-900">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
+                  Irreversible Destructive Operation
+                </div>
+                <p className="leading-relaxed text-[11px] text-rose-900/90">
+                  Permanent deletion will immediately delete the employee profile, associated login accounts, enrollments, module progress, assessment results, and competency histories.
+                </p>
+                <p className="leading-relaxed text-[11px] text-emerald-900 bg-emerald-50/90 p-2 rounded-lg border border-emerald-200">
+                  ✓ Shared organizational curriculum (all 13 courses / 106 modules), competency catalogs, designations, and other employees remain 100% preserved.
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="confirm-delete-input" className="text-xs font-bold text-foreground">
+                  Type <span className="font-mono text-rose-700">{selectedEmp.employeeCode}</span> or <span className="font-mono text-rose-700">{selectedEmp.name}</span> to confirm:
+                </Label>
+                <Input
+                  id="confirm-delete-input"
+                  placeholder={`Type "${selectedEmp.employeeCode}" to confirm`}
+                  value={confirmInput}
+                  onChange={(e) => setConfirmInput(e.target.value)}
+                  className="h-8.5 text-xs font-mono"
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setDeleteModalOpen(false)}
+                disabled={isDeleting}
+                className="h-8 text-xs font-semibold"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={handleConfirmPermanentDelete}
+                disabled={
+                  isDeleting ||
+                  (confirmInput.trim().toLowerCase() !== selectedEmp.employeeCode.toLowerCase() &&
+                    confirmInput.trim().toLowerCase() !== selectedEmp.name.toLowerCase())
+                }
+                className="h-8 text-xs font-semibold gap-1.5 shadow-xs"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Deleting Permanently...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Permanently Delete Employee
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+    </Card>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Main Organization Settings Page
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -885,7 +1324,7 @@ export default function SettingsPage() {
   const demoStore = useDemoStore();
   const demoActive = isDemoMode();
 
-  const [activeTab, setActiveTab] = useState<"users" | "audit" | "managers" | "org">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "audit" | "managers" | "removed" | "org">("users");
 
   const [orgName, setOrgName] = useState("");
   const [orgIndustry, setOrgIndustry] = useState("");
@@ -1004,6 +1443,14 @@ export default function SettingsPage() {
         </Button>
         <Button
           size="sm"
+          variant={activeTab === "removed" ? "default" : "outline"}
+          onClick={() => setActiveTab("removed")}
+          className="h-8.5 text-xs gap-1.5 font-semibold"
+        >
+          <UserX className="h-3.5 w-3.5 text-rose-600" /> Removed Employees
+        </Button>
+        <Button
+          size="sm"
           variant={activeTab === "org" ? "default" : "outline"}
           onClick={() => setActiveTab("org")}
           className="h-8.5 text-xs gap-1.5 font-semibold"
@@ -1020,6 +1467,9 @@ export default function SettingsPage() {
 
       {/* Tab 3: Manager Oversight */}
       {activeTab === "managers" && <ManagerMonitoringSection />}
+
+      {/* Tab 4: Removed Employees */}
+      {activeTab === "removed" && <RemovedEmployeesSection />}
 
       {/* Tab 4: Organization Profile */}
       {activeTab === "org" && (

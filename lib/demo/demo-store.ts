@@ -609,6 +609,20 @@ export function reactivateEmployeeInStore(
   return { success: true };
 }
 
+export function permanentlyDeleteEmployeeInStore(
+  employeeId: string
+): { success: boolean; error?: string } {
+  const employees = getStoredEmployees();
+  const updated = employees.filter((e) => e.id !== employeeId);
+
+  if (typeof window !== "undefined") {
+    localStorage.setItem(KEYS.EMPLOYEES, JSON.stringify(updated));
+    dispatchGlobalChange();
+  }
+
+  return { success: true };
+}
+
 export function updateEmployeeCompetencyLevelInStore(
   employeeId: string,
   competencyId: string,
@@ -1264,6 +1278,7 @@ export function useDemoStore() {
     updateEmployee: updateEmployeeInStore,
     deactivateEmployee: deactivateEmployeeInStore,
     reactivateEmployee: reactivateEmployeeInStore,
+    permanentlyDeleteEmployee: permanentlyDeleteEmployeeInStore,
     updateEmployeeCompetencyLevel: updateEmployeeCompetencyLevelInStore,
     updateCompetency: updateCompetencyInStore,
     updateDesignation: updateDesignationInStore,

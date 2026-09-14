@@ -68,6 +68,7 @@ export const adminCreateUserSchema = z
       required_error: "Role is required",
       invalid_type_error: "Role must be ADMIN, MANAGER, or EMPLOYEE",
     }),
+    designationId: z.string().trim().optional().nullable(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
