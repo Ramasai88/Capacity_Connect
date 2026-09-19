@@ -44,6 +44,9 @@ import {
   Layers,
   ChevronLeft,
   ChevronRight,
+  Mail,
+  Copy,
+  ExternalLink,
 } from "lucide-react";
 
 type UserRole = "ADMIN" | "MANAGER" | "EMPLOYEE";
@@ -53,6 +56,7 @@ interface ManagedUser {
   name: string;
   email: string;
   role: UserRole;
+  isActivated?: boolean;
   lastLoginAt?: string | null;
   createdAt: string;
 }
@@ -135,6 +139,8 @@ function UserManagementSection() {
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [createError, setCreateError] = useState<string | null>(null);
   const [createSuccess, setCreateSuccess] = useState<string | null>(null);
+  const [devActivationLink, setDevActivationLink] = useState<string | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   // Form state
@@ -185,14 +191,22 @@ function UserManagementSection() {
     e.preventDefault();
     setCreateError(null);
     setCreateSuccess(null);
+    setDevActivationLink(null);
+    setCopiedLink(false);
     setFieldErrors({});
 
     const errors: Record<string, string> = {};
     if (!newName.trim() || newName.trim().length < 2) errors.name = "Full Name must be at least 2 characters";
     if (!newEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) errors.email = "Enter a valid email address";
-    if (!newPassword || newPassword.length < 8) errors.password = "Password must be at least 8 characters";
-    if (newPassword !== newConfirmPassword) errors.confirmPassword = "Passwords do not match";
-    if (newRole === "EMPLOYEE" && !newDesignationId) errors.designationId = "Please select a Job Role / Designation";
+    
+    if (newRole !== "EMPLOYEE") {
+      if (!newPassword || newPassword.length < 8) errors.password = "Password must be at least 8 characters";
+      if (newPassword !== newConfirmPassword) errors.confirmPassword = "Passwords do not match";
+    }
+
+    if (newRole === "EMPLOYEE" && !newDesignationId) {
+      errors.designationId = "Please select a Job Role / Designation";
+    }
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -208,8 +222,8 @@ function UserManagementSection() {
         body: JSON.stringify({
           name: newName.trim(),
           email: newEmail.trim(),
-          password: newPassword,
-          confirmPassword: newConfirmPassword,
+          password: newRole !== "EMPLOYEE" ? newPassword : undefined,
+          confirmPassword: newRole !== "EMPLOYEE" ? newConfirmPassword : undefined,
           role: newRole,
           designationId: newRole === "EMPLOYEE" ? newDesignationId : undefined,
         }),
@@ -223,9 +237,18 @@ function UserManagementSection() {
         return;
       }
 
-      setCreateSuccess(
-        `${ROLE_LABELS[newRole]} account created for ${data.user?.name}. Role-specific learning scope established.`
-      );
+      if (data.developmentActivationLink) {
+        setDevActivationLink(data.developmentActivationLink);
+        setCreateSuccess(`Employee account created successfully for ${data.user?.name}.`);
+      } else {
+        setDevActivationLink(null);
+        setCreateSuccess(
+          newRole === "EMPLOYEE"
+            ? `Employee account provisioned for ${data.user?.name}. An activation email has been dispatched with their setup link.`
+            : `${ROLE_LABELS[newRole]} account created for ${data.user?.name}.`
+        );
+      }
+
       setNewName("");
       setNewEmail("");
       setNewPassword("");
@@ -287,9 +310,62 @@ function UserManagementSection() {
           )}
 
           {createSuccess && (
-            <div className="flex items-center gap-2 rounded-xl p-3.5 text-xs shadow-2xs bg-emerald-50 text-emerald-900 border border-emerald-200 mb-4">
-              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
-              <span className="font-medium">{createSuccess}</span>
+            <div className="space-y-3 mb-4">
+              <div className="flex items-center gap-2 rounded-xl p-3.5 text-xs shadow-2xs bg-emerald-50 text-emerald-900 border border-emerald-200">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                <span className="font-medium">{createSuccess}</span>
+              </div>
+
+              {devActivationLink && (
+                <div className="rounded-xl border border-amber-300/80 bg-amber-50/70 p-4 text-xs text-amber-950 shadow-2xs space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 font-semibold text-amber-900">
+                      <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+                      <span>Development Mode — Email Delivery Not Configured</span>
+                    </div>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-200/70 text-amber-800 uppercase tracking-wide">
+                      Dev Fallback
+                    </span>
+                  </div>
+                  <p className="text-muted-foreground leading-relaxed">
+                    Because SMTP is not configured in this environment, use the secure one-time activation link below to test the employee account activation flow:
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-8 text-xs font-semibold gap-1.5 bg-white border-amber-300 hover:bg-amber-100/50 shadow-2xs text-amber-900"
+                      onClick={() => {
+                        navigator.clipboard.writeText(devActivationLink);
+                        setCopiedLink(true);
+                        setTimeout(() => setCopiedLink(false), 2500);
+                      }}
+                    >
+                      {copiedLink ? (
+                        <>
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                          Copied Link!
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-3.5 w-3.5 text-amber-700" />
+                          Copy Activation Link
+                        </>
+                      )}
+                    </Button>
+                    <a
+                      href={devActivationLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-semibold bg-amber-700 hover:bg-amber-800 text-white shadow-2xs transition-colors"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      Open Activation Link
+                    </a>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -324,36 +400,6 @@ function UserManagementSection() {
                   className="h-8.5 text-xs shadow-2xs"
                 />
                 {fieldErrors.email && <p className="text-xs text-destructive">{fieldErrors.email}</p>}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="new-user-password" className="text-xs font-bold text-foreground">Password</Label>
-                <PasswordInput
-                  id="new-user-password"
-                  name="create_new_user_password"
-                  autoComplete="new-password"
-                  placeholder="Min 8 characters"
-                  value={newPassword}
-                  onChange={(e) => { setNewPassword(e.target.value); setFieldErrors(p => ({ ...p, password: "" })); }}
-                  className="h-8.5 text-xs shadow-2xs"
-                />
-                {fieldErrors.password && <p className="text-xs text-destructive">{fieldErrors.password}</p>}
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="new-user-confirm-password" className="text-xs font-bold text-foreground">Confirm Password</Label>
-                <PasswordInput
-                  id="new-user-confirm-password"
-                  name="create_new_user_confirm_password"
-                  autoComplete="new-password"
-                  placeholder="Re-enter password"
-                  value={newConfirmPassword}
-                  onChange={(e) => { setNewConfirmPassword(e.target.value); setFieldErrors(p => ({ ...p, confirmPassword: "" })); }}
-                  className="h-8.5 text-xs shadow-2xs"
-                />
-                {fieldErrors.confirmPassword && <p className="text-xs text-destructive">{fieldErrors.confirmPassword}</p>}
               </div>
             </div>
 
@@ -417,6 +463,49 @@ function UserManagementSection() {
                 <p className="text-xs text-muted-foreground">
                   Determines required competencies, proficiency targets, diagnostic assessment scope, and automatic course enrollments.
                 </p>
+              </div>
+            )}
+
+            {/* Password setup vs Email Activation Info */}
+            {newRole === "EMPLOYEE" ? (
+              <div className="rounded-xl border border-indigo-200/80 bg-indigo-50/50 p-3.5 text-xs text-indigo-950 space-y-1">
+                <div className="flex items-center gap-1.5 font-semibold text-indigo-900">
+                  <Mail className="h-4 w-4 text-indigo-600 shrink-0" />
+                  <span>Password Setup via Email Activation</span>
+                </div>
+                <p className="text-muted-foreground leading-relaxed">
+                  The employee will receive an activation email with their Employee ID and a secure, time-limited link to create their own password upon first login.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="new-user-password" className="text-xs font-bold text-foreground">Password</Label>
+                  <PasswordInput
+                    id="new-user-password"
+                    name="create_new_user_password"
+                    autoComplete="new-password"
+                    placeholder="Min 8 characters"
+                    value={newPassword}
+                    onChange={(e) => { setNewPassword(e.target.value); setFieldErrors(p => ({ ...p, password: "" })); }}
+                    className="h-8.5 text-xs shadow-2xs"
+                  />
+                  {fieldErrors.password && <p className="text-xs text-destructive">{fieldErrors.password}</p>}
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="new-user-confirm-password" className="text-xs font-bold text-foreground">Confirm Password</Label>
+                  <PasswordInput
+                    id="new-user-confirm-password"
+                    name="create_new_user_confirm_password"
+                    autoComplete="new-password"
+                    placeholder="Re-enter password"
+                    value={newConfirmPassword}
+                    onChange={(e) => { setNewConfirmPassword(e.target.value); setFieldErrors(p => ({ ...p, confirmPassword: "" })); }}
+                    className="h-8.5 text-xs shadow-2xs"
+                  />
+                  {fieldErrors.confirmPassword && <p className="text-xs text-destructive">{fieldErrors.confirmPassword}</p>}
+                </div>
               </div>
             )}
 

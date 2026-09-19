@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import { prisma } from "@/lib/db/prisma";
 import { adminCreateUserSchema } from "@/lib/validations/auth";
 import { authenticateApi } from "@/lib/auth/session";
 import { AuditService } from "@/lib/services/audit.service";
+import { ActivationService } from "@/lib/services/activation.service";
+import { EmailService } from "@/lib/services/email.service";
 
 /**
  * POST /api/users
@@ -13,9 +16,15 @@ import { AuditService } from "@/lib/services/audit.service";
  * Security & Data Model:
  * - Requires an authenticated ADMIN session (checked server-side via authenticateApi).
  * - Role is validated against the Prisma UserRole enum (ADMIN | MANAGER | EMPLOYEE).
- * - When role is EMPLOYEE, an Employee workforce profile is atomically created and linked via employeeId.
- * - When role is MANAGER or ADMIN, User is created without an Employee workforce profile (employeeId = null).
- * - Password is bcrypt-hashed with cost factor 10.
+ * - When role is EMPLOYEE:
+ *   - Direct password setup by admin is bypassed.
+ *   - Account is created in an unactivated state (isActivated = false) with a locked password placeholder.
+ *   - An Employee workforce profile is atomically created and linked via employeeId.
+ *   - A secure one-time activation token is generated.
+ *   - An activation email is dispatched to the employee with their Employee ID and setup link.
+ * - When role is MANAGER or ADMIN:
+ *   - Password is required, validated, and bcrypt-hashed with cost factor 10.
+ *   - User is created directly activated (isActivated = true) without an Employee workforce profile (employeeId = null).
  * - Duplicate emails within the same organization are rejected with 409.
  */
 export async function POST(request: Request) {
@@ -105,15 +114,28 @@ export async function POST(request: Request) {
     }
 
     // -----------------------------------------------------------------------
-    // Step 4: Hash password and execute atomic creation transaction
+    // Step 4: Handle password & activation branching by role
     // -----------------------------------------------------------------------
-    const passwordHash = await bcrypt.hash(password, 10);
+    const isEmployee = role === "EMPLOYEE";
+    let passwordHash: string;
+    let isActivated: boolean;
+
+    if (isEmployee) {
+      passwordHash = `$2a$10$LOCKED_UNACTIVATED_${crypto.randomBytes(16).toString("hex")}`;
+      isActivated = false;
+    } else {
+      passwordHash = await bcrypt.hash(password!, 10);
+      isActivated = true;
+    }
+
+    let rawActivationToken: string | null = null;
+    let assignedEmployeeCode: string | null = null;
 
     const user = await prisma.$transaction(async (tx) => {
       let employeeId: string | null = null;
 
       // If creating an EMPLOYEE, provision/link an Employee workforce profile
-      if (role === "EMPLOYEE") {
+      if (isEmployee) {
         let employee = await tx.employee.findFirst({
           where: {
             email: normalizedEmail,
@@ -132,7 +154,9 @@ export async function POST(request: Request) {
               },
             },
           });
-          const employeeCode = existingCode ? `EMP-${Date.now().toString(36).toUpperCase()}` : candidateCode;
+          const employeeCode = existingCode
+            ? `EMP-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`
+            : candidateCode;
 
           employee = await tx.employee.create({
             data: {
@@ -152,6 +176,7 @@ export async function POST(request: Request) {
         }
 
         employeeId = employee.id;
+        assignedEmployeeCode = employee.employeeCode;
 
         // Auto-assign role-relevant courses into CourseEnrollment
         if (employee.designationId) {
@@ -203,12 +228,14 @@ export async function POST(request: Request) {
           role,
           organizationId: organizationId!,
           employeeId,
+          isActivated,
         },
         select: {
           id: true,
           name: true,
           email: true,
           role: true,
+          isActivated: true,
           organizationId: true,
           employeeId: true,
           lastLoginAt: true,
@@ -216,8 +243,50 @@ export async function POST(request: Request) {
         },
       });
 
+      // If creating an unactivated EMPLOYEE, generate a secure one-time activation token
+      if (isEmployee && employeeId) {
+        const tokenResult = await ActivationService.createToken(
+          {
+            userId: newUser.id,
+            employeeId,
+            organizationId: organizationId!,
+          },
+          tx
+        );
+        rawActivationToken = tokenResult.rawToken;
+      }
+
       return newUser;
     });
+
+    // -----------------------------------------------------------------------
+    // Step 5: Send Activation Email for Employees post-transaction commit
+    // -----------------------------------------------------------------------
+    let emailDeliveryResult: {
+      success: boolean;
+      simulated?: boolean;
+      activationUrl?: string;
+      error?: string;
+    } | null = null;
+
+    if (isEmployee && rawActivationToken) {
+      try {
+        const org = await prisma.organization.findUnique({
+          where: { id: organizationId! },
+          select: { name: true },
+        });
+
+        emailDeliveryResult = await EmailService.sendActivationEmail({
+          recipientEmail: normalizedEmail,
+          recipientName: user.name.trim(),
+          employeeCode: assignedEmployeeCode || undefined,
+          rawToken: rawActivationToken,
+          organizationName: org?.name,
+        });
+      } catch (emailErr) {
+        console.error("Failed to send employee activation email from /api/users:", emailErr);
+      }
+    }
 
     await AuditService.log({
       organizationId: organizationId!,
@@ -228,14 +297,36 @@ export async function POST(request: Request) {
       category: "USER_MANAGEMENT",
       targetId: user.id,
       targetName: `${user.name} (${user.email})`,
-      description: `Administrator ${auth.user.name || auth.user.email} provisioned new ${role} account for ${user.name} (${user.email}).`,
-      metadata: { role, email: user.email, designationId: validatedDesignationId },
+      description: isEmployee
+        ? `Administrator ${auth.user.name || auth.user.email} provisioned employee account for ${user.name} (${user.email}) and dispatched an email activation link.`
+        : `Administrator ${auth.user.name || auth.user.email} provisioned new ${role} account for ${user.name} (${user.email}).`,
+      metadata: { role, email: user.email, designationId: validatedDesignationId, isActivated },
     });
+
+    // Determine response message and development fallback link
+    const isDevFallback =
+      isEmployee &&
+      process.env.NODE_ENV !== "production" &&
+      Boolean(emailDeliveryResult?.simulated && emailDeliveryResult?.activationUrl);
+
+    let responseMessage: string;
+    if (isEmployee) {
+      if (emailDeliveryResult?.success && !emailDeliveryResult?.simulated) {
+        responseMessage = `Employee account provisioned for ${user.name}. An activation email has been dispatched with their setup link.`;
+      } else if (isDevFallback) {
+        responseMessage = `Employee account created successfully. Email delivery is not configured (Development Mode). Development activation link is available for testing.`;
+      } else {
+        responseMessage = `Employee account provisioned for ${user.name}. Notice: SMTP email delivery is not configured.`;
+      }
+    } else {
+      responseMessage = `Account created successfully with role ${role}.`;
+    }
 
     return NextResponse.json(
       {
-        message: `Account created successfully with role ${role}.`,
+        message: responseMessage,
         user,
+        ...(isDevFallback ? { developmentActivationLink: emailDeliveryResult!.activationUrl } : {}),
       },
       { status: 201 }
     );
@@ -275,6 +366,7 @@ export async function GET() {
         name: true,
         email: true,
         role: true,
+        isActivated: true,
         organizationId: true,
         employeeId: true,
         lastLoginAt: true,

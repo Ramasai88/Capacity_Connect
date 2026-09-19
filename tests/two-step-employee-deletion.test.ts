@@ -65,16 +65,19 @@ describe("Two-Step Employee Removal & Permanent Deletion System", () => {
     );
     testEmployeeId = createdEmp.id;
 
-    // 3. Create User account for this employee with hashed password
+    // 3. Configure User account for this employee with hashed password and active state
     const passwordHash = await bcrypt.hash(testPassword, 10);
-    const user = await prisma.user.create({
-      data: {
+    const user = await prisma.user.upsert({
+      where: { employeeId: testEmployeeId },
+      update: { passwordHash, isActivated: true },
+      create: {
         organizationId: TEST_ORG_ID,
         name: "Lifecycle Test Employee",
         email: testEmail,
         passwordHash,
         role: "EMPLOYEE",
         employeeId: testEmployeeId,
+        isActivated: true,
       },
     });
     testUserId = user.id;
@@ -355,14 +358,17 @@ describe("Two-Step Employee Removal & Permanent Deletion System", () => {
     );
 
     // Create user login
-    await prisma.user.create({
-      data: {
+    await prisma.user.upsert({
+      where: { employeeId: emp.id },
+      update: { passwordHash, isActivated: true },
+      create: {
         organizationId: TEST_ORG_ID,
         name: "Restore Candidate Employee",
         email: restoreEmail,
         passwordHash,
         role: "EMPLOYEE",
         employeeId: emp.id,
+        isActivated: true,
       },
     });
 

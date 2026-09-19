@@ -58,6 +58,7 @@ model Organization {
 
   users                User[]
   employees            Employee[]
+  activationTokens     AccountActivationToken[]
   designations         Designation[]
   competencies         Competency[]
   courses              Course[]
@@ -74,23 +75,50 @@ model Organization {
 // ---------------------------------------------------------------------------
 
 model User {
-  id             String    @id @default(cuid())
-  name           String
-  email          String
-  passwordHash   String
-  role           UserRole  @default(EMPLOYEE)
-  organizationId String
-  employeeId     String?   @unique
-  lastLoginAt    DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id               String                   @id @default(cuid())
+  name             String
+  email            String
+  passwordHash     String
+  role             UserRole                 @default(EMPLOYEE)
+  organizationId   String
+  employeeId       String?                  @unique
+  isActivated      Boolean                  @default(true)
+  lastLoginAt      DateTime?
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  employee     Employee?    @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  organization     Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  employee         Employee?                @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  activationTokens AccountActivationToken[]
 
   @@unique([organizationId, email])
   @@index([organizationId])
   @@map("users")
+}
+
+// ---------------------------------------------------------------------------
+// Account Activation & One-Time Tokens
+// ---------------------------------------------------------------------------
+
+model AccountActivationToken {
+  id             String    @id @default(cuid())
+  tokenHash      String    @unique
+  userId         String
+  employeeId     String
+  organizationId String
+  expiresAt      DateTime
+  usedAt         DateTime?
+  createdAt      DateTime  @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  employee     Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([employeeId])
+  @@index([organizationId])
+  @@index([expiresAt])
+  @@map("account_activation_tokens")
 }
 
 // ---------------------------------------------------------------------------
@@ -110,9 +138,10 @@ model Employee {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
-  organization      Organization                   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  designation          Designation?                   @relation(fields: [designationId], references: [id], onDelete: SetNull)
+  organization         Organization                  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  designation          Designation?                  @relation(fields: [designationId], references: [id], onDelete: SetNull)
   user                 User?
+  activationTokens     AccountActivationToken[]
   competencies         EmployeeCompetency[]
   assessmentHistory    CompetencyAssessmentHistory[]
   enrollments          CourseEnrollment[]

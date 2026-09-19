@@ -53,16 +53,25 @@ describe("Admin Single Authoritative Update Flow for Employees and Managers", ()
     employeeId = emp.id;
 
     const passwordHash = await bcrypt.hash(initialPassword, 10);
-    const empUser = await prisma.user.create({
-      data: {
-        name: "Original Employee Name",
-        email: originalEmployeeEmail,
-        passwordHash,
-        role: "EMPLOYEE",
-        organizationId: TEST_ORG_ID,
-        employeeId: emp.id,
-      },
-    });
+    let empUser = await prisma.user.findFirst({ where: { employeeId: emp.id } });
+    if (empUser) {
+      empUser = await prisma.user.update({
+        where: { id: empUser.id },
+        data: { passwordHash, isActivated: true },
+      });
+    } else {
+      empUser = await prisma.user.create({
+        data: {
+          name: "Original Employee Name",
+          email: originalEmployeeEmail,
+          passwordHash,
+          role: "EMPLOYEE",
+          organizationId: TEST_ORG_ID,
+          employeeId: emp.id,
+          isActivated: true,
+        },
+      });
+    }
     employeeUserId = empUser.id;
 
     // Update progress on auto-enrolled course to test learning history preservation
@@ -88,16 +97,25 @@ describe("Admin Single Authoritative Update Flow for Employees and Managers", ()
     });
     managerId = mgr.id;
 
-    const mgrUser = await prisma.user.create({
-      data: {
-        name: "Original Manager Name",
-        email: originalManagerEmail,
-        passwordHash,
-        role: "MANAGER",
-        organizationId: TEST_ORG_ID,
-        employeeId: mgr.id,
-      },
-    });
+    let mgrUser = await prisma.user.findFirst({ where: { employeeId: mgr.id } });
+    if (mgrUser) {
+      mgrUser = await prisma.user.update({
+        where: { id: mgrUser.id },
+        data: { passwordHash, role: "MANAGER", isActivated: true },
+      });
+    } else {
+      mgrUser = await prisma.user.create({
+        data: {
+          name: "Original Manager Name",
+          email: originalManagerEmail,
+          passwordHash,
+          role: "MANAGER",
+          organizationId: TEST_ORG_ID,
+          employeeId: mgr.id,
+          isActivated: true,
+        },
+      });
+    }
     managerUserId = mgrUser.id;
 
     // 3. Create secondary org employee for tenant isolation check
@@ -109,7 +127,7 @@ describe("Admin Single Authoritative Update Flow for Employees and Managers", ()
       status: "ACTIVE",
     });
     secondaryOrgEmployeeId = secEmp.id;
-  });
+  }, 30000);
 
   afterAll(async () => {
     // Clean up created test entities

@@ -58,22 +58,61 @@ export const adminCreateUserSchema = z
       .string()
       .trim()
       .email("Enter a valid email address"),
-    password: z
-      .string()
-      .min(8, "Password must be at least 8 characters"),
-    confirmPassword: z
-      .string()
-      .min(1, "Please confirm your password"),
+    password: z.string().optional(),
+    confirmPassword: z.string().optional(),
     role: z.enum(["ADMIN", "MANAGER", "EMPLOYEE"], {
       required_error: "Role is required",
       invalid_type_error: "Role must be ADMIN, MANAGER, or EMPLOYEE",
     }),
     designationId: z.string().trim().optional().nullable(),
   })
+  .superRefine((data, ctx) => {
+    if (data.role === "ADMIN" || data.role === "MANAGER") {
+      if (!data.password || data.password.length < 8) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Password must be at least 8 characters",
+          path: ["password"],
+        });
+      }
+      if (!data.confirmPassword) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please confirm your password",
+          path: ["confirmPassword"],
+        });
+      }
+      if (data.password && data.confirmPassword && data.password !== data.confirmPassword) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Passwords do not match",
+          path: ["confirmPassword"],
+        });
+      }
+    }
+  });
+
+export type AdminCreateUserInput = z.infer<typeof adminCreateUserSchema>;
+
+/**
+ * Account activation schema for Phase 1 employee self-password creation.
+ */
+export const activateAccountSchema = z
+  .object({
+    token: z.string().trim().min(1, "Activation token is required"),
+    password: z
+      .string()
+      .min(1, "Password is required")
+      .min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string().min(1, "Please confirm your password"),
+  })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
     path: ["confirmPassword"],
   });
 
-export type AdminCreateUserInput = z.infer<typeof adminCreateUserSchema>;
+export type ActivateAccountInput = z.infer<typeof activateAccountSchema>;
 
+export const verifyTokenQuerySchema = z.object({
+  token: z.string().trim().min(1, "Activation token is required"),
+});

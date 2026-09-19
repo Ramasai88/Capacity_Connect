@@ -11,8 +11,11 @@ import {
   CompetencyGapResult,
 } from "@/lib/skill-gap/calculateSkillGap";
 import { EmployeeStatus } from "@prisma/client";
+import crypto from "crypto";
 import { RoleLearningService } from "./role-learning.service";
 import { AuditService } from "./audit.service";
+import { ActivationService } from "./activation.service";
+import { EmailService } from "./email.service";
 
 export class EmployeeServiceError extends Error {
   statusCode: number;
@@ -394,6 +397,8 @@ export class EmployeeService {
       }
     }
 
+    let rawActivationToken: string | null = null;
+
     // Atomic creation via transaction
     const createdEmployee = await prisma.$transaction(
       async (tx) => {
@@ -446,10 +451,73 @@ export class EmployeeService {
           );
         }
 
+        // Provision unactivated User account linked to this Employee
+        let user = await tx.user.findFirst({
+          where: {
+            email: { equals: email, mode: "insensitive" },
+            organizationId,
+          },
+        });
+
+        if (!user) {
+          const lockedPlaceholder = `$2a$10$LOCKED_UNACTIVATED_${crypto.randomBytes(16).toString("hex")}`;
+          user = await tx.user.create({
+            data: {
+              organizationId,
+              name: data.name.trim(),
+              email,
+              passwordHash: lockedPlaceholder,
+              role: "EMPLOYEE",
+              employeeId: emp.id,
+              isActivated: false,
+            },
+          });
+        } else if (!user.employeeId) {
+          user = await tx.user.update({
+            where: { id: user.id },
+            data: {
+              employeeId: emp.id,
+              isActivated: false,
+            },
+          });
+        }
+
+        // Create secure one-time activation token
+        const tokenResult = await ActivationService.createToken(
+          {
+            userId: user.id,
+            employeeId: emp.id,
+            organizationId,
+          },
+          tx
+        );
+
+        rawActivationToken = tokenResult.rawToken;
+
         return emp;
       },
       { maxWait: 15000, timeout: 30000 }
     );
+
+    // Send activation email after successful transaction commit
+    if (rawActivationToken) {
+      try {
+        const org = await prisma.organization.findUnique({
+          where: { id: organizationId },
+          select: { name: true },
+        });
+
+        await EmailService.sendActivationEmail({
+          recipientEmail: email,
+          recipientName: data.name.trim(),
+          employeeCode,
+          rawToken: rawActivationToken,
+          organizationName: org?.name,
+        });
+      } catch (emailErr) {
+        console.error("Failed to send activation email:", emailErr);
+      }
+    }
 
     const fullRecord = await this.getEmployeeById(organizationId, createdEmployee.id);
     if (!fullRecord) {

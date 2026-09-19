@@ -129,6 +129,22 @@ export async function verifyUserCredentials(
       return null;
     }
 
+    // Check if user account has completed initial activation
+    if (user.isActivated === false) {
+      await AuditService.log({
+        organizationId: user.organizationId,
+        actorId: user.id,
+        actorName: user.name,
+        actorRole: user.role,
+        action: "AUTH_LOGIN_FAILURE",
+        category: "AUTHENTICATION",
+        status: "FAILURE",
+        description: `Login rejected for user ${user.name} (${user.email}): Account has not been activated.`,
+        metadata: { attemptedEmail: normalizedEmail, reason: "ACCOUNT_NOT_ACTIVATED" },
+      });
+      return null;
+    }
+
     // Check if user is associated with a deactivated/removed employee
     if (user.role === "EMPLOYEE" || user.employeeId) {
       const emp = user.employeeId
@@ -188,27 +204,30 @@ export async function verifyUserCredentials(
       });
 
       if (!emp) {
-        const empCount = await prisma.employee.count({ where: { organizationId: user.organizationId } });
-        const candidateCode = `EMP-${String(empCount + 1).padStart(3, "0")}`;
-        const existingCode = await prisma.employee.findUnique({
-          where: {
-            organizationId_employeeCode: {
+        try {
+          const empCount = await prisma.employee.count({ where: { organizationId: user.organizationId } });
+          const candidateCode = `EMP-${String(empCount + 1).padStart(3, "0")}`;
+          emp = await prisma.employee.create({
+            data: {
               organizationId: user.organizationId,
               employeeCode: candidateCode,
+              name: user.name,
+              email: normalizedEmail,
+              status: "ACTIVE",
             },
-          },
-        });
-        const employeeCode = existingCode ? `EMP-${Date.now().toString(36).toUpperCase()}` : candidateCode;
-
-        emp = await prisma.employee.create({
-          data: {
-            organizationId: user.organizationId,
-            employeeCode,
-            name: user.name,
-            email: normalizedEmail,
-            status: "ACTIVE",
-          },
-        });
+          });
+        } catch {
+          const fallbackCode = `EMP-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+          emp = await prisma.employee.create({
+            data: {
+              organizationId: user.organizationId,
+              employeeCode: fallbackCode,
+              name: user.name,
+              email: normalizedEmail,
+              status: "ACTIVE",
+            },
+          });
+        }
       }
 
       employeeId = emp.id;
