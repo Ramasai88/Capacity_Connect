@@ -15,6 +15,9 @@
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
+    "db:test:push": "tsx scripts/test-db-runner.ts push",
+    "db:test:seed": "tsx scripts/test-db-runner.ts seed",
+    "db:test:setup": "tsx scripts/test-db-runner.ts setup",
     "db:studio": "prisma studio",
     "postinstall": "prisma generate"
   },
