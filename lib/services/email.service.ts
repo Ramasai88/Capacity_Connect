@@ -1,5 +1,3 @@
-import { Resend } from "resend";
-
 export interface SendActivationEmailOptions {
   recipientEmail: string;
   recipientName: string;
@@ -21,7 +19,7 @@ export interface EmailDeliveryResult {
  * Dispatches account activation emails, notification alerts, and onboarding notices.
  *
  * Transports:
- * - Production (NODE_ENV === "production"): Resend HTTPS API via RESEND_API_KEY & RESEND_FROM_EMAIL.
+ * - Production (NODE_ENV === "production"): Brevo HTTPS API via BREVO_API_KEY, BREVO_FROM_EMAIL & BREVO_FROM_NAME.
  * - Development: Gmail / Custom SMTP via Nodemailer with safe simulated fallback if unconfigured.
  */
 export class EmailService {
@@ -76,10 +74,10 @@ export class EmailService {
    */
   static isConfigured(): boolean {
     if (process.env.NODE_ENV === "production") {
-      console.log("[EmailService] Production Resend config check:", {
-        hasApiKey: Boolean(process.env.RESEND_API_KEY),
+      console.log("[EmailService] Production Brevo config check:", {
+        hasApiKey: Boolean(process.env.BREVO_API_KEY),
       });
-      return Boolean(process.env.RESEND_API_KEY);
+      return Boolean(process.env.BREVO_API_KEY);
     }
 
     console.log("[EmailService] SMTP config check:", {
@@ -194,55 +192,78 @@ Please do not reply to this automated message.
       sentAt: new Date(),
     });
 
-    // 1. PRODUCTION TRANSPORT: Resend HTTPS API
+    // 1. PRODUCTION TRANSPORT: Brevo HTTPS API
     if (process.env.NODE_ENV === "production") {
-      const resendApiKey = process.env.RESEND_API_KEY;
-      if (!resendApiKey) {
-        console.warn("[EmailService] ⚠️ RESEND_API_KEY is not configured in production. Account activation email was not delivered.");
+      const brevoApiKey = process.env.BREVO_API_KEY;
+      if (!brevoApiKey) {
+        console.warn("[EmailService] ⚠️ BREVO_API_KEY is not configured in production. Account activation email was not delivered.");
         return {
           success: false,
           simulated: false,
-          error: "Resend API key is not configured in production environment.",
+          error: "Brevo API key is not configured in production environment.",
           activationUrl,
         };
       }
 
       try {
-        const resend = new Resend(resendApiKey);
-        const resendFrom =
-          process.env.RESEND_FROM_EMAIL ||
-          "Capacity Connect <onboarding@resend.dev>";
+        const brevoFromEmail =
+          process.env.BREVO_FROM_EMAIL ||
+          "service.capacityconnect@gmail.com";
+        const brevoFromName =
+          process.env.BREVO_FROM_NAME ||
+          "Capacity Connect";
 
-        const { data, error } = await resend.emails.send({
-          from: resendFrom,
-          to: recipientEmail,
-          subject,
-          text: textContent,
-          html: htmlContent,
+        const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+          method: "POST",
+          headers: {
+            "accept": "application/json",
+            "api-key": brevoApiKey,
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            sender: {
+              email: brevoFromEmail,
+              name: brevoFromName,
+            },
+            to: [
+              {
+                email: recipientEmail,
+                name: recipientName,
+              },
+            ],
+            subject,
+            htmlContent,
+            textContent,
+          }),
         });
 
-        if (error) {
-          console.error("[EmailService] Resend email delivery failed:", error.message);
+        if (!response.ok) {
+          const errorData: any = await response.json().catch(() => ({}));
+          const errorMessage =
+            errorData?.message ||
+            `Failed to deliver email via Brevo (HTTP ${response.status})`;
+          console.error("[EmailService] Brevo email delivery failed:", errorMessage);
           return {
             success: false,
             simulated: false,
-            error: error.message || "Failed to deliver email via Resend",
+            error: errorMessage,
             activationUrl,
           };
         }
 
+        const data: any = await response.json().catch(() => ({}));
         return {
           success: true,
           simulated: false,
-          messageId: data?.id,
+          messageId: data?.messageId,
           activationUrl,
         };
       } catch (err: any) {
-        console.error("[EmailService] Resend dispatch exception:", err?.message || "Unknown error");
+        console.error("[EmailService] Brevo dispatch exception:", err?.message || "Unknown error");
         return {
           success: false,
           simulated: false,
-          error: err?.message || "Failed to deliver email via Resend",
+          error: err?.message || "Failed to deliver email via Brevo",
           activationUrl,
         };
       }
