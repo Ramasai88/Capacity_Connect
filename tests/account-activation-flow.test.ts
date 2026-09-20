@@ -389,10 +389,12 @@ describe("Phase 1 — Email Activation Link + Employee Password Setup Flow", () 
     expect(result.activationUrl).toContain(`/activate-account?token=${rawToken}`);
   });
 
-  it("27: Production Protection — EmailService fails safely and never returns simulated delivery in production without SMTP", async () => {
+  it("27: Production Protection — EmailService fails safely and never returns simulated delivery in production without Resend API key", async () => {
     const originalEnv = process.env.NODE_ENV;
+    const originalResendKey = process.env.RESEND_API_KEY;
     try {
       (process.env as any).NODE_ENV = "production";
+      delete process.env.RESEND_API_KEY;
 
       const rawToken = "prod-test-token-" + Date.now();
       const result = await EmailService.sendActivationEmail({
@@ -403,12 +405,13 @@ describe("Phase 1 — Email Activation Link + Employee Password Setup Flow", () 
         organizationName: "KL University",
       });
 
-      // Without SMTP credentials in production, must NOT simulate delivery
+      // Without Resend credentials in production, must NOT simulate delivery
       expect(result.simulated).toBe(false);
       expect(result.success).toBe(false);
-      expect(result.error).toContain("SMTP");
+      expect(result.error).toContain("Resend");
     } finally {
       (process.env as any).NODE_ENV = originalEnv;
+      process.env.RESEND_API_KEY = originalResendKey;
     }
   });
 

@@ -1,3 +1,5 @@
+import { Resend } from "resend";
+
 export interface SendActivationEmailOptions {
   recipientEmail: string;
   recipientName: string;
@@ -18,9 +20,9 @@ export interface EmailDeliveryResult {
  * Enterprise Email Service for Capacity Connect.
  * Dispatches account activation emails, notification alerts, and onboarding notices.
  *
- * Configuration:
- * - SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM, SMTP_SECURE
- * - Falls back to safe structured delivery simulation in development/testing if SMTP is unconfigured.
+ * Transports:
+ * - Production (NODE_ENV === "production"): Resend HTTPS API via RESEND_API_KEY & RESEND_FROM_EMAIL.
+ * - Development: Gmail / Custom SMTP via Nodemailer with safe simulated fallback if unconfigured.
  */
 export class EmailService {
   // In-memory delivery history for test assertions & auditability
@@ -70,9 +72,16 @@ export class EmailService {
   }
 
   /**
-   * Checks whether real SMTP credentials are configured.
+   * Checks whether the active transport credentials are configured.
    */
   static isConfigured(): boolean {
+    if (process.env.NODE_ENV === "production") {
+      console.log("[EmailService] Production Resend config check:", {
+        hasApiKey: Boolean(process.env.RESEND_API_KEY),
+      });
+      return Boolean(process.env.RESEND_API_KEY);
+    }
+
     console.log("[EmailService] SMTP config check:", {
       host: Boolean(process.env.SMTP_HOST),
       user: Boolean(process.env.SMTP_USER),
@@ -185,6 +194,61 @@ Please do not reply to this automated message.
       sentAt: new Date(),
     });
 
+    // 1. PRODUCTION TRANSPORT: Resend HTTPS API
+    if (process.env.NODE_ENV === "production") {
+      const resendApiKey = process.env.RESEND_API_KEY;
+      if (!resendApiKey) {
+        console.warn("[EmailService] ⚠️ RESEND_API_KEY is not configured in production. Account activation email was not delivered.");
+        return {
+          success: false,
+          simulated: false,
+          error: "Resend API key is not configured in production environment.",
+          activationUrl,
+        };
+      }
+
+      try {
+        const resend = new Resend(resendApiKey);
+        const resendFrom =
+          process.env.RESEND_FROM_EMAIL ||
+          "Capacity Connect <onboarding@resend.dev>";
+
+        const { data, error } = await resend.emails.send({
+          from: resendFrom,
+          to: recipientEmail,
+          subject,
+          text: textContent,
+          html: htmlContent,
+        });
+
+        if (error) {
+          console.error("[EmailService] Resend email delivery failed:", error.message);
+          return {
+            success: false,
+            simulated: false,
+            error: error.message || "Failed to deliver email via Resend",
+            activationUrl,
+          };
+        }
+
+        return {
+          success: true,
+          simulated: false,
+          messageId: data?.id,
+          activationUrl,
+        };
+      } catch (err: any) {
+        console.error("[EmailService] Resend dispatch exception:", err?.message || "Unknown error");
+        return {
+          success: false,
+          simulated: false,
+          error: err?.message || "Failed to deliver email via Resend",
+          activationUrl,
+        };
+      }
+    }
+
+    // 2. DEVELOPMENT TRANSPORT: Nodemailer SMTP
     const smtpHost = process.env.SMTP_HOST;
     const smtpPort = parseInt(process.env.SMTP_PORT || "587", 10);
     const smtpUser = process.env.SMTP_USER;
@@ -236,18 +300,7 @@ Please do not reply to this automated message.
       }
     }
 
-    // If SMTP is NOT configured in production, do not simulate or pretend delivery
-    if (process.env.NODE_ENV === "production") {
-      console.warn("[EmailService] ⚠️ SMTP is not configured in production environment. Account activation email was not delivered.");
-      return {
-        success: false,
-        simulated: false,
-        error: "SMTP email service is not configured in production.",
-        activationUrl,
-      };
-    }
-
-    // In development/test mode: Safe structured simulation fallback
+    // 3. DEVELOPMENT FALLBACK: Safe structured simulation if SMTP is unconfigured
     console.log(`[EmailService] 📧 Development fallback: Simulated activation email for: ${recipientEmail} (Employee: ${code})`);
     console.log(`[EmailService] 🔗 Development activation link: ${activationUrl}`);
 
@@ -259,3 +312,4 @@ Please do not reply to this automated message.
     };
   }
 }
+
