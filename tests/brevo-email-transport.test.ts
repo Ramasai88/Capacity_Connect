@@ -34,6 +34,7 @@ describe("Brevo Production Email Transport & Environment Isolation", () => {
       recipientEmail: "employee.prod@company.com",
       recipientName: "Anita Roy",
       employeeCode: "EMP-PROD-789",
+      role: "Software Developer",
       rawToken: "raw-token-prod-xyz",
       organizationName: "KL University",
     });
@@ -70,9 +71,12 @@ describe("Brevo Production Email Transport & Environment Isolation", () => {
     ]);
     expect(parsedBody.subject).toBe("Welcome to Capacity Connect — Activate Your Account");
     expect(parsedBody.textContent).toContain("EMP-PROD-789");
+    expect(parsedBody.textContent).toContain("Role: Software Developer");
     expect(parsedBody.textContent).toContain("https://capacity-connect-ldwb.onrender.com/activate-account?token=raw-token-prod-xyz");
     expect(parsedBody.htmlContent).toContain("Anita Roy");
     expect(parsedBody.htmlContent).toContain("EMP-PROD-789");
+    expect(parsedBody.htmlContent).toContain("Role");
+    expect(parsedBody.htmlContent).toContain("Software Developer");
     expect(parsedBody.htmlContent).toContain("https://capacity-connect-ldwb.onrender.com/activate-account?token=raw-token-prod-xyz");
   });
 

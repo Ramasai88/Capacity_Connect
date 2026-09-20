@@ -2,6 +2,7 @@ export interface SendActivationEmailOptions {
   recipientEmail: string;
   recipientName: string;
   employeeCode?: string;
+  role?: string;
   rawToken: string;
   organizationName?: string;
 }
@@ -28,6 +29,7 @@ export class EmailService {
     recipientEmail: string;
     recipientName: string;
     employeeCode: string;
+    role?: string;
     activationUrl: string;
     subject: string;
     sentAt: Date;
@@ -105,7 +107,7 @@ export class EmailService {
   static async sendActivationEmail(
     options: SendActivationEmailOptions
   ): Promise<EmailDeliveryResult> {
-    const { recipientEmail, recipientName, employeeCode, rawToken, organizationName } = options;
+    const { recipientEmail, recipientName, employeeCode, role, rawToken, organizationName } = options;
     const orgName = organizationName || "Capacity Connect";
     const code = employeeCode || "N/A";
     const activationUrl = this.generateActivationUrl(rawToken);
@@ -117,7 +119,7 @@ Welcome to Capacity Connect, ${recipientName}!
 
 Your employee account has been created for ${orgName}.
 
-Employee ID: ${code}
+Employee ID: ${code}${role ? `\nRole: ${role}` : ""}
 
 Please activate your account and create your password using the secure link below:
 ${activationUrl}
@@ -161,6 +163,10 @@ Please do not reply to this automated message.
     <div class="emp-card">
       <div class="emp-id-label">Employee ID</div>
       <div class="emp-id-value">${code}</div>
+      ${role ? `
+      <div class="emp-id-label" style="margin-top: 10px;">Role</div>
+      <div class="emp-id-value" style="font-size: 15px; font-weight: 600; color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">${role}</div>
+      ` : ""}
     </div>
 
     <p>To begin, please activate your account and choose your personal password using the secure button below:</p>
@@ -187,6 +193,7 @@ Please do not reply to this automated message.
       recipientEmail,
       recipientName,
       employeeCode: code,
+      role,
       activationUrl,
       subject,
       sentAt: new Date(),

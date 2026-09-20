@@ -61,8 +61,9 @@ describe("Phase 1 — Email Activation Link + Employee Password Setup Flow", () 
     const sentEmail = emailHistory.find((e) => e.recipientEmail === testEmail);
     expect(sentEmail).toBeDefined();
 
-    // 5. Verify email contains Employee ID
+    // 5. Verify email contains Employee ID and Role
     expect(sentEmail!.employeeCode).toBe(testCode);
+    expect(sentEmail!.role).toBe("Software Engineer");
 
     // 6. Verify email contains activation link with token
     expect(sentEmail!.activationUrl).toContain("/activate-account?token=");
@@ -327,6 +328,7 @@ describe("Phase 1 — Email Activation Link + Employee Password Setup Flow", () 
       recipientEmail: testEmail,
       recipientName: employeeName,
       employeeCode: txResult.employee.employeeCode,
+      role: "Software Developer",
       rawToken: txResult.token,
       organizationName: "KL University",
     });
@@ -346,10 +348,11 @@ describe("Phase 1 — Email Activation Link + Employee Password Setup Flow", () 
     });
     expect(loginAttempt).toBeNull();
 
-    // Verify email sent with employee code and token link
+    // Verify email sent with employee code, role, and token link
     const sentEmail = EmailService.getSentEmailsHistory().find((e) => e.recipientEmail === testEmail);
     expect(sentEmail).toBeDefined();
     expect(sentEmail!.employeeCode).toBe(txResult.employee.employeeCode);
+    expect(sentEmail!.role).toBe("Software Developer");
     expect(sentEmail!.activationUrl).toContain(`/activate-account?token=${txResult.token}`);
 
     // Complete password setup

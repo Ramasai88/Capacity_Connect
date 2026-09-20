@@ -361,6 +361,7 @@ export class EmployeeService {
     }
 
     // Validate designation if supplied
+    let designationTitle: string | undefined;
     if (data.designationId) {
       const designation = await prisma.designation.findFirst({
         where: {
@@ -376,6 +377,7 @@ export class EmployeeService {
           "INVALID_DESIGNATION"
         );
       }
+      designationTitle = designation.title;
     }
 
     // Validate competencies if supplied
@@ -511,6 +513,7 @@ export class EmployeeService {
           recipientEmail: email,
           recipientName: data.name.trim(),
           employeeCode,
+          role: designationTitle || "Employee",
           rawToken: rawActivationToken,
           organizationName: org?.name,
         });

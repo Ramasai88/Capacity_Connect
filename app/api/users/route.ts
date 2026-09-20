@@ -7,6 +7,7 @@ import { authenticateApi } from "@/lib/auth/session";
 import { AuditService } from "@/lib/services/audit.service";
 import { ActivationService } from "@/lib/services/activation.service";
 import { EmailService } from "@/lib/services/email.service";
+import { RoleLearningService } from "@/lib/services/role-learning.service";
 
 /**
  * POST /api/users
@@ -131,133 +132,105 @@ export async function POST(request: Request) {
     let rawActivationToken: string | null = null;
     let assignedEmployeeCode: string | null = null;
 
-    const user = await prisma.$transaction(async (tx) => {
-      let employeeId: string | null = null;
+    const user = await prisma.$transaction(
+      async (tx) => {
+        let employeeId: string | null = null;
 
-      // If creating an EMPLOYEE, provision/link an Employee workforce profile
-      if (isEmployee) {
-        let employee = await tx.employee.findFirst({
-          where: {
+        // If creating an EMPLOYEE, provision/link an Employee workforce profile
+        if (isEmployee) {
+          let employee = await tx.employee.findFirst({
+            where: {
+              email: normalizedEmail,
+              organizationId: organizationId!,
+            },
+          });
+
+          if (!employee) {
+            const empCount = await tx.employee.count({ where: { organizationId: organizationId! } });
+            const candidateCode = `EMP-${String(empCount + 1).padStart(3, "0")}`;
+            const existingCode = await tx.employee.findUnique({
+              where: {
+                organizationId_employeeCode: {
+                  organizationId: organizationId!,
+                  employeeCode: candidateCode,
+                },
+              },
+            });
+            const employeeCode = existingCode
+              ? `EMP-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`
+              : candidateCode;
+
+            employee = await tx.employee.create({
+              data: {
+                organizationId: organizationId!,
+                employeeCode,
+                name: name.trim(),
+                email: normalizedEmail,
+                designationId: validatedDesignationId,
+                status: "ACTIVE",
+              },
+            });
+          } else if (validatedDesignationId && employee.designationId !== validatedDesignationId) {
+            employee = await tx.employee.update({
+              where: { id: employee.id },
+              data: { designationId: validatedDesignationId },
+            });
+          }
+
+          employeeId = employee.id;
+          assignedEmployeeCode = employee.employeeCode;
+
+          // Auto-assign role-relevant courses into CourseEnrollment
+          if (employee.designationId) {
+            await RoleLearningService.syncEmployeeRoleCourseEnrollments(
+              organizationId!,
+              employee.id,
+              employee.designationId,
+              tx
+            );
+          }
+        }
+
+        const newUser = await tx.user.create({
+          data: {
+            name: name.trim(),
             email: normalizedEmail,
+            passwordHash,
+            role,
             organizationId: organizationId!,
+            employeeId,
+            isActivated,
+          },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            isActivated: true,
+            organizationId: true,
+            employeeId: true,
+            lastLoginAt: true,
+            createdAt: true,
           },
         });
 
-        if (!employee) {
-          const empCount = await tx.employee.count({ where: { organizationId: organizationId! } });
-          const candidateCode = `EMP-${String(empCount + 1).padStart(3, "0")}`;
-          const existingCode = await tx.employee.findUnique({
-            where: {
-              organizationId_employeeCode: {
-                organizationId: organizationId!,
-                employeeCode: candidateCode,
-              },
-            },
-          });
-          const employeeCode = existingCode
-            ? `EMP-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`
-            : candidateCode;
-
-          employee = await tx.employee.create({
-            data: {
+        // If creating an unactivated EMPLOYEE, generate a secure one-time activation token
+        if (isEmployee && employeeId) {
+          const tokenResult = await ActivationService.createToken(
+            {
+              userId: newUser.id,
+              employeeId,
               organizationId: organizationId!,
-              employeeCode,
-              name: name.trim(),
-              email: normalizedEmail,
-              designationId: validatedDesignationId,
-              status: "ACTIVE",
             },
-          });
-        } else if (validatedDesignationId && employee.designationId !== validatedDesignationId) {
-          employee = await tx.employee.update({
-            where: { id: employee.id },
-            data: { designationId: validatedDesignationId },
-          });
+            tx
+          );
+          rawActivationToken = tokenResult.rawToken;
         }
 
-        employeeId = employee.id;
-        assignedEmployeeCode = employee.employeeCode;
-
-        // Auto-assign role-relevant courses into CourseEnrollment
-        if (employee.designationId) {
-          const designation = await tx.designation.findFirst({
-            where: { id: employee.designationId, organizationId: organizationId! },
-            include: { requirements: true },
-          });
-
-          if (designation && designation.requirements.length > 0) {
-            const reqCompIds = designation.requirements.map((r) => r.competencyId);
-            const roleCourses = await tx.course.findMany({
-              where: {
-                organizationId: organizationId!,
-                status: "PUBLISHED",
-                competencyId: { in: reqCompIds },
-              },
-              include: { _count: { select: { modules: true } } },
-            });
-
-            const existingEnrs = await tx.courseEnrollment.findMany({
-              where: { employeeId: employee.id },
-              select: { courseId: true },
-            });
-            const enrolledIds = new Set(existingEnrs.map((e) => e.courseId));
-
-            for (const course of roleCourses) {
-              if (!enrolledIds.has(course.id)) {
-                await tx.courseEnrollment.create({
-                  data: {
-                    employeeId: employee.id,
-                    courseId: course.id,
-                    progressPercent: 0,
-                    completedLessons: 0,
-                    totalLessons: course._count.modules,
-                    status: "IN_PROGRESS",
-                  },
-                });
-              }
-            }
-          }
-        }
-      }
-
-      const newUser = await tx.user.create({
-        data: {
-          name: name.trim(),
-          email: normalizedEmail,
-          passwordHash,
-          role,
-          organizationId: organizationId!,
-          employeeId,
-          isActivated,
-        },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          isActivated: true,
-          organizationId: true,
-          employeeId: true,
-          lastLoginAt: true,
-          createdAt: true,
-        },
-      });
-
-      // If creating an unactivated EMPLOYEE, generate a secure one-time activation token
-      if (isEmployee && employeeId) {
-        const tokenResult = await ActivationService.createToken(
-          {
-            userId: newUser.id,
-            employeeId,
-            organizationId: organizationId!,
-          },
-          tx
-        );
-        rawActivationToken = tokenResult.rawToken;
-      }
-
-      return newUser;
-    });
+        return newUser;
+      },
+      { maxWait: 15000, timeout: 30000 }
+    );
 
     // -----------------------------------------------------------------------
     // Step 5: Send Activation Email for Employees post-transaction commit
@@ -276,10 +249,22 @@ export async function POST(request: Request) {
           select: { name: true },
         });
 
+        let employeeRole = "Employee";
+        if (user.employeeId) {
+          const emp = await prisma.employee.findUnique({
+            where: { id: user.employeeId },
+            include: { designation: { select: { title: true } } },
+          });
+          if (emp?.designation?.title) {
+            employeeRole = emp.designation.title;
+          }
+        }
+
         emailDeliveryResult = await EmailService.sendActivationEmail({
           recipientEmail: normalizedEmail,
           recipientName: user.name.trim(),
           employeeCode: assignedEmployeeCode || undefined,
+          role: employeeRole,
           rawToken: rawActivationToken,
           organizationName: org?.name,
         });
