@@ -23,7 +23,7 @@ describe("Complete Real Backend API Domain Services", () => {
   });
 
   it("retrieves detailed course with ordered curriculum modules", async () => {
-    const courses = await CourseService.getCourses(TEST_ORG_ID, { limit: 1 });
+    const courses = await CourseService.getCourses(TEST_ORG_ID, { search: "Python", limit: 1 });
     const firstCourse = courses.courses[0];
 
     const detailed = await CourseService.getCourseById(TEST_ORG_ID, firstCourse.id);

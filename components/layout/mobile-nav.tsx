@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 interface MobileNavProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  role: "ADMIN" | "MANAGER" | "EMPLOYEE";
+  role: "ADMIN" | "TRAINER" | "TRAINEE";
 }
 
 export function MobileNav({ open, onOpenChange, role }: MobileNavProps) {

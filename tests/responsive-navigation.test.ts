@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+﻿import { describe, it, expect } from "vitest";
 import { navItems } from "@/components/layout/sidebar";
 
 describe("Responsive Role-Based Navigation Architecture", () => {
@@ -31,57 +31,57 @@ describe("Responsive Role-Based Navigation Architecture", () => {
     expect(adminHrefs).not.toContain("/my-learning");
   });
 
-  it("exposes the complete authorized navigation for MANAGER and excludes Admin-only views", () => {
-    const managerItems = navItems.filter(
-      (item) => !item.roles || item.roles.includes("MANAGER")
+  it("exposes the complete authorized navigation for TRAINER and excludes Admin-only views", () => {
+    const trainerItems = navItems.filter(
+      (item) => !item.roles || item.roles.includes("TRAINER")
     );
-    const managerHrefs = managerItems.map((i) => i.href);
+    const trainerHrefs = trainerItems.map((i) => i.href);
 
-    expect(managerHrefs).toContain("/dashboard");
-    expect(managerHrefs).toContain("/employees");
-    expect(managerHrefs).toContain("/competencies");
-    expect(managerHrefs).toContain("/designations");
-    expect(managerHrefs).toContain("/skill-gaps");
-    expect(managerHrefs).toContain("/recommendations");
-    expect(managerHrefs).toContain("/assistant");
-    expect(managerHrefs).toContain("/courses");
-    expect(managerHrefs).toContain("/reassessments");
-    expect(managerHrefs).toContain("/reports");
+    expect(trainerHrefs).toContain("/dashboard");
+    expect(trainerHrefs).toContain("/employees");
+    expect(trainerHrefs).toContain("/competencies");
+    expect(trainerHrefs).toContain("/designations");
+    expect(trainerHrefs).toContain("/skill-gaps");
+    expect(trainerHrefs).toContain("/recommendations");
+    expect(trainerHrefs).toContain("/assistant");
+    expect(trainerHrefs).toContain("/courses");
+    expect(trainerHrefs).toContain("/reassessments");
+    expect(trainerHrefs).toContain("/reports");
 
-    // Manager should NOT have access to Admin settings
-    expect(managerHrefs).not.toContain("/settings");
-    // Manager should not have employee personal development views
-    expect(managerHrefs).not.toContain("/my-development");
-    expect(managerHrefs).not.toContain("/my-learning");
+    // Trainer should NOT have access to Admin settings
+    expect(trainerHrefs).not.toContain("/settings");
+    // Trainer should not have trainee personal development views
+    expect(trainerHrefs).not.toContain("/my-development");
+    expect(trainerHrefs).not.toContain("/my-learning");
   });
 
-  it("exposes the complete authorized navigation for EMPLOYEE and excludes management views", () => {
-    const employeeItems = navItems.filter(
-      (item) => !item.roles || item.roles.includes("EMPLOYEE")
+  it("exposes the complete authorized navigation for TRAINEE and excludes management views", () => {
+    const traineeItems = navItems.filter(
+      (item) => !item.roles || item.roles.includes("TRAINEE")
     );
-    const employeeHrefs = employeeItems.map((i) => i.href);
+    const traineeHrefs = traineeItems.map((i) => i.href);
 
-    expect(employeeHrefs).toContain("/dashboard");
-    expect(employeeHrefs).toContain("/my-development");
-    expect(employeeHrefs).toContain("/skill-gaps");
-    expect(employeeHrefs).toContain("/recommendations");
-    expect(employeeHrefs).toContain("/assistant");
-    expect(employeeHrefs).toContain("/courses");
-    expect(employeeHrefs).toContain("/my-learning");
+    expect(traineeHrefs).toContain("/dashboard");
+    expect(traineeHrefs).toContain("/my-development");
+    expect(traineeHrefs).toContain("/skill-gaps");
+    expect(traineeHrefs).toContain("/recommendations");
+    expect(traineeHrefs).toContain("/assistant");
+    expect(traineeHrefs).toContain("/courses");
+    expect(traineeHrefs).toContain("/my-learning");
 
-    // Employee should NOT have management / admin views
-    expect(employeeHrefs).not.toContain("/employees");
-    expect(employeeHrefs).not.toContain("/competencies");
-    expect(employeeHrefs).not.toContain("/designations");
-    expect(employeeHrefs).not.toContain("/reassessments");
-    expect(employeeHrefs).not.toContain("/reports");
-    expect(employeeHrefs).not.toContain("/settings");
+    // Trainee should NOT have management / admin views
+    expect(traineeHrefs).not.toContain("/employees");
+    expect(traineeHrefs).not.toContain("/competencies");
+    expect(traineeHrefs).not.toContain("/designations");
+    expect(traineeHrefs).not.toContain("/reassessments");
+    expect(traineeHrefs).not.toContain("/reports");
+    expect(traineeHrefs).not.toContain("/settings");
   });
 
   it("verifies all navigation items have non-empty labels, valid paths, and icons", () => {
     for (const item of navItems) {
       expect(item.label).toBeTruthy();
-      expect(item.href).toMatch(/^\/[a-z0-9-]+$/);
+      expect(item.href).toMatch(/^(\/[a-z0-9-]+)+$/);
       expect(item.icon).toBeDefined();
     }
   });

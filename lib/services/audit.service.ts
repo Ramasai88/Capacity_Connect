@@ -5,9 +5,9 @@ export interface LogActivityParams {
   organizationId: string;
   actorId?: string | null;
   actorName?: string | null;
-  actorRole?: UserRole | "ADMIN" | "MANAGER" | "EMPLOYEE" | null;
+  actorRole?: UserRole | "ADMIN" | "TRAINER" | "TRAINEE" | null;
   action: string;
-  category: "AUTHENTICATION" | "USER_MANAGEMENT" | "MANAGER_OPERATION" | "LEARNING";
+  category: "AUTHENTICATION" | "USER_MANAGEMENT" | "TRAINER_OPERATION" | "MANAGER_OPERATION" | "LEARNING";
   targetId?: string | null;
   targetName?: string | null;
   description: string;
@@ -195,11 +195,11 @@ export class AuditService {
    * Aggregates managerial activity metrics and recent operations for administrative oversight.
    */
   static async getManagerActivityOverview(organizationId: string): Promise<ManagerActivitySummary[]> {
-    // 1. Fetch all managers in the organization
+    // 1. Fetch all trainers in the organization
     const managers = await prisma.user.findMany({
       where: {
         organizationId,
-        role: "MANAGER",
+        role: "TRAINER",
       },
       select: {
         id: true,

@@ -7,12 +7,15 @@ async function fetchJson<T>(
   url: string,
   options?: RequestInit
 ): Promise<{ success: boolean; data: T; message?: string; meta?: any }> {
+  const isFormData = typeof FormData !== "undefined" && options?.body instanceof FormData;
+  const headers: Record<string, string> = { ...((options?.headers as Record<string, string>) || {}) };
+  if (!isFormData && !headers["Content-Type"]) {
+    headers["Content-Type"] = "application/json";
+  }
+
   const res = await fetch(url, {
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options?.headers,
-    },
+    headers,
   });
 
   const json = await res.json();
@@ -206,6 +209,11 @@ export const apiClient = {
       const qs = employeeId ? `?employeeId=${encodeURIComponent(employeeId)}` : "";
       return fetchJson<any>(`/api/my-development${qs}`);
     },
+    updateProfile: (data: any) =>
+      fetchJson<any>("/api/my-development", {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
   },
 
   reports: {
@@ -220,4 +228,108 @@ export const apiClient = {
         body: JSON.stringify(data),
       }),
   },
+
+  // ── Phase 2 ───────────────────────────────────────────────────────────────
+
+  trainerLibrary: {
+    list: (query?: { search?: string; resourceType?: string; competencyId?: string; courseId?: string; onlyPublished?: boolean }) => {
+      const params = new URLSearchParams();
+      if (query?.search) params.set("search", query.search);
+      if (query?.resourceType) params.set("resourceType", query.resourceType);
+      if (query?.competencyId) params.set("competencyId", query.competencyId);
+      if (query?.courseId) params.set("courseId", query.courseId);
+      if (query?.onlyPublished !== undefined) params.set("onlyPublished", String(query.onlyPublished));
+      const qs = params.toString();
+      return fetchJson<any>(`/api/trainer/library${qs ? `?${qs}` : ""}`);
+    },
+    getById: (id: string) => fetchJson<any>(`/api/trainer/library/${id}`),
+    create: (data: any) =>
+      fetchJson<any>("/api/trainer/library", { method: "POST", body: JSON.stringify(data) }),
+    upload: (formData: FormData) =>
+      fetchJson<any>("/api/trainer/library/upload", { method: "POST", body: formData }),
+    update: (id: string, data: any) =>
+      fetchJson<any>(`/api/trainer/library/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    delete: (id: string) =>
+      fetchJson<any>(`/api/trainer/library/${id}`, { method: "DELETE" }),
+  },
+
+  questionnaires: {
+    list: (query?: { status?: string; courseId?: string; competencyId?: string; search?: string }) => {
+      const params = new URLSearchParams();
+      if (query?.status) params.set("status", query.status);
+      if (query?.courseId) params.set("courseId", query.courseId);
+      if (query?.competencyId) params.set("competencyId", query.competencyId);
+      if (query?.search) params.set("search", query.search);
+      const qs = params.toString();
+      return fetchJson<any>(`/api/questionnaires${qs ? `?${qs}` : ""}`);
+    },
+    getById: (id: string) => fetchJson<any>(`/api/questionnaires/${id}`),
+    create: (data: any) =>
+      fetchJson<any>("/api/questionnaires", { method: "POST", body: JSON.stringify(data) }),
+    update: (id: string, data: any) =>
+      fetchJson<any>(`/api/questionnaires/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    publish: (id: string) =>
+      fetchJson<any>(`/api/questionnaires/${id}/publish`, { method: "POST" }),
+    archive: (id: string) =>
+      fetchJson<any>(`/api/questionnaires/${id}/archive`, { method: "POST" }),
+    submit: (id: string, data: { answers: Array<{ questionId: string; selectedOption: number }>; timeSpentMinutes?: number }) =>
+      fetchJson<any>(`/api/questionnaires/${id}/submit`, { method: "POST", body: JSON.stringify(data) }),
+    analytics: (id: string) => fetchJson<any>(`/api/questionnaires/${id}/analytics`),
+  },
+
+  feedback: {
+    list: (query?: { courseId?: string }) => {
+      const params = new URLSearchParams();
+      if (query?.courseId) params.set("courseId", query.courseId);
+      const qs = params.toString();
+      return fetchJson<any>(`/api/feedback${qs ? `?${qs}` : ""}`);
+    },
+    submit: (data: {
+      courseId: string;
+      rating: number;
+      isAnonymous?: boolean;
+      contentQualityRating?: number;
+      trainerClarityRating?: number;
+      applicabilityRating?: number;
+      comments?: string;
+    }) => fetchJson<any>("/api/feedback", { method: "POST", body: JSON.stringify(data) }),
+  },
+
+  publishing: {
+    list: (query?: { category?: string; search?: string }) => {
+      const params = new URLSearchParams();
+      if (query?.category) params.set("category", query.category);
+      if (query?.search) params.set("search", query.search);
+      const qs = params.toString();
+      return fetchJson<any>(`/api/admin/publishing${qs ? `?${qs}` : ""}`);
+    },
+    getById: (id: string) => fetchJson<any>(`/api/admin/publishing/${id}`),
+    create: (data: any) =>
+      fetchJson<any>("/api/admin/publishing", { method: "POST", body: JSON.stringify(data) }),
+    update: (id: string, data: any) =>
+      fetchJson<any>(`/api/admin/publishing/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    delete: (id: string) =>
+      fetchJson<any>(`/api/admin/publishing/${id}`, { method: "DELETE" }),
+  },
+
+  trainerProfile: {
+    get: () => fetchJson<any>("/api/trainer/profile"),
+    update: (data: { specializations?: string[]; teachingDomains?: string[]; bio?: string; name?: string; department?: string }) =>
+      fetchJson<any>("/api/trainer/profile", { method: "PUT", body: JSON.stringify(data) }),
+  },
+
+  users: {
+    list: () => fetchJson<any[]>("/api/users"),
+    create: (data: any) =>
+      fetchJson<any>("/api/users", { method: "POST", body: JSON.stringify(data) }),
+    getPending: () => fetchJson<{ pendingUsers: any[]; count: number }>("/api/users/pending"),
+    approve: (id: string) =>
+      fetchJson<any>(`/api/users/${id}/approve`, { method: "PATCH" }),
+    reject: (id: string, reason?: string) =>
+      fetchJson<any>(`/api/users/${id}/reject`, {
+        method: "PATCH",
+        body: JSON.stringify({ reason }),
+      }),
+  },
 };
+

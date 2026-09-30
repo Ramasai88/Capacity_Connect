@@ -9,14 +9,14 @@ import { MobileNav } from "@/components/layout/mobile-nav";
 
 export interface TopNavProps {
   userName: string;
-  role: "ADMIN" | "MANAGER" | "EMPLOYEE";
+  role: "ADMIN" | "TRAINER" | "TRAINEE";
   organizationName: string;
   isDemo?: boolean;
 }
 
 export function TopNav({
   userName = "User",
-  role = "EMPLOYEE",
+  role = "TRAINEE",
   organizationName = "",
   isDemo = false,
 }: TopNavProps) {

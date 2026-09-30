@@ -6,11 +6,11 @@ import { reassessmentQuerySchema } from "@/lib/validations/reassessment";
 /**
  * GET /api/reassessments
  * List reassessment requests with employee, course, and competency context.
- * RBAC: ADMIN & MANAGER (EMPLOYEE only sees their own).
+ * RBAC: ADMIN & TRAINER (TRAINEE only sees their own).
  */
 export async function GET(request: NextRequest) {
   try {
-    const auth = await authenticateApi(["ADMIN", "MANAGER", "EMPLOYEE"]);
+    const auth = await authenticateApi(["ADMIN", "TRAINER", "TRAINEE"]);
     if (!auth.authorized) {
       return auth.response!;
     }
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     const userRole = auth.user?.role;
     const userEmployeeId = auth.user?.employeeId;
     const queryData = { ...parsed.data };
-    if (userRole === "EMPLOYEE" && userEmployeeId) {
+    if (userRole === "TRAINEE" && userEmployeeId) {
       queryData.employeeId = userEmployeeId;
     }
 

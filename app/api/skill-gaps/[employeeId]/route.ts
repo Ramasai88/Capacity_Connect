@@ -14,7 +14,7 @@ interface RouteParams {
  */
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const auth = await authenticateApi(["ADMIN", "MANAGER", "EMPLOYEE"]);
+    const auth = await authenticateApi(["ADMIN", "TRAINER", "TRAINEE"]);
     if (!auth.authorized) {
       return auth.response!;
     }
@@ -22,8 +22,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const userRole = auth.user?.role;
     const userEmployeeId = auth.user?.employeeId;
 
-    // RBAC: Employee only sees their own
-    if (userRole === "EMPLOYEE" && userEmployeeId !== params.employeeId) {
+    // RBAC: Trainee only sees their own
+    if (userRole === "TRAINEE" && userEmployeeId !== params.employeeId) {
       return NextResponse.json(
         { error: { code: "FORBIDDEN", message: "You only have permission to view your own skill gaps." } },
         { status: 403 }

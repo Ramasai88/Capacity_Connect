@@ -55,8 +55,8 @@ export default function EmployeesPage() {
     }
   }, [loadRealData]);
 
-  if (role === "EMPLOYEE") {
-    return <AccessDenied requiredRole="MANAGER or ADMIN" currentRole="EMPLOYEE" resourceName="the Employee Directory" />;
+  if (role === "TRAINEE") {
+    return <AccessDenied requiredRole="TRAINER or ADMIN" currentRole="TRAINEE" resourceName="the Employee Directory" />;
   }
 
   const isAdmin = role === "ADMIN";

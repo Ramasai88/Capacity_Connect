@@ -15,7 +15,7 @@ interface RouteParams {
  */
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const auth = await authenticateApi(["ADMIN", "MANAGER", "EMPLOYEE"]);
+    const auth = await authenticateApi(["ADMIN", "TRAINER", "TRAINEE"]);
     if (!auth.authorized) {
       return auth.response!;
     }

@@ -57,24 +57,24 @@ describe("Role-Based Learning, Assessment & Resource Access System", () => {
   // 1. Schema Validation & Admin User Provisioning
   // ==========================================================================
   describe("1. Admin User Provisioning & Designation Validation", () => {
-    it("validates EMPLOYEE creation with a valid designationId", () => {
+    it("validates TRAINEE creation with a valid designationId", () => {
       const result = adminCreateUserSchema.safeParse({
         name: "Ravi ML Engineer",
         email: "ravi.ml@example.com",
         password: "Password@123",
         confirmPassword: "Password@123",
-        role: "EMPLOYEE",
+        role: "TRAINEE",
         designationId: "desig-mle",
       });
 
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.role).toBe("EMPLOYEE");
+        expect(result.data.role).toBe("TRAINEE");
         expect(result.data.designationId).toBe("desig-mle");
       }
     });
 
-    it("rejects EMPLOYEE creation when invalid designationId is provided to EmployeeService", async () => {
+    it("rejects TRAINEE creation when invalid designationId is provided to EmployeeService", async () => {
       await expect(
         EmployeeService.createEmployee(TEST_ORG_ID, {
           name: "Invalid Designation Employee",
@@ -86,7 +86,7 @@ describe("Role-Based Learning, Assessment & Resource Access System", () => {
       ).rejects.toThrow("The specified designation does not exist in this organization.");
     });
 
-    it("allows ADMIN and MANAGER creation without designationId", () => {
+    it("allows ADMIN and TRAINER creation without designationId", () => {
       const adminResult = adminCreateUserSchema.safeParse({
         name: "Admin User",
         email: "admin.test@example.com",
@@ -96,14 +96,14 @@ describe("Role-Based Learning, Assessment & Resource Access System", () => {
       });
       expect(adminResult.success).toBe(true);
 
-      const managerResult = adminCreateUserSchema.safeParse({
-        name: "Manager User",
-        email: "mgr.test@example.com",
+      const trainerResult = adminCreateUserSchema.safeParse({
+        name: "Trainer User",
+        email: "trainer.test@example.com",
         password: "Password@123",
         confirmPassword: "Password@123",
-        role: "MANAGER",
+        role: "TRAINER",
       });
-      expect(managerResult.success).toBe(true);
+      expect(trainerResult.success).toBe(true);
     });
   });
 
@@ -392,11 +392,11 @@ describe("Role-Based Learning, Assessment & Resource Access System", () => {
       expect(scope).toBeNull();
     });
 
-    it("enforces RBAC permissions: EMPLOYEES cannot add or edit employees or designations", () => {
-      expect(hasPermission("EMPLOYEE", "canAddEmployee")).toBe(false);
-      expect(hasPermission("EMPLOYEE", "canEditEmployee")).toBe(false);
-      expect(hasPermission("EMPLOYEE", "canCreateDesignation")).toBe(false);
-      expect(hasPermission("EMPLOYEE", "canCreateCompetency")).toBe(false);
+    it("enforces RBAC permissions: TRAINEES cannot add or edit employees or designations", () => {
+      expect(hasPermission("TRAINEE", "canAddEmployee")).toBe(false);
+      expect(hasPermission("TRAINEE", "canEditEmployee")).toBe(false);
+      expect(hasPermission("TRAINEE", "canCreateDesignation")).toBe(false);
+      expect(hasPermission("TRAINEE", "canCreateCompetency")).toBe(false);
 
       expect(hasPermission("ADMIN", "canAddEmployee")).toBe(true);
       expect(hasPermission("ADMIN", "canEditEmployee")).toBe(true);

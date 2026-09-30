@@ -89,9 +89,9 @@ export class AIAssistantService {
     const lower = userMessage.toLowerCase();
 
     // -------------------------------------------------------------------------
-    // 1. EMPLOYEE ROLE CONTEXT: Strictly limited to authenticated employee's records
+    // 1. TRAINEE ROLE CONTEXT: Strictly limited to authenticated trainee's records
     // -------------------------------------------------------------------------
-    if (user.role === "EMPLOYEE") {
+    if (user.role === "TRAINEE") {
       let employeeId = user.employeeId;
 
       if (!employeeId) {
@@ -102,7 +102,7 @@ export class AIAssistantService {
         employeeId = dbUser?.employeeId ?? null;
       }
 
-      // Check if employee is trying to query someone else's data
+      // Check if trainee is trying to query someone else's data
       const otherEmployees = await prisma.employee.findMany({
         where: {
           organizationId,
@@ -126,7 +126,7 @@ export class AIAssistantService {
     }
 
     // -------------------------------------------------------------------------
-    // 2. ADMIN & MANAGER CONTEXT: Organization-level intelligence + Target Employee Search
+    // 2. ADMIN & TRAINER CONTEXT: Organization-level intelligence + Target Trainee Search
     // -------------------------------------------------------------------------
     const totalEmployees = await prisma.employee.count({ where: { organizationId } });
     const totalCompetencies = await prisma.competency.count({ where: { organizationId } });
@@ -601,8 +601,8 @@ The **GIL** is a mutual-exclusion lock used by the CPython interpreter to ensure
 - **Solution for CPU tasks**: Use the \`multiprocessing\` module or offload to C extensions.`;
     }
 
-    // Organization-level summary for Admin/Manager
-    if (context.role === "ADMIN" || context.role === "MANAGER") {
+    // Organization-level summary for Admin/Trainer
+    if (context.role === "ADMIN" || context.role === "TRAINER") {
       return `Hello **${context.userName}** (${context.role})! I am your **Capacity Connect Management Assistant**.
 
 **Organization Overview for ${context.organizationName}:**
@@ -651,7 +651,7 @@ What specific skill or assessment topic would you like to explore?`;
         "Explain AsyncIO in simple terms",
       ];
     }
-    if (context.role === "ADMIN" || context.role === "MANAGER") {
+    if (context.role === "ADMIN" || context.role === "TRAINER") {
       return [
         "Give me Ananya Patel Skill Gap",
         "What are common skill gaps in our organization?",

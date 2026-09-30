@@ -64,12 +64,12 @@ export default function ReassessmentsPage() {
   }, [loadRealData]);
 
   // Check role authorization
-  if (role === "EMPLOYEE") {
+  if (role === "TRAINEE") {
     return (
       <AccessDenied
-        requiredRole="MANAGER or ADMIN"
-        currentRole="EMPLOYEE"
-        resourceName="the Manager Reassessment & Level Verification portal"
+        requiredRole="TRAINER or ADMIN"
+        currentRole="TRAINEE"
+        resourceName="the Trainer Reassessment & Level Verification portal"
       />
     );
   }

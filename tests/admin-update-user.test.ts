@@ -65,7 +65,7 @@ describe("Admin Single Authoritative Update Flow for Employees and Managers", ()
           name: "Original Employee Name",
           email: originalEmployeeEmail,
           passwordHash,
-          role: "EMPLOYEE",
+          role: "TRAINEE",
           organizationId: TEST_ORG_ID,
           employeeId: emp.id,
           isActivated: true,
@@ -101,7 +101,7 @@ describe("Admin Single Authoritative Update Flow for Employees and Managers", ()
     if (mgrUser) {
       mgrUser = await prisma.user.update({
         where: { id: mgrUser.id },
-        data: { passwordHash, role: "MANAGER", isActivated: true },
+        data: { passwordHash, role: "TRAINER", isActivated: true },
       });
     } else {
       mgrUser = await prisma.user.create({
@@ -109,7 +109,7 @@ describe("Admin Single Authoritative Update Flow for Employees and Managers", ()
           name: "Original Manager Name",
           email: originalManagerEmail,
           passwordHash,
-          role: "MANAGER",
+          role: "TRAINER",
           organizationId: TEST_ORG_ID,
           employeeId: mgr.id,
           isActivated: true,
@@ -193,7 +193,7 @@ describe("Admin Single Authoritative Update Flow for Employees and Managers", ()
     const userDb = await prisma.user.findUnique({ where: { id: employeeUserId } });
     expect(userDb?.name).toBe(updatedName);
     expect(userDb?.email).toBe(updatedEmail);
-    expect(userDb?.role).toBe("EMPLOYEE"); // Role preserved
+    expect(userDb?.role).toBe("TRAINEE"); // Role preserved
     expect(userDb?.id).toBe(employeeUserId); // User ID preserved
 
     // Verify login with updated email and original password succeeds
@@ -243,7 +243,7 @@ describe("Admin Single Authoritative Update Flow for Employees and Managers", ()
     const mgrUserDb = await prisma.user.findUnique({ where: { id: managerUserId } });
     expect(mgrUserDb?.name).toBe(updatedMgrName);
     expect(mgrUserDb?.email).toBe(updatedMgrEmail);
-    expect(mgrUserDb?.role).toBe("MANAGER"); // Role preserved
+    expect(mgrUserDb?.role).toBe("TRAINER"); // Role preserved
 
     // Verify login works with new manager email
     const verifiedMgr = await verifyUserCredentials({
@@ -251,7 +251,7 @@ describe("Admin Single Authoritative Update Flow for Employees and Managers", ()
       password: initialPassword,
     });
     expect(verifiedMgr).not.toBeNull();
-    expect(verifiedMgr?.role).toBe("MANAGER");
+    expect(verifiedMgr?.role).toBe("TRAINER");
   });
 
   it("4. Rejects duplicate email within the same organization", async () => {
@@ -304,8 +304,8 @@ describe("Admin Single Authoritative Update Flow for Employees and Managers", ()
 
   it("7. RBAC permissions: Only ADMIN has permission to edit employees/managers", () => {
     expect(hasPermission("ADMIN", "canEditEmployee")).toBe(true);
-    expect(hasPermission("MANAGER", "canEditEmployee")).toBe(false);
-    expect(hasPermission("EMPLOYEE", "canEditEmployee")).toBe(false);
+    expect(hasPermission("TRAINER", "canEditEmployee")).toBe(false);
+    expect(hasPermission("TRAINEE", "canEditEmployee")).toBe(false);
   });
 
   it("8. Unauthenticated requests are rejected with 401", async () => {

@@ -41,7 +41,7 @@ describe("Phase 1 — Email Activation Link + Employee Password Setup Flow", () 
     expect(user).toBeDefined();
     expect(user!.isActivated).toBe(false);
     expect(user!.employeeId).toBe(created.id);
-    expect(user!.role).toBe("EMPLOYEE");
+    expect(user!.role).toBe("TRAINEE");
 
     // 3. Verify Activation Token generated with expiration
     const tokenRecord = await prisma.accountActivationToken.findFirst({
@@ -164,7 +164,7 @@ describe("Phase 1 — Email Activation Link + Employee Password Setup Flow", () 
 
     expect(loginUser).toBeDefined();
     expect(loginUser!.email).toBe(testEmail);
-    expect(loginUser!.role).toBe("EMPLOYEE");
+    expect(loginUser!.role).toBe("TRAINEE");
     expect(loginUser!.organizationId).toBe(TEST_ORG_ID);
     expect(loginUser!.employeeId).toBeDefined();
   });
@@ -241,12 +241,12 @@ describe("Phase 1 — Email Activation Link + Employee Password Setup Flow", () 
     expect(tooShort.success).toBe(false);
   });
 
-  it("23: adminCreateUserSchema allows EMPLOYEE without password, but requires password for ADMIN and MANAGER", () => {
-    // 1. Employee without password -> valid
+  it("23: adminCreateUserSchema allows TRAINEE without password, but requires password for ADMIN and TRAINER", () => {
+    // 1. Trainee without password -> valid
     const empValid = adminCreateUserSchema.safeParse({
-      name: "Employee Without Password",
-      email: "emp.nopass@example.com",
-      role: "EMPLOYEE",
+      name: "Trainee Without Password",
+      email: "trainee.nopass@example.com",
+      role: "TRAINEE",
       designationId: "desig-swe",
     });
     expect(empValid.success).toBe(true);
@@ -259,13 +259,13 @@ describe("Phase 1 — Email Activation Link + Employee Password Setup Flow", () 
     });
     expect(adminInvalid.success).toBe(false);
 
-    // 3. Manager without password -> invalid
-    const mgrInvalid = adminCreateUserSchema.safeParse({
-      name: "Manager Without Password",
-      email: "mgr.nopass@example.com",
-      role: "MANAGER",
+    // 3. Trainer without password -> invalid
+    const trainerInvalid = adminCreateUserSchema.safeParse({
+      name: "Trainer Without Password",
+      email: "trainer.nopass@example.com",
+      role: "TRAINER",
     });
-    expect(mgrInvalid.success).toBe(false);
+    expect(trainerInvalid.success).toBe(false);
 
     // 4. Admin with valid password -> valid
     const adminValid = adminCreateUserSchema.safeParse({
@@ -304,7 +304,7 @@ describe("Phase 1 — Email Activation Link + Employee Password Setup Flow", () 
           name: employeeName,
           email: testEmail,
           passwordHash: lockedPlaceholder,
-          role: "EMPLOYEE",
+          role: "TRAINEE",
           organizationId: TEST_ORG_ID,
           employeeId: employee.id,
           isActivated: false,
@@ -368,7 +368,7 @@ describe("Phase 1 — Email Activation Link + Employee Password Setup Flow", () 
       password: "EmployeeSetupPass@123",
     });
     expect(activatedLogin).not.toBeNull();
-    expect(activatedLogin!.role).toBe("EMPLOYEE");
+    expect(activatedLogin!.role).toBe("TRAINEE");
   });
 
   it("26: Development Fallback — EmailService safely returns simulated delivery result with activation link when SMTP is unconfigured", async () => {
@@ -442,7 +442,7 @@ describe("Phase 1 — Email Activation Link + Employee Password Setup Flow", () 
           name: employeeName,
           email: testEmail,
           passwordHash: `$2a$10$LOCKED_UNACTIVATED_${Date.now()}`,
-          role: "EMPLOYEE",
+          role: "TRAINEE",
           organizationId: TEST_ORG_ID,
           employeeId: emp.id,
           isActivated: false,
@@ -497,10 +497,10 @@ describe("Phase 1 — Email Activation Link + Employee Password Setup Flow", () 
       password: "DevPasswordSetup@123",
     });
     expect(login).not.toBeNull();
-    expect(login!.role).toBe("EMPLOYEE");
+    expect(login!.role).toBe("TRAINEE");
   });
 
-  it("29: Regression safety — Existing Admin, Manager, and active Employee accounts remain fully operational", async () => {
+  it("29: Regression safety — Existing Admin, Trainer, and active Trainee accounts remain fully operational", async () => {
     // 1. Admin Login
     const adminLogin = await verifyUserCredentials({
       email: "admin@klu.edu",
@@ -509,21 +509,21 @@ describe("Phase 1 — Email Activation Link + Employee Password Setup Flow", () 
     expect(adminLogin).not.toBeNull();
     expect(adminLogin!.role).toBe("ADMIN");
 
-    // 2. Manager Login
-    const managerLogin = await verifyUserCredentials({
+    // 2. Trainer Login
+    const trainerLogin = await verifyUserCredentials({
       email: "sarah.jenkins@capacityconnect.demo",
-      password: "Manager@123",
+      password: "Trainer@123",
     });
-    expect(managerLogin).not.toBeNull();
-    expect(managerLogin!.role).toBe("MANAGER");
+    expect(trainerLogin).not.toBeNull();
+    expect(trainerLogin!.role).toBe("TRAINER");
 
-    // 3. Existing Employee Login (Ravi Kumar)
-    const employeeLogin = await verifyUserCredentials({
+    // 3. Existing Trainee Login (Ravi Kumar)
+    const traineeLogin = await verifyUserCredentials({
       email: "ravi.kumar@capacityconnect.demo",
-      password: "Employee@123",
+      password: "Trainee@123",
     });
-    expect(employeeLogin).not.toBeNull();
-    expect(employeeLogin!.role).toBe("EMPLOYEE");
+    expect(traineeLogin).not.toBeNull();
+    expect(traineeLogin!.role).toBe("TRAINEE");
   });
 
   it("30: EmailService.getBaseUrl() prioritizes APP_BASE_URL and trims trailing slashes correctly", () => {

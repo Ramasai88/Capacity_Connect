@@ -19,6 +19,7 @@ export interface CapacityReportResponse {
     totalEmployees: number;
     activeEmployees: number;
     removedEmployees: number;
+    totalTrainers: number;
     totalManagers: number;
     totalCompetencies: number;
     totalDesignations: number;
@@ -55,7 +56,7 @@ export class ReportService {
       org,
       activeEmployeesCount,
       removedEmployeesCount,
-      managersCount,
+      trainersCount,
       competenciesCount,
       designationsCount,
       coursesCount,
@@ -71,7 +72,7 @@ export class ReportService {
       }),
       prisma.employee.count({ where: { organizationId, status: "ACTIVE" } }),
       prisma.employee.count({ where: { organizationId, status: "INACTIVE" } }),
-      prisma.user.count({ where: { organizationId, role: "MANAGER" } }),
+      prisma.user.count({ where: { organizationId, role: "TRAINER" } }),
       prisma.competency.count({ where: { organizationId } }),
       prisma.designation.count({ where: { organizationId } }),
       prisma.course.count({ where: { organizationId } }),
@@ -166,7 +167,8 @@ export class ReportService {
         totalEmployees: activeEmployeesCount,
         activeEmployees: activeEmployeesCount,
         removedEmployees: removedEmployeesCount,
-        totalManagers: managersCount,
+        totalTrainers: trainersCount,
+        totalManagers: trainersCount,
         totalCompetencies: competenciesCount,
         totalDesignations: designationsCount,
         totalCourses: coursesCount,

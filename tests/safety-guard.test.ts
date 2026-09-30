@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import path from "path";
-import { assertSafeTestDatabaseUrl, parseEnvFile } from "./safety-guard";
+import { assertSafeTestDatabaseUrl, assertSafeDevDatabaseUrl, parseEnvFile } from "./safety-guard";
 
 describe("Safety Guard — Database Isolation Protection", () => {
   it("throws error when DATABASE_URL is missing or empty", () => {
@@ -37,4 +37,13 @@ describe("Safety Guard — Database Isolation Protection", () => {
     const result = assertSafeTestDatabaseUrl(testDbUrl);
     expect(result).toBe(testDbUrl);
   });
+
+  it("assertSafeDevDatabaseUrl rejects production markers and non-localhost urls", () => {
+    const prodUrl = "postgresql://user:pass@dpg-dacqaivavr4c739e3ujg-a.singapore-postgres.render.com/capacity_connect_db_uh6j";
+    expect(() => assertSafeDevDatabaseUrl(prodUrl)).toThrowError(/CRITICAL SAFETY GUARD/i);
+    expect(() => assertSafeDevDatabaseUrl("postgresql://postgres:postgres@localhost:5432/capacity_connect_test")).toThrowError(/points to the test database/i);
+    const validDevUrl = "postgresql://postgres:postgres@localhost:5432/capacity_connect_dev";
+    expect(assertSafeDevDatabaseUrl(validDevUrl)).toBe(validDevUrl);
+  });
 });
+

@@ -87,7 +87,7 @@ describe("Phase 1: Real Employee User → Employee Profile Integration", () => {
           name,
           email,
           passwordHash,
-          role: "EMPLOYEE",
+          role: "TRAINEE",
           organizationId: TEST_ORG_ID,
           employeeId: newEmp.id,
         },
@@ -98,7 +98,7 @@ describe("Phase 1: Real Employee User → Employee Profile Integration", () => {
 
     trackEmployee(employee.id);
 
-    expect(user.role).toBe("EMPLOYEE");
+    expect(user.role).toBe("TRAINEE");
     expect(user.employeeId).toBe(employee.id);
     expect(user.employeeId).not.toBeNull();
 
@@ -114,7 +114,7 @@ describe("Phase 1: Real Employee User → Employee Profile Integration", () => {
     expect(dbUser?.employee?.organizationId).toBe(TEST_ORG_ID);
   });
 
-  it("admin-created EMPLOYEE user creates Employee profile and links User.employeeId", async () => {
+  it("admin-created TRAINEE user creates Employee profile and links User.employeeId", async () => {
     const email = trackEmail("phase1.admin.created.emp@capacityconnect.internal");
     const name = "Admin Created Worker";
     const passwordHash = await bcrypt.hash("WorkerPass@123", 10);
@@ -137,7 +137,7 @@ describe("Phase 1: Real Employee User → Employee Profile Integration", () => {
           name,
           email,
           passwordHash,
-          role: "EMPLOYEE",
+          role: "TRAINEE",
           organizationId: TEST_ORG_ID,
           employeeId: employee.id,
         },
@@ -149,7 +149,7 @@ describe("Phase 1: Real Employee User → Employee Profile Integration", () => {
 
     trackEmployee(user.createdEmpId);
 
-    expect(user.role).toBe("EMPLOYEE");
+    expect(user.role).toBe("TRAINEE");
     expect(user.employeeId).toBe(user.createdEmpId);
 
     const dbEmployee = await prisma.employee.findUnique({
@@ -159,7 +159,7 @@ describe("Phase 1: Real Employee User → Employee Profile Integration", () => {
     expect(dbEmployee?.email).toBe(email);
   });
 
-  it("admin-created MANAGER user sets employeeId = null (no Employee workforce profile)", async () => {
+  it("admin-created TRAINER user sets employeeId = null (no Employee workforce profile)", async () => {
     const email = trackEmail("phase1.manager.user@capacityconnect.internal");
     const name = "Test Department Manager";
     const passwordHash = await bcrypt.hash("ManagerPass@123", 10);
@@ -169,13 +169,13 @@ describe("Phase 1: Real Employee User → Employee Profile Integration", () => {
         name,
         email,
         passwordHash,
-        role: "MANAGER",
+        role: "TRAINER",
         organizationId: TEST_ORG_ID,
         employeeId: null,
       },
     });
 
-    expect(user.role).toBe("MANAGER");
+    expect(user.role).toBe("TRAINER");
     expect(user.employeeId).toBeNull();
 
     // Verify no stray Employee record was created with this email
@@ -246,7 +246,7 @@ describe("Phase 2: Strict Employee Identity in Learning & Multi-User Isolation",
 
   it("multiple employees maintain independent enrollments in the same course without cross-contamination", async () => {
     const course = await prisma.course.findFirst({
-      where: { organizationId: TEST_ORG_ID },
+      where: { organizationId: TEST_ORG_ID, modules: { some: {} } },
       include: { modules: { orderBy: { order: "asc" } } },
     });
     expect(course).not.toBeNull();

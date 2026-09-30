@@ -68,3 +68,49 @@ export function assertSafeTestDatabaseUrl(candidateUrl?: string): string {
 
   return url;
 }
+
+/**
+ * Validates that the provided DATABASE_URL is safe for development operations
+ * and does NOT point to production or external infrastructure.
+ */
+export function assertSafeDevDatabaseUrl(candidateUrl?: string): string {
+  const url = candidateUrl !== undefined ? candidateUrl : process.env.DATABASE_URL;
+
+  if (!url || url.trim() === "") {
+    throw new Error(
+      "DATABASE_URL is missing. Please configure a local development database in .env (e.g. postgresql://postgres:postgres@localhost:5432/capacity_connect_dev)."
+    );
+  }
+
+  const normalized = url.toLowerCase();
+  const knownProdMarkers = [
+    "capacity_connect_db_uh6j",
+    "dpg-dacqaivavr4c739e3ujg-a",
+    "singapore-postgres.render.com",
+    "render.com",
+  ];
+
+  for (const marker of knownProdMarkers) {
+    if (normalized.includes(marker.toLowerCase())) {
+      throw new Error(
+        `CRITICAL SAFETY GUARD: Refusing operation against production database. URL contains production marker "${marker}".`
+      );
+    }
+  }
+
+  if (normalized.includes("capacity_connect_test")) {
+    throw new Error(
+      "CRITICAL SAFETY GUARD: URL points to the test database (capacity_connect_test). Please use a dedicated development database."
+    );
+  }
+
+  // Ensure it targets localhost / 127.0.0.1 / local docker
+  if (!normalized.includes("localhost") && !normalized.includes("127.0.0.1") && !normalized.includes("host.docker.internal")) {
+    throw new Error(
+      "CRITICAL SAFETY GUARD: Local development database must target localhost / 127.0.0.1."
+    );
+  }
+
+  return url;
+}
+

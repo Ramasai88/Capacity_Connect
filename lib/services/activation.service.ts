@@ -133,6 +133,14 @@ export class ActivationService {
       };
     }
 
+    if (tokenRecord.user.approvalStatus !== "APPROVED") {
+      return {
+        valid: false,
+        code: "ACCOUNT_NOT_APPROVED",
+        message: "Your account registration has not been approved by an administrator.",
+      };
+    }
+
     return {
       valid: true,
       employee: {
@@ -216,6 +224,14 @@ export class ActivationService {
             "Your activation link has expired. Please contact your administrator for a new link.",
             400,
             "TOKEN_EXPIRED"
+          );
+        }
+
+        if (tokenRecord.user.approvalStatus !== "APPROVED") {
+          throw new ActivationServiceError(
+            "Your account registration has not been approved by an administrator.",
+            403,
+            "ACCOUNT_NOT_APPROVED"
           );
         }
 

@@ -12,18 +12,18 @@ import { RoleLearningService } from "@/lib/services/role-learning.service";
 /**
  * POST /api/users
  *
- * Admin-only endpoint to create user accounts with any role (ADMIN, MANAGER, or EMPLOYEE).
+ * Admin-only endpoint to create user accounts with any role (ADMIN, TRAINER, or TRAINEE).
  *
  * Security & Data Model:
  * - Requires an authenticated ADMIN session (checked server-side via authenticateApi).
- * - Role is validated against the Prisma UserRole enum (ADMIN | MANAGER | EMPLOYEE).
- * - When role is EMPLOYEE:
+ * - Role is validated against the Prisma UserRole enum (ADMIN | TRAINER | TRAINEE).
+ * - When role is TRAINEE:
  *   - Direct password setup by admin is bypassed.
  *   - Account is created in an unactivated state (isActivated = false) with a locked password placeholder.
  *   - An Employee workforce profile is atomically created and linked via employeeId.
  *   - A secure one-time activation token is generated.
- *   - An activation email is dispatched to the employee with their Employee ID and setup link.
- * - When role is MANAGER or ADMIN:
+ *   - An activation email is dispatched to the trainee with their Employee ID and setup link.
+ * - When role is TRAINER or ADMIN:
  *   - Password is required, validated, and bcrypt-hashed with cost factor 10.
  *   - User is created directly activated (isActivated = true) without an Employee workforce profile (employeeId = null).
  * - Duplicate emails within the same organization are rejected with 409.
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
         );
       }
       validatedDesignationId = designation.id;
-    } else if (role === "EMPLOYEE") {
+    } else if (role === "TRAINEE") {
       const defaultDesig = await prisma.designation.findFirst({
         where: { organizationId: organizationId! },
         orderBy: { title: "asc" },
@@ -117,11 +117,11 @@ export async function POST(request: Request) {
     // -----------------------------------------------------------------------
     // Step 4: Handle password & activation branching by role
     // -----------------------------------------------------------------------
-    const isEmployee = role === "EMPLOYEE";
+    const isTrainee = role === "TRAINEE";
     let passwordHash: string;
     let isActivated: boolean;
 
-    if (isEmployee) {
+    if (isTrainee) {
       passwordHash = `$2a$10$LOCKED_UNACTIVATED_${crypto.randomBytes(16).toString("hex")}`;
       isActivated = false;
     } else {
@@ -136,8 +136,8 @@ export async function POST(request: Request) {
       async (tx) => {
         let employeeId: string | null = null;
 
-        // If creating an EMPLOYEE, provision/link an Employee workforce profile
-        if (isEmployee) {
+        // If creating a TRAINEE, provision/link an Employee workforce profile
+        if (isTrainee) {
           let employee = await tx.employee.findFirst({
             where: {
               email: normalizedEmail,
@@ -214,8 +214,8 @@ export async function POST(request: Request) {
           },
         });
 
-        // If creating an unactivated EMPLOYEE, generate a secure one-time activation token
-        if (isEmployee && employeeId) {
+        // If creating an unactivated TRAINEE, generate a secure one-time activation token
+        if (isTrainee && employeeId) {
           const tokenResult = await ActivationService.createToken(
             {
               userId: newUser.id,
@@ -233,7 +233,7 @@ export async function POST(request: Request) {
     );
 
     // -----------------------------------------------------------------------
-    // Step 5: Send Activation Email for Employees post-transaction commit
+    // Step 5: Send Activation Email for Trainees post-transaction commit
     // -----------------------------------------------------------------------
     let emailDeliveryResult: {
       success: boolean;
@@ -242,21 +242,21 @@ export async function POST(request: Request) {
       error?: string;
     } | null = null;
 
-    if (isEmployee && rawActivationToken) {
+    if (isTrainee && rawActivationToken) {
       try {
         const org = await prisma.organization.findUnique({
           where: { id: organizationId! },
           select: { name: true },
         });
 
-        let employeeRole = "Employee";
+        let traineeRole = "Trainee";
         if (user.employeeId) {
           const emp = await prisma.employee.findUnique({
             where: { id: user.employeeId },
             include: { designation: { select: { title: true } } },
           });
           if (emp?.designation?.title) {
-            employeeRole = emp.designation.title;
+            traineeRole = emp.designation.title;
           }
         }
 
@@ -264,12 +264,12 @@ export async function POST(request: Request) {
           recipientEmail: normalizedEmail,
           recipientName: user.name.trim(),
           employeeCode: assignedEmployeeCode || undefined,
-          role: employeeRole,
+          role: traineeRole,
           rawToken: rawActivationToken,
           organizationName: org?.name,
         });
       } catch (emailErr) {
-        console.error("Failed to send employee activation email from /api/users:", emailErr);
+        console.error("Failed to send trainee activation email from /api/users:", emailErr);
       }
     }
 
@@ -282,26 +282,26 @@ export async function POST(request: Request) {
       category: "USER_MANAGEMENT",
       targetId: user.id,
       targetName: `${user.name} (${user.email})`,
-      description: isEmployee
-        ? `Administrator ${auth.user.name || auth.user.email} provisioned employee account for ${user.name} (${user.email}) and dispatched an email activation link.`
+      description: isTrainee
+        ? `Administrator ${auth.user.name || auth.user.email} provisioned trainee account for ${user.name} (${user.email}) and dispatched an email activation link.`
         : `Administrator ${auth.user.name || auth.user.email} provisioned new ${role} account for ${user.name} (${user.email}).`,
       metadata: { role, email: user.email, designationId: validatedDesignationId, isActivated },
     });
 
     // Determine response message and development fallback link
     const isDevFallback =
-      isEmployee &&
+      isTrainee &&
       process.env.NODE_ENV !== "production" &&
       Boolean(emailDeliveryResult?.simulated && emailDeliveryResult?.activationUrl);
 
     let responseMessage: string;
-    if (isEmployee) {
+    if (isTrainee) {
       if (emailDeliveryResult?.success && !emailDeliveryResult?.simulated) {
-        responseMessage = `Employee account provisioned for ${user.name}. An activation email has been dispatched with their setup link.`;
+        responseMessage = `Trainee account provisioned for ${user.name}. An activation email has been dispatched with their setup link.`;
       } else if (isDevFallback) {
-        responseMessage = `Employee account created successfully. Email delivery is not configured (Development Mode). Development activation link is available for testing.`;
+        responseMessage = `Trainee account created successfully. Email delivery is not configured (Development Mode). Development activation link is available for testing.`;
       } else {
-        responseMessage = `Employee account provisioned for ${user.name}. Notice: SMTP email delivery is not configured.`;
+        responseMessage = `Trainee account provisioned for ${user.name}. Notice: SMTP email delivery is not configured.`;
       }
     } else {
       responseMessage = `Account created successfully with role ${role}.`;

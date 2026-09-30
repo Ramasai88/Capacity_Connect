@@ -15,7 +15,7 @@ interface RouteParams {
  */
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
-    const auth = await authenticateApi(["ADMIN", "MANAGER", "EMPLOYEE"]);
+    const auth = await authenticateApi(["ADMIN", "TRAINER", "TRAINEE"]);
     if (!auth.authorized) {
       return auth.response!;
     }
@@ -27,8 +27,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       const body = await request.json();
       const parsed = enrollCourseSchema.safeParse(body);
       if (parsed.success && parsed.data.employeeId) {
-        // If employee role, cannot enroll other employees
-        if (auth.user?.role === "EMPLOYEE" && parsed.data.employeeId !== auth.user?.employeeId) {
+        // If trainee role, cannot enroll other employees
+        if (auth.user?.role === "TRAINEE" && parsed.data.employeeId !== auth.user?.employeeId) {
           return NextResponse.json(
             { error: { code: "FORBIDDEN", message: "You can only enroll yourself in courses." } },
             { status: 403 }

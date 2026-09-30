@@ -6,7 +6,7 @@ import { authenticateApi } from "@/lib/auth/session";
 import { AuditService } from "@/lib/services/audit.service";
 
 export async function POST(request: Request) {
-  // Enforce server-side ADMIN authentication: Public registration is strictly disabled
+  // Enforce server-side ADMIN authentication: Direct registration is restricted to Admin
   const auth = await authenticateApi(["ADMIN"]);
   if (!auth.authorized) {
     return auth.response!;
@@ -70,7 +70,6 @@ export async function POST(request: Request) {
 
     // Atomic Transaction: Create Employee Profile + Create User + Link employeeId
     const { user } = await prisma.$transaction(async (tx) => {
-      // 1. Check if Employee profile already exists with this email in the organization
       let employee = await tx.employee.findFirst({
         where: {
           email: normalizedEmail,
@@ -78,7 +77,6 @@ export async function POST(request: Request) {
         },
       });
 
-      // 2. If no Employee profile exists, create one for this new employee
       if (!employee) {
         const empCount = await tx.employee.count({ where: { organizationId: organization.id } });
         const candidateCode = `EMP-${String(empCount + 1).padStart(3, "0")}`;
@@ -103,15 +101,16 @@ export async function POST(request: Request) {
         });
       }
 
-      // 3. Create User record with role EMPLOYEE and linked employeeId
       const newUser = await tx.user.create({
         data: {
           name: name.trim(),
           email: normalizedEmail,
           passwordHash,
-          role: "EMPLOYEE", // Always EMPLOYEE for public self-registration
+          role: "TRAINEE",
           organizationId: organization.id,
           employeeId: employee.id,
+          approvalStatus: "APPROVED",
+          isActivated: true,
         },
         select: {
           id: true,
@@ -120,6 +119,8 @@ export async function POST(request: Request) {
           role: true,
           organizationId: true,
           employeeId: true,
+          approvalStatus: true,
+          isActivated: true,
           createdAt: true,
         },
       });
@@ -136,8 +137,8 @@ export async function POST(request: Request) {
       category: "USER_MANAGEMENT",
       targetId: user.id,
       targetName: `${user.name} (${user.email})`,
-      description: `Administrator ${auth.user.name || auth.user.email} provisioned new EMPLOYEE account for ${user.name} (${user.email}).`,
-      metadata: { role: "EMPLOYEE", email: user.email },
+      description: `Administrator ${auth.user.name || auth.user.email} provisioned new TRAINEE account for ${user.name} (${user.email}).`,
+      metadata: { role: "TRAINEE", email: user.email },
     });
 
     return NextResponse.json(
@@ -161,3 +162,5 @@ export async function POST(request: Request) {
     );
   }
 }
+
+

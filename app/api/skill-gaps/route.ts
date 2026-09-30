@@ -8,7 +8,7 @@ import { SkillGapService } from "@/lib/services/skill-gap.service";
  */
 export async function GET(request: NextRequest) {
   try {
-    const auth = await authenticateApi(["ADMIN", "MANAGER", "EMPLOYEE"]);
+    const auth = await authenticateApi(["ADMIN", "TRAINER", "TRAINEE"]);
     if (!auth.authorized) {
       return auth.response!;
     }
@@ -16,10 +16,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const department = searchParams.get("department") || undefined;
 
-    // RBAC: Employee only sees their own skill gaps
+    // RBAC: Trainee only sees their own skill gaps
     const userRole = auth.user?.role;
     const userEmployeeId = auth.user?.employeeId;
-    if (userRole === "EMPLOYEE" && userEmployeeId) {
+    if (userRole === "TRAINEE" && userEmployeeId) {
       const single = await SkillGapService.getEmployeeSkillGaps(auth.organizationId!, userEmployeeId);
       return NextResponse.json({
         success: true,

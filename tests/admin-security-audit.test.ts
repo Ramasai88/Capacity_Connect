@@ -62,13 +62,13 @@ describe("Security Enhancement — Account Provisioning & Registration Lockdown"
       expect(data.error).toBeDefined();
     });
 
-    it("rejects EMPLOYEE requests with 403 Forbidden", async () => {
+    it("rejects TRAINEE requests with 403 Forbidden", async () => {
       vi.mocked(getServerSession).mockResolvedValue({
         user: {
           id: "emp-user-1",
           name: "Ravi Kumar",
           email: "ravi.kumar@capacityconnect.demo",
-          role: "EMPLOYEE",
+          role: "TRAINEE",
           organizationId: TEST_ORG_ID,
         },
         expires: new Date(Date.now() + 3600000).toISOString(),
@@ -87,13 +87,13 @@ describe("Security Enhancement — Account Provisioning & Registration Lockdown"
       expect(data.error.code).toBe("FORBIDDEN");
     });
 
-    it("rejects MANAGER requests with 403 Forbidden", async () => {
+    it("rejects TRAINER requests with 403 Forbidden", async () => {
       vi.mocked(getServerSession).mockResolvedValue({
         user: {
           id: "mgr-user-1",
           name: "Sarah Jenkins",
           email: "sarah.jenkins@capacityconnect.demo",
-          role: "MANAGER",
+          role: "TRAINER",
           organizationId: TEST_ORG_ID,
         },
         expires: new Date(Date.now() + 3600000).toISOString(),
@@ -128,7 +128,7 @@ describe("Security Enhancement — Account Provisioning & Registration Lockdown"
         email: testEmail,
         password: "SecurePassword123!",
         confirmPassword: "SecurePassword123!",
-        role: "EMPLOYEE",
+        role: "TRAINEE",
       });
 
       const res = await registerHandler(req);
@@ -136,7 +136,7 @@ describe("Security Enhancement — Account Provisioning & Registration Lockdown"
       const data = await res.json();
       expect(data.user).toBeDefined();
       expect(data.user.email).toBe(testEmail);
-      expect(data.user.role).toBe("EMPLOYEE");
+      expect(data.user.role).toBe("TRAINEE");
       // Password must NEVER be returned
       expect(data.user.password).toBeUndefined();
       expect(data.user.passwordHash).toBeUndefined();
@@ -167,13 +167,13 @@ describe("Security Enhancement — Account Provisioning & Registration Lockdown"
       expect(res.status).toBe(401);
     });
 
-    it("rejects MANAGER attempting to create an ADMIN account with 403", async () => {
+    it("rejects TRAINER attempting to create an ADMIN account with 403", async () => {
       vi.mocked(getServerSession).mockResolvedValue({
         user: {
           id: "mgr-user-1",
           name: "Sarah Jenkins",
           email: "sarah.jenkins@capacityconnect.demo",
-          role: "MANAGER",
+          role: "TRAINER",
           organizationId: TEST_ORG_ID,
         },
         expires: new Date(Date.now() + 3600000).toISOString(),
@@ -191,7 +191,7 @@ describe("Security Enhancement — Account Provisioning & Registration Lockdown"
       expect(res.status).toBe(403);
     });
 
-    it("allows ADMIN to create MANAGER in their organization with tenant isolation", async () => {
+    it("allows ADMIN to create TRAINER in their organization with tenant isolation", async () => {
       const testEmail = trackEmail(`provisioned.mgr.${Date.now()}@capacityconnect.internal`);
       vi.mocked(getServerSession).mockResolvedValue({
         user: {
@@ -209,24 +209,24 @@ describe("Security Enhancement — Account Provisioning & Registration Lockdown"
         email: testEmail,
         password: "ManagerPassword123!",
         confirmPassword: "ManagerPassword123!",
-        role: "MANAGER",
+        role: "TRAINER",
       });
 
       const res = await createUserHandler(req);
       expect(res.status).toBe(201);
       const data = await res.json();
-      expect(data.user.role).toBe("MANAGER");
+      expect(data.user.role).toBe("TRAINER");
       expect(data.user.organizationId).toBe(TEST_ORG_ID);
 
       // Verify DB entity
       const createdDbUser = await prisma.user.findFirst({
         where: { email: testEmail },
       });
-      expect(createdDbUser?.role).toBe("MANAGER");
+      expect(createdDbUser?.role).toBe("TRAINER");
       expect(createdDbUser?.organizationId).toBe(TEST_ORG_ID);
     });
 
-    it("allows ADMIN to create EMPLOYEE and automatically links workforce profile", async () => {
+    it("allows ADMIN to create TRAINEE and automatically links workforce profile", async () => {
       const testEmail = trackEmail(`provisioned.emp.${Date.now()}@capacityconnect.internal`);
       vi.mocked(getServerSession).mockResolvedValue({
         user: {
@@ -244,13 +244,13 @@ describe("Security Enhancement — Account Provisioning & Registration Lockdown"
         email: testEmail,
         password: "EmployeePassword123!",
         confirmPassword: "EmployeePassword123!",
-        role: "EMPLOYEE",
+        role: "TRAINEE",
       });
 
       const res = await createUserHandler(req);
       expect(res.status).toBe(201);
       const data = await res.json();
-      expect(data.user.role).toBe("EMPLOYEE");
+      expect(data.user.role).toBe("TRAINEE");
       expect(data.user.employeeId).toBeDefined();
 
       const createdDbUser = await prisma.user.findFirst({
@@ -306,7 +306,7 @@ describe("Audit Logging & Manager Activity Oversight", () => {
         id: "emp-user-1",
         name: "Ravi Kumar",
         email: "ravi.kumar@capacityconnect.demo",
-        role: "EMPLOYEE",
+        role: "TRAINEE",
         organizationId: TEST_ORG_ID,
       },
       expires: new Date(Date.now() + 3600000).toISOString(),
@@ -338,13 +338,13 @@ describe("Audit Logging & Manager Activity Oversight", () => {
   });
 
   it("manager activity endpoint aggregates operational metrics for admins", async () => {
-    // Manager cannot access manager-activity overview
+    // Trainer cannot access manager-activity overview
     vi.mocked(getServerSession).mockResolvedValue({
       user: {
         id: "mgr-user-1",
         name: "Sarah Jenkins",
         email: "sarah.jenkins@capacityconnect.demo",
-        role: "MANAGER",
+        role: "TRAINER",
         organizationId: TEST_ORG_ID,
       },
       expires: new Date(Date.now() + 3600000).toISOString(),

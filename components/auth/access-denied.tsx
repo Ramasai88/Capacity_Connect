@@ -11,7 +11,7 @@ export interface AccessDeniedProps {
 
 export function AccessDenied({
   requiredRole = "ADMIN",
-  currentRole = "EMPLOYEE",
+  currentRole = "TRAINEE",
   resourceName = "this administrative area",
 }: AccessDeniedProps) {
   return (

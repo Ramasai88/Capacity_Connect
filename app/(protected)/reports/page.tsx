@@ -65,11 +65,11 @@ export default function ReportsPage() {
     }
   }, [loadRealData]);
 
-  if (role === "EMPLOYEE") {
+  if (role === "TRAINEE") {
     return (
       <AccessDenied
-        requiredRole="MANAGER or ADMIN"
-        currentRole="EMPLOYEE"
+        requiredRole="TRAINER or ADMIN"
+        currentRole="TRAINEE"
         resourceName="Executive Capacity Reports & Analytics"
       />
     );

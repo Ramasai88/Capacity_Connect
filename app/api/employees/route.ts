@@ -6,11 +6,11 @@ import { createEmployeeSchema, employeeQuerySchema } from "@/lib/validations/emp
 /**
  * GET /api/employees
  * List employees with search, department, designation, and status filters.
- * RBAC: ADMIN and MANAGER can list all employees.
+ * RBAC: ADMIN and TRAINER can list all employees.
  */
 export async function GET(request: NextRequest) {
   try {
-    const auth = await authenticateApi(["ADMIN", "MANAGER"]);
+    const auth = await authenticateApi(["ADMIN", "TRAINER"]);
     if (!auth.authorized) {
       return auth.response!;
     }

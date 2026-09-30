@@ -95,7 +95,7 @@ export default function EmployeeProfilePage() {
     return { gap, course: matchingCourse || null };
   });
 
-  const canEditLevel = role === "ADMIN" || role === "MANAGER";
+  const canEditLevel = role === "ADMIN" || role === "TRAINER";
 
   function startEdit(competencyId: string, currentLevel: number | null) {
     setEditingCompetency(competencyId);

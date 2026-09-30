@@ -46,10 +46,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Role check: Employee can only view their own
+    // Role check: Trainee can only view their own
     const userRole = session?.user?.role;
     const userEmployeeId = session?.user?.employeeId;
-    if (session && userRole === "EMPLOYEE" && userEmployeeId && r.employeeId !== userEmployeeId) {
+    if (session && userRole === "TRAINEE" && userEmployeeId && r.employeeId !== userEmployeeId) {
       return NextResponse.json(
         { error: { code: "FORBIDDEN", message: "You do not have permission to view this reassessment." } },
         { status: 403 }

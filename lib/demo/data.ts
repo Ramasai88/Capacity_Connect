@@ -692,7 +692,7 @@ export interface DemoUser {
   id: string;
   email: string;
   name: string;
-  role: "ADMIN" | "MANAGER" | "EMPLOYEE";
+  role: "ADMIN" | "TRAINER" | "TRAINEE";
   organizationId: string;
   employeeId: string | null;
   department?: string;
@@ -716,23 +716,23 @@ export const DEMO_USERS: {
   },
   manager: {
     id: "usr-manager-1",
-    email: "manager@capacityconnect.demo",
+    email: "trainer@capacityconnect.demo",
     name: "Sarah Jenkins",
-    role: "MANAGER",
+    role: "TRAINER",
     organizationId: "org-kl-university",
     employeeId: null,
-    department: "Engineering Leadership",
-    avatarLabel: "SJ (Manager)",
+    department: "Training & Development",
+    avatarLabel: "SJ (Trainer)",
   },
   employee: {
     id: "usr-emp-1",
     email: "ravi.kumar@capacityconnect.demo",
     name: "Ravi Kumar",
-    role: "EMPLOYEE",
+    role: "TRAINEE",
     organizationId: "org-kl-university",
     employeeId: "emp-1",
     department: "Engineering",
-    avatarLabel: "RK (Employee)",
+    avatarLabel: "RK (Trainee)",
   },
 };
 

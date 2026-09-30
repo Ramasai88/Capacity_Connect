@@ -16,7 +16,7 @@ interface RouteParams {
  */
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
-    const auth = await authenticateApi(["ADMIN", "MANAGER", "EMPLOYEE"]);
+    const auth = await authenticateApi(["ADMIN", "TRAINER", "TRAINEE"]);
     if (!auth.authorized) {
       return auth.response!;
     }
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         moduleId: params.moduleId,
       });
       if (parsed.success && parsed.data.employeeId) {
-        if (auth.user?.role === "EMPLOYEE" && parsed.data.employeeId !== auth.user?.employeeId) {
+        if (auth.user?.role === "TRAINEE" && parsed.data.employeeId !== auth.user?.employeeId) {
           return NextResponse.json(
             { error: { code: "FORBIDDEN", message: "You cannot mark modules complete for other employees." } },
             { status: 403 }

@@ -31,10 +31,7 @@ export const signupSchema = z
     confirmPassword: z
       .string()
       .min(1, "Please confirm your password"),
-    // Role is sent from the signup form but is ALWAYS overridden to EMPLOYEE
-    // server-side. This field exists only so the field is included in the form
-    // without a TypeScript error; the register endpoint ignores it.
-    role: z.enum(["EMPLOYEE", "MANAGER", "ADMIN"]).optional(),
+    role: z.enum(["ADMIN", "TRAINER", "TRAINEE"]).optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -46,7 +43,7 @@ export type SignupInput = z.infer<typeof signupSchema>;
 /**
  * Admin-only user creation schema.
  * Only accessible via /api/users (requires authenticated ADMIN session).
- * Allows creating accounts with ADMIN, MANAGER, or EMPLOYEE roles.
+ * Allows creating accounts with ADMIN, TRAINER, or TRAINEE roles.
  */
 export const adminCreateUserSchema = z
   .object({
@@ -60,14 +57,14 @@ export const adminCreateUserSchema = z
       .email("Enter a valid email address"),
     password: z.string().optional(),
     confirmPassword: z.string().optional(),
-    role: z.enum(["ADMIN", "MANAGER", "EMPLOYEE"], {
+    role: z.enum(["ADMIN", "TRAINER", "TRAINEE"], {
       required_error: "Role is required",
-      invalid_type_error: "Role must be ADMIN, MANAGER, or EMPLOYEE",
+      invalid_type_error: "Role must be ADMIN, TRAINER, or TRAINEE",
     }),
     designationId: z.string().trim().optional().nullable(),
   })
   .superRefine((data, ctx) => {
-    if (data.role === "ADMIN" || data.role === "MANAGER") {
+    if (data.role === "ADMIN" || data.role === "TRAINER") {
       if (!data.password || data.password.length < 8) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
@@ -94,6 +91,15 @@ export const adminCreateUserSchema = z
 
 export type AdminCreateUserInput = z.infer<typeof adminCreateUserSchema>;
 
+export const updateUserRoleSchema = z.object({
+  role: z.enum(["ADMIN", "TRAINER", "TRAINEE"], {
+    required_error: "Role is required",
+    invalid_type_error: "Role must be ADMIN, TRAINER, or TRAINEE",
+  }),
+});
+
+export type UpdateUserRoleInput = z.infer<typeof updateUserRoleSchema>;
+
 /**
  * Account activation schema for Phase 1 employee self-password creation.
  */
@@ -116,3 +122,9 @@ export type ActivateAccountInput = z.infer<typeof activateAccountSchema>;
 export const verifyTokenQuerySchema = z.object({
   token: z.string().trim().min(1, "Activation token is required"),
 });
+
+export const rejectUserSchema = z.object({
+  reason: z.string().trim().max(500, "Rejection reason cannot exceed 500 characters").optional(),
+});
+
+export type RejectUserInput = z.infer<typeof rejectUserSchema>;

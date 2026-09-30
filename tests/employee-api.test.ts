@@ -69,6 +69,7 @@ describe("Employee API & Service Layer", () => {
 
   it("retrieves employee list from PostgreSQL via EmployeeService.getEmployees", async () => {
     const result = await EmployeeService.getEmployees(TEST_ORG_ID, {
+      search: "Ravi",
       page: 1,
       limit: 50,
     });

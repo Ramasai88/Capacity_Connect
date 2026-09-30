@@ -31,12 +31,16 @@ import {
   Activity,
   Layers,
   Calendar,
+  Megaphone,
+  Bell,
+  Trophy,
+  Pin,
 } from "lucide-react";
 
 export default function DashboardPage() {
   const { data: session } = useSession();
   const role = (session?.user as any)?.role || "ADMIN";
-  const isEmployeeRole = role === "EMPLOYEE";
+  const isTraineeRole = role === "TRAINEE";
 
   const demoStore = useDemoStore();
   const [realReport, setRealReport] = useState<any | null>(null);
@@ -47,12 +51,13 @@ export default function DashboardPage() {
   const [realSummaries, setRealSummaries] = useState<any[]>([]);
   const [employeeDevData, setEmployeeDevData] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(!isDemoMode());
+  const [publishedPosts, setPublishedPosts] = useState<any[]>([]);
 
   const loadRealData = useCallback(async () => {
     if (isDemoMode()) return;
     try {
       setIsLoading(true);
-      if (isEmployeeRole) {
+      if (isTraineeRole) {
         const [devRes, crsRes] = await Promise.all([
           apiClient.myDevelopment.get().catch(() => ({ data: null })),
           apiClient.courses.list().catch(() => ({ data: [] })),
@@ -74,13 +79,19 @@ export default function DashboardPage() {
         setRealEnrollments(enrRes?.data || []);
         setRealReassessments(reassRes?.data || []);
         setRealSummaries(gapRes?.data || []);
+        // Fetch published content (visible to all roles)
+        try {
+          const pubRes = await apiClient.publishing.list();
+          const allPosts: any[] = pubRes?.data?.posts ?? pubRes?.data ?? [];
+          setPublishedPosts(allPosts.filter((p: any) => p.isPublished && !p.expiresAt || (p.expiresAt && new Date(p.expiresAt) > new Date())));
+        } catch { /* publishing section degrades gracefully */ }
       }
     } catch (err) {
       console.error("Failed to load real dashboard data:", err);
     } finally {
       setIsLoading(false);
     }
-  }, [isEmployeeRole]);
+  }, [isTraineeRole]);
 
   useEffect(() => {
     if (!isDemoMode()) {
@@ -88,7 +99,7 @@ export default function DashboardPage() {
     }
   }, [loadRealData]);
 
-  // Derived data for Admin / Manager
+  // Derived data for Admin / Trainer
   const employees = isDemoMode() ? demoStore.employees : realEmployees;
   const competenciesCount = isDemoMode()
     ? demoStore.competencies.length
@@ -152,20 +163,20 @@ export default function DashboardPage() {
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
               </span>
               <Activity className="h-3 w-3 text-indigo-300 ml-0.5" />
-              <span>{isEmployeeRole ? "Personal Skill Profile" : "Real-Time Workforce Analytics"}</span>
+              <span>{isTraineeRole ? "Personal Skill Profile" : "Real-Time Workforce Analytics"}</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
               Welcome back, {session?.user?.name || "User"}
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-              {isEmployeeRole
+              {isTraineeRole
                 ? "Monitor your competency profile, diagnostic assessment roadmap, and active learning milestones."
                 : `Comprehensive workforce capacity and organizational skill readiness overview for ${orgName}.`}
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-            {!isEmployeeRole && (
+            {!isTraineeRole && (
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15">
                 <span className="text-[11px] text-slate-300 font-medium">Readiness:</span>
                 <span className="text-sm font-extrabold text-emerald-400">{overallReadiness}%</span>
@@ -188,8 +199,8 @@ export default function DashboardPage() {
           <Loader2 className="h-7 w-7 animate-spin text-indigo-600" />
           <span className="font-medium">Loading live capacity metrics...</span>
         </div>
-      ) : isEmployeeRole ? (
-        /* ================= EMPLOYEE ROLE DASHBOARD ================= */
+      ) : isTraineeRole ? (
+        /* ================= TRAINEE ROLE DASHBOARD ================= */
         <div className="space-y-6">
           {/* Employee KPI Overview */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -688,6 +699,54 @@ export default function DashboardPage() {
             </div>
           </div>
         </>
+      )}
+      {/* PUBLISHED CONTENT FEED — visible to all roles */}
+      {!isDemoMode() && publishedPosts.length > 0 && (
+        <Card className="shadow-xs">
+          <CardHeader className="pb-3 border-b border-border/60">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-200">
+                  <Megaphone className="h-3.5 w-3.5" />
+                </div>
+                <div>
+                  <CardTitle className="text-sm">Announcements & Updates</CardTitle>
+                  <CardDescription className="text-xs">Latest published content from your organization</CardDescription>
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-4 space-y-2.5">
+            {publishedPosts.slice(0, 5).map((post: any) => {
+              const catIcon = post.category === "NOTIFICATION" ? Bell
+                : post.category === "ACHIEVEMENT" ? Trophy
+                : post.category === "FEATURED" ? Sparkles
+                : Megaphone;
+              const CatIcon = catIcon;
+              const catColor = post.category === "NOTIFICATION" ? "text-sky-600 bg-sky-50"
+                : post.category === "ACHIEVEMENT" ? "text-amber-600 bg-amber-50"
+                : post.category === "FEATURED" ? "text-purple-600 bg-purple-50"
+                : "text-indigo-600 bg-indigo-50";
+              return (
+                <div key={post.id} className="flex items-start gap-3 p-3 rounded-xl border border-border/80 bg-card hover:bg-slate-50/80 transition-all shadow-2xs">
+                  <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${catColor}`}>
+                    <CatIcon className="h-3.5 w-3.5" />
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-0.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold text-xs text-foreground">{post.title}</span>
+                      {post.isPinned && <Pin className="h-3 w-3 text-indigo-500 shrink-0" />}
+                      {post.priority === "URGENT" && (
+                        <span className="text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded">URGENT</span>
+                      )}
+                    </div>
+                    {post.summary && <p className="text-[11px] text-muted-foreground truncate">{post.summary}</p>}
+                  </div>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
       )}
     </div>
   );

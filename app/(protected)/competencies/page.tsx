@@ -50,8 +50,8 @@ export default function CompetenciesPage() {
     }
   }, [loadRealData]);
 
-  if (role === "EMPLOYEE") {
-    return <AccessDenied requiredRole="MANAGER or ADMIN" currentRole="EMPLOYEE" resourceName="the Competency Framework Catalog" />;
+  if (role === "TRAINEE") {
+    return <AccessDenied requiredRole="TRAINER or ADMIN" currentRole="TRAINEE" resourceName="the Competency Framework Catalog" />;
   }
   const isAdmin = role === "ADMIN";
 

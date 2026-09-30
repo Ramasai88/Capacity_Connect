@@ -138,8 +138,8 @@ describe("Extensible Competency Catalog & Course Authoring", () => {
 
   it("5. Verifies RBAC: only ADMIN can create/modify competencies in the catalog", () => {
     expect(hasPermission("ADMIN", "canCreateCompetency")).toBe(true);
-    expect(hasPermission("MANAGER", "canCreateCompetency")).toBe(false);
-    expect(hasPermission("EMPLOYEE", "canCreateCompetency")).toBe(false);
+    expect(hasPermission("TRAINER", "canCreateCompetency")).toBe(false);
+    expect(hasPermission("TRAINEE", "canCreateCompetency")).toBe(false);
   });
 
   it("6. Existing course authoring continues to work seamlessly for Python", async () => {

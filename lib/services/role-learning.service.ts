@@ -273,9 +273,9 @@ export class RoleLearningService {
     organizationId: string,
     employeeId: string,
     courseId: string,
-    userRole: string = "EMPLOYEE"
+    userRole: string = "TRAINEE"
   ): Promise<boolean> {
-    if (userRole === "ADMIN" || userRole === "MANAGER") {
+    if (userRole === "ADMIN" || userRole === "TRAINER") {
       const exists = await prisma.course.findFirst({
         where: { id: courseId, organizationId },
       });

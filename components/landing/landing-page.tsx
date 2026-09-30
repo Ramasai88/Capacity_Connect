@@ -163,7 +163,7 @@ export function LandingPage({ isAuthenticated = false, userName }: LandingPagePr
                       <ShieldCheck className="h-4 w-4" />
                       <span>Role-Based Access</span>
                     </div>
-                    <div className="text-xl font-bold text-white">Admin • Manager • Emp</div>
+                    <div className="text-xl font-bold text-white">Admin • Trainer • Trainee</div>
                     <div className="text-[11px] text-slate-400">Strict multi-tenant security & review</div>
                   </div>
                 </div>

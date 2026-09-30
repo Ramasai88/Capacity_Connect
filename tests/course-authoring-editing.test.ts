@@ -24,17 +24,17 @@ describe("Course Authoring, Structured Roadmap & Safe Course Editing", () => {
       expect(isRouteAllowed("ADMIN", "/courses")).toBe(true);
     });
 
-    it("allows MANAGER to create and manage courses", () => {
-      expect(hasPermission("MANAGER", "canCreateCourse")).toBe(true);
-      expect(hasPermission("MANAGER", "canExportData")).toBe(true);
-      expect(isRouteAllowed("MANAGER", "/courses")).toBe(true);
+    it("allows TRAINER to create and manage courses", () => {
+      expect(hasPermission("TRAINER", "canCreateCourse")).toBe(true);
+      expect(hasPermission("TRAINER", "canExportData")).toBe(true);
+      expect(isRouteAllowed("TRAINER", "/courses")).toBe(true);
     });
 
-    it("strictly prohibits EMPLOYEE from creating or editing courses", () => {
-      expect(hasPermission("EMPLOYEE", "canCreateCourse")).toBe(false);
-      expect(hasPermission("EMPLOYEE", "canAddEmployee")).toBe(false);
-      expect(hasPermission("EMPLOYEE", "canReviewReassessments")).toBe(false);
-      expect(isRouteAllowed("EMPLOYEE", "/courses")).toBe(true); // Can view & enroll
+    it("strictly prohibits TRAINEE from creating or editing courses", () => {
+      expect(hasPermission("TRAINEE", "canCreateCourse")).toBe(false);
+      expect(hasPermission("TRAINEE", "canAddEmployee")).toBe(false);
+      expect(hasPermission("TRAINEE", "canReviewReassessments")).toBe(false);
+      expect(isRouteAllowed("TRAINEE", "/courses")).toBe(true); // Can view & enroll
     });
   });
 

@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth/auth";
 import { isDemoMode } from "@/lib/demo/config";
 import { DEMO_ORGANIZATION } from "@/lib/demo/data";
 
-export type AllowedRole = "ADMIN" | "MANAGER" | "EMPLOYEE";
+export type AllowedRole = "ADMIN" | "TRAINER" | "TRAINEE";
 
 export interface AuthenticatedUser {
   id: string;

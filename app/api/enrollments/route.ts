@@ -5,7 +5,7 @@ import { enrollmentQuerySchema } from "@/lib/validations/learning";
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = await authenticateApi(["ADMIN", "MANAGER", "EMPLOYEE"]);
+    const auth = await authenticateApi(["ADMIN", "TRAINER", "TRAINEE"]);
     if (!auth.authorized) {
       return auth.response!;
     }
@@ -27,11 +27,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // RBAC: Employee only sees their own enrollments
+    // RBAC: Trainee only sees their own enrollments
     const userRole = auth.user?.role;
     const userEmployeeId = auth.user?.employeeId;
     const queryData = { ...parsed.data };
-    if (userRole === "EMPLOYEE" && userEmployeeId) {
+    if (userRole === "TRAINEE" && userEmployeeId) {
       queryData.employeeId = userEmployeeId;
     }
 

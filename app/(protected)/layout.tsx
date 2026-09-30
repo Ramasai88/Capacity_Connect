@@ -36,7 +36,7 @@ export default async function ProtectedLayout({
     }
   }
 
-  const role = (session.user.role as "ADMIN" | "MANAGER" | "EMPLOYEE") || "ADMIN";
+  const role = (session.user.role as "ADMIN" | "TRAINER" | "TRAINEE") || "ADMIN";
 
   return (
     <div className="flex min-h-screen">

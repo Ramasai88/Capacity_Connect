@@ -35,7 +35,7 @@ afterEach(async () => {
 // ============================================================================
 
 describe("signupSchema — Public Registration", () => {
-  it("validates a correct EMPLOYEE signup payload", () => {
+  it("validates a correct TRAINEE signup payload", () => {
     const result = signupSchema.safeParse({
       name: "Test Employee",
       email: "test.employee@example.com",
@@ -91,28 +91,28 @@ describe("adminCreateUserSchema — Admin-Only Account Creation", () => {
     expect(result.data?.role).toBe("ADMIN");
   });
 
-  it("validates MANAGER role payload", () => {
+  it("validates TRAINER role payload", () => {
     const result = adminCreateUserSchema.safeParse({
-      name: "New Manager",
-      email: "mgr.new@example.com",
-      password: "ManagerPass@1",
-      confirmPassword: "ManagerPass@1",
-      role: "MANAGER",
+      name: "New Trainer",
+      email: "trainer.new@example.com",
+      password: "TrainerPass@1",
+      confirmPassword: "TrainerPass@1",
+      role: "TRAINER",
     });
     expect(result.success).toBe(true);
-    expect(result.data?.role).toBe("MANAGER");
+    expect(result.data?.role).toBe("TRAINER");
   });
 
-  it("validates EMPLOYEE role payload", () => {
+  it("validates TRAINEE role payload", () => {
     const result = adminCreateUserSchema.safeParse({
-      name: "New Employee",
-      email: "emp.new@example.com",
-      password: "EmployeePass@1",
-      confirmPassword: "EmployeePass@1",
-      role: "EMPLOYEE",
+      name: "New Trainee",
+      email: "trainee.new@example.com",
+      password: "TraineePass@1",
+      confirmPassword: "TraineePass@1",
+      role: "TRAINEE",
     });
     expect(result.success).toBe(true);
-    expect(result.data?.role).toBe("EMPLOYEE");
+    expect(result.data?.role).toBe("TRAINEE");
   });
 
   it("rejects invalid role strings (privilege escalation attempt)", () => {
@@ -142,10 +142,10 @@ describe("adminCreateUserSchema — Admin-Only Account Creation", () => {
 // ============================================================================
 
 describe("Privilege Escalation Prevention — Public Registration", () => {
-  it("public registration always stores EMPLOYEE regardless of submitted role", async () => {
+  it("public registration always stores TRAINEE regardless of submitted role", async () => {
     // Simulate what the public /api/auth/register endpoint does:
     // it uses signupSchema which only validates name/email/password, then
-    // ALWAYS hardcodes role=EMPLOYEE when writing to the database.
+    // ALWAYS hardcodes role=TRAINEE when writing to the database.
     const email = trackEmail("escalation.test@capacityconnect.internal");
 
     const hash = await bcrypt.hash("TestPass@123", 10);
@@ -155,23 +155,23 @@ describe("Privilege Escalation Prevention — Public Registration", () => {
         name: "Escalation Test User",
         email,
         passwordHash: hash,
-        // Server-side enforcement: always EMPLOYEE
-        role: "EMPLOYEE",
+        // Server-side enforcement: always TRAINEE
+        role: "TRAINEE",
         organizationId: TEST_ORG_ID,
       },
     });
 
-    expect(user.role).toBe("EMPLOYEE");
+    expect(user.role).toBe("TRAINEE");
     // Verify from a fresh DB read — not trusting the create return value
     const dbUser = await prisma.user.findFirst({ where: { email } });
-    expect(dbUser?.role).toBe("EMPLOYEE");
+    expect(dbUser?.role).toBe("TRAINEE");
   });
 
   it("malicious ADMIN role submission cannot bypass server enforcement", async () => {
     // A client could POST { role: "ADMIN" } to /api/auth/register
-    // The endpoint ignores the submitted role and hardcodes EMPLOYEE.
+    // The endpoint ignores the submitted role and hardcodes TRAINEE.
     // We test this by verifying the schema does NOT mandate a role, and that
-    // the server always writes EMPLOYEE.
+    // the server always writes TRAINEE.
     const parsed = signupSchema.safeParse({
       name: "Attacker",
       email: "attacker@evil.com",
@@ -180,7 +180,7 @@ describe("Privilege Escalation Prevention — Public Registration", () => {
     });
     // Schema should still validate even without role — server handles it
     expect(parsed.success).toBe(true);
-    // The role field is optional — server ignores it and enforces EMPLOYEE
+    // The role field is optional — server ignores it and enforces TRAINEE
     expect((parsed.data as any).role).toBeUndefined();
   });
 });
@@ -190,13 +190,13 @@ describe("Privilege Escalation Prevention — Public Registration", () => {
 // ============================================================================
 
 describe("RBAC Policy — Account Creation Authorization", () => {
-  it("MANAGER does not have canAddEmployee permission", () => {
-    // Managers cannot add employees via employee CRUD
-    expect(hasPermission("MANAGER", "canAddEmployee")).toBe(false);
+  it("TRAINER does not have canAddEmployee permission", () => {
+    // Trainers cannot add employees via employee CRUD
+    expect(hasPermission("TRAINER", "canAddEmployee")).toBe(false);
   });
 
-  it("EMPLOYEE does not have canAddEmployee permission", () => {
-    expect(hasPermission("EMPLOYEE", "canAddEmployee")).toBe(false);
+  it("TRAINEE does not have canAddEmployee permission", () => {
+    expect(hasPermission("TRAINEE", "canAddEmployee")).toBe(false);
   });
 
   it("ADMIN has canAddEmployee permission", () => {
@@ -237,57 +237,57 @@ describe("Admin-Controlled Account Creation — PostgreSQL", () => {
     expect((loginResult as any)?.passwordHash).toBeUndefined();
   });
 
-  it("creates MANAGER account in PostgreSQL with correct role", async () => {
-    const email = trackEmail("test.manager.created@capacityconnect.internal");
-    const hash = await bcrypt.hash("Manager@Created1", 10);
+  it("creates TRAINER account in PostgreSQL with correct role", async () => {
+    const email = trackEmail("test.trainer.created@capacityconnect.internal");
+    const hash = await bcrypt.hash("Trainer@Created1", 10);
 
     const user = await prisma.user.create({
       data: {
-        name: "Test Manager Created",
+        name: "Test Trainer Created",
         email,
         passwordHash: hash,
-        role: "MANAGER",
+        role: "TRAINER",
         organizationId: TEST_ORG_ID,
       },
       select: { id: true, email: true, role: true, organizationId: true },
     });
 
-    expect(user.role).toBe("MANAGER");
+    expect(user.role).toBe("TRAINER");
 
-    // Verify login retrieves MANAGER role from DB
+    // Verify login retrieves TRAINER role from DB
     const loginResult = await verifyUserCredentials({
       email,
-      password: "Manager@Created1",
+      password: "Trainer@Created1",
     });
     expect(loginResult).not.toBeNull();
-    expect(loginResult?.role).toBe("MANAGER");
+    expect(loginResult?.role).toBe("TRAINER");
     expect((loginResult as any)?.passwordHash).toBeUndefined();
   });
 
-  it("creates EMPLOYEE account in PostgreSQL with correct role", async () => {
-    const email = trackEmail(`test.employee.created.${Date.now()}@capacityconnect.internal`);
-    const hash = await bcrypt.hash("Employee@Created1", 10);
+  it("creates TRAINEE account in PostgreSQL with correct role", async () => {
+    const email = trackEmail(`test.trainee.created.${Date.now()}@capacityconnect.internal`);
+    const hash = await bcrypt.hash("Trainee@Created1", 10);
 
     const user = await prisma.user.create({
       data: {
-        name: "Test Employee Created",
+        name: "Test Trainee Created",
         email,
         passwordHash: hash,
-        role: "EMPLOYEE",
+        role: "TRAINEE",
         organizationId: TEST_ORG_ID,
       },
       select: { id: true, email: true, role: true, organizationId: true },
     });
 
-    expect(user.role).toBe("EMPLOYEE");
+    expect(user.role).toBe("TRAINEE");
 
-    // Verify login retrieves EMPLOYEE role from DB
+    // Verify login retrieves TRAINEE role from DB
     const loginResult = await verifyUserCredentials({
       email,
-      password: "Employee@Created1",
+      password: "Trainee@Created1",
     });
     expect(loginResult).not.toBeNull();
-    expect(loginResult?.role).toBe("EMPLOYEE");
+    expect(loginResult?.role).toBe("TRAINEE");
     expect((loginResult as any)?.passwordHash).toBeUndefined();
   });
 
@@ -323,17 +323,17 @@ describe("Session Role Derivation — PostgreSQL is Source of Truth", () => {
     });
     expect(admin?.role).toBe("ADMIN");
 
-    const manager = await verifyUserCredentials({
+    const trainer = await verifyUserCredentials({
       email: "sarah.jenkins@capacityconnect.demo",
-      password: "Manager@123",
+      password: "Trainer@123",
     });
-    expect(manager?.role).toBe("MANAGER");
+    expect(trainer?.role).toBe("TRAINER");
 
-    const employee = await verifyUserCredentials({
+    const trainee = await verifyUserCredentials({
       email: "ravi.kumar@capacityconnect.demo",
-      password: "Employee@123",
+      password: "Trainee@123",
     });
-    expect(employee?.role).toBe("EMPLOYEE");
+    expect(trainee?.role).toBe("TRAINEE");
   });
 
   it("session payload never contains password hash", async () => {

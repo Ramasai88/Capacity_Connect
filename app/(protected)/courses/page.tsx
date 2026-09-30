@@ -57,7 +57,7 @@ export default function CoursesPage() {
   const enrollments: any[] = isDemoMode() ? demoStore.enrollments : realEnrollments;
 
   const enrolledCourseIds = new Set(enrollments.map((e) => e.courseId));
-  const canManageCourse = role === "ADMIN" || role === "MANAGER";
+  const canManageCourse = role === "ADMIN" || role === "TRAINER";
 
   async function handleEnroll(course: any) {
     setEnrollError(null);

@@ -58,14 +58,14 @@ describe("AI Learning Assistant — Isolated, Read-Only & Secure", () => {
       id: `usr-${Date.now()}`,
       name: emp.name,
       email: emp.email,
-      role: "EMPLOYEE",
+      role: "TRAINEE",
       organizationId: ORG_A,
       employeeId: emp.id,
     };
 
     const context = await AIAssistantService.buildAuthorizedContext(ORG_A, user);
 
-    expect(context.role).toBe("EMPLOYEE");
+    expect(context.role).toBe("TRAINEE");
     expect(context.employeeData?.employeeId).toBe(emp.id);
     expect(context.employeeData?.name).toBe(emp.name);
     expect(context.employeeData?.latestAssessment?.score).toBe(45);
@@ -110,7 +110,7 @@ describe("AI Learning Assistant — Isolated, Read-Only & Secure", () => {
       id: `usr-${Date.now()}`,
       name: emp.name,
       email: emp.email,
-      role: "EMPLOYEE",
+      role: "TRAINEE",
       organizationId: ORG_A,
       employeeId: emp.id,
     };
@@ -143,7 +143,7 @@ describe("AI Learning Assistant — Isolated, Read-Only & Secure", () => {
       id: `usr-${Date.now()}`,
       name: emp.name,
       email: emp.email,
-      role: "EMPLOYEE",
+      role: "TRAINEE",
       organizationId: ORG_A,
       employeeId: emp.id,
     };
@@ -217,7 +217,7 @@ describe("AI Learning Assistant — Isolated, Read-Only & Secure", () => {
       id: `usr-a-${Date.now()}`,
       name: empA.name,
       email: empA.email,
-      role: "EMPLOYEE",
+      role: "TRAINEE",
       organizationId: ORG_A,
       employeeId: empA.id,
     };
@@ -244,7 +244,7 @@ describe("AI Learning Assistant — Isolated, Read-Only & Secure", () => {
       id: `usr-${Date.now()}`,
       name: emp.name,
       email: emp.email,
-      role: "EMPLOYEE",
+      role: "TRAINEE",
       organizationId: ORG_A,
       employeeId: emp.id,
     };
@@ -290,7 +290,7 @@ describe("AI Learning Assistant — Isolated, Read-Only & Secure", () => {
       id: `usr-focus-${Date.now()}`,
       name: emp.name,
       email: emp.email,
-      role: "EMPLOYEE",
+      role: "TRAINEE",
       organizationId: ORG_A,
       employeeId: emp.id,
     };
@@ -370,7 +370,7 @@ describe("AI Learning Assistant — Isolated, Read-Only & Secure", () => {
     expect(res.reply).toContain("55%");
   });
 
-  it("EMPLOYEE querying another employee is rejected with authorization notice", async () => {
+  it("TRAINEE querying another employee is rejected with authorization notice", async () => {
     const emp1 = await prisma.employee.create({
       data: {
         organizationId: ORG_A,
@@ -397,7 +397,7 @@ describe("AI Learning Assistant — Isolated, Read-Only & Secure", () => {
       id: `usr-ravi-${Date.now()}`,
       name: emp1.name,
       email: emp1.email,
-      role: "EMPLOYEE",
+      role: "TRAINEE",
       organizationId: ORG_A,
       employeeId: emp1.id,
     };

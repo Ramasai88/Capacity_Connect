@@ -48,21 +48,27 @@ import {
   ArrowUpRight,
   CheckCircle,
   Lightbulb,
+  Award,
+  Star,
+  Heart,
+  Edit3,
 } from "lucide-react";
+import { EditProfessionalProfileDialog } from "@/components/trainee/edit-professional-profile-dialog";
 
 export default function MyDevelopmentPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { data: session, status: sessionStatus } = useSession();
-  const userRole = (session?.user as any)?.role || "EMPLOYEE";
+  const userRole = (session?.user as any)?.role || "TRAINEE";
 
   const [data, setData] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
 
   const loadData = useCallback(async () => {
     if (sessionStatus === "loading") return;
-    if (userRole !== "EMPLOYEE") {
+    if (userRole !== "TRAINEE") {
       setIsLoading(false);
       return;
     }
@@ -74,7 +80,7 @@ export default function MyDevelopmentPage() {
       setData(res.data);
     } catch (err: any) {
       console.error("Failed to load development profile:", err);
-      setError(err.message || "Failed to load employee skill development profile.");
+      setError(err.message || "Failed to load trainee skill development profile.");
     } finally {
       setIsLoading(false);
     }
@@ -88,17 +94,17 @@ export default function MyDevelopmentPage() {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-xs text-muted-foreground gap-3">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
-        <span>Loading employee skill development profile...</span>
+        <span>Loading trainee skill development profile...</span>
       </div>
     );
   }
 
-  if (session && userRole !== "EMPLOYEE") {
+  if (session && userRole !== "TRAINEE") {
     return (
       <AccessDenied
-        requiredRole="EMPLOYEE"
+        requiredRole="TRAINEE"
         currentRole={userRole}
-        resourceName="the Employee Self-Service Skill Development page"
+        resourceName="the Trainee Self-Service Skill Development page"
       />
     );
   }
@@ -190,6 +196,13 @@ export default function MyDevelopmentPage() {
           </div>
 
           <div className="flex flex-wrap gap-2.5 shrink-0">
+            <Button
+              size="sm"
+              onClick={() => setIsEditProfileOpen(true)}
+              className="text-xs font-bold gap-1.5 bg-white text-indigo-950 hover:bg-slate-100 shadow-sm"
+            >
+              <Edit3 className="h-3.5 w-3.5 text-indigo-600" /> Edit Profile
+            </Button>
             <Button
               size="sm"
               onClick={() => router.push("/recommendations")}
@@ -289,6 +302,189 @@ export default function MyDevelopmentPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Trainee Professional Profile & Qualifications */}
+      {(() => {
+        const hasProfileData =
+          (employee?.skills && employee.skills.length > 0) ||
+          (employee?.interests && employee.interests.length > 0) ||
+          employee?.qualifications ||
+          employee?.workExperience ||
+          employee?.certificates ||
+          employee?.bio;
+
+        return (
+          <Card className="shadow-xs border-border/80">
+            <CardHeader className="bg-slate-50/50 dark:bg-slate-900/30 border-b border-border/50 pb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
+                    <User className="h-4 w-4 text-indigo-600" />
+                    Professional Profile & Credentials
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Qualifications, industry experience, skills inventory, learning interests, and certifications.
+                  </CardDescription>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setIsEditProfileOpen(true)}
+                  className="text-xs font-semibold gap-1.5 bg-white hover:bg-slate-50 text-indigo-700 border-indigo-200"
+                >
+                  <Edit3 className="h-3.5 w-3.5" /> Edit Profile
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-5 space-y-4">
+              {!hasProfileData ? (
+                <div className="py-6 text-center text-xs text-muted-foreground space-y-3">
+                  <p>No professional profile details added yet.</p>
+                  <Button
+                    size="sm"
+                    onClick={() => setIsEditProfileOpen(true)}
+                    className="text-xs font-bold gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white"
+                  >
+                    <Edit3 className="h-3.5 w-3.5" /> Add Profile Details
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Bio */}
+                  {employee.bio && (
+                    <div className="space-y-1.5 md:col-span-2">
+                      <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                        <User className="h-3.5 w-3.5 text-indigo-600" />
+                        Professional Bio
+                      </div>
+                      <p className="text-xs text-muted-foreground bg-slate-50/80 dark:bg-slate-900/50 p-3 rounded-lg border border-border/60 leading-relaxed">
+                        {employee.bio}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Skills */}
+                  {Array.isArray(employee.skills) && employee.skills.length > 0 && (
+                    <div className="space-y-1.5">
+                      <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                        <Star className="h-3.5 w-3.5 text-amber-500" />
+                        Key Skills & Competency Areas
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {employee.skills.map((skill: string, idx: number) => (
+                          <Badge
+                            key={idx}
+                            variant="secondary"
+                            className="text-[11px] font-medium bg-indigo-50/80 text-indigo-700 border border-indigo-200/80"
+                          >
+                            {skill}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Interests */}
+                  {Array.isArray(employee.interests) && employee.interests.length > 0 && (
+                    <div className="space-y-1.5">
+                      <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                        <Heart className="h-3.5 w-3.5 text-rose-500" />
+                        Learning Interests & Specializations
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {employee.interests.map((interest: string, idx: number) => (
+                          <Badge
+                            key={idx}
+                            variant="outline"
+                            className="text-[11px] font-medium text-slate-700 border-slate-300"
+                          >
+                            {interest}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Qualifications */}
+                  {employee.qualifications && (
+                    <div className="space-y-1.5">
+                      <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                        <GraduationCap className="h-3.5 w-3.5 text-indigo-600" />
+                        Academic Qualifications
+                      </div>
+                      <div className="text-xs text-muted-foreground bg-slate-50/80 dark:bg-slate-900/50 p-3 rounded-lg border border-border/60">
+                        {typeof employee.qualifications === "string"
+                          ? employee.qualifications
+                          : Array.isArray(employee.qualifications)
+                          ? employee.qualifications.map((q: any, i: number) => (
+                              <div key={i} className="mb-1 last:mb-0">
+                                <strong>{q.degree || q.title || JSON.stringify(q)}</strong>
+                                {q.institution && ` — ${q.institution}`}
+                                {q.year && ` (${q.year})`}
+                                {q.field && ` • ${q.field}`}
+                              </div>
+                            ))
+                          : JSON.stringify(employee.qualifications)}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Work Experience */}
+                  {employee.workExperience && (
+                    <div className="space-y-1.5">
+                      <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                        <Briefcase className="h-3.5 w-3.5 text-slate-600" />
+                        Work Experience
+                      </div>
+                      <div className="text-xs text-muted-foreground bg-slate-50/80 dark:bg-slate-900/50 p-3 rounded-lg border border-border/60">
+                        {typeof employee.workExperience === "string"
+                          ? employee.workExperience
+                          : Array.isArray(employee.workExperience)
+                          ? employee.workExperience.map((w: any, i: number) => (
+                              <div key={i} className="mb-1.5 last:mb-0">
+                                <strong>{w.role || w.title || JSON.stringify(w)}</strong>
+                                {w.company && ` @ ${w.company}`}
+                                {(w.duration || w.years) && ` (${w.duration || w.years})`}
+                                {w.description && <div className="text-[11px] text-slate-600 mt-0.5">{w.description}</div>}
+                              </div>
+                            ))
+                          : JSON.stringify(employee.workExperience)}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Certificates */}
+                  {employee.certificates && (
+                    <div className="space-y-1.5 md:col-span-2">
+                      <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                        <Award className="h-3.5 w-3.5 text-emerald-600" />
+                        Certifications & Accreditations
+                      </div>
+                      <div className="text-xs text-muted-foreground bg-slate-50/80 dark:bg-slate-900/50 p-3 rounded-lg border border-border/60">
+                        {typeof employee.certificates === "string"
+                          ? employee.certificates
+                          : Array.isArray(employee.certificates)
+                          ? (
+                              <div className="flex flex-wrap gap-2">
+                                {employee.certificates.map((c: any, i: number) => (
+                                  <Badge key={i} variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 py-1">
+                                    {typeof c === "string"
+                                      ? c
+                                      : `${c.title || c.name || "Certificate"}${c.issuer ? ` (${c.issuer})` : ""}${c.year ? ` • ${c.year}` : ""}`}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )
+                          : JSON.stringify(employee.certificates)}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* SECTION 1: Visual Development Journey */}
       <Card className="shadow-xs overflow-hidden">
@@ -851,6 +1047,16 @@ export default function MyDevelopmentPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit Professional Profile Modal */}
+      {employee && (
+        <EditProfessionalProfileDialog
+          open={isEditProfileOpen}
+          onOpenChange={setIsEditProfileOpen}
+          employee={employee}
+          onSuccess={loadData}
+        />
+      )}
     </div>
   );
 }

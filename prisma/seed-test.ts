@@ -195,8 +195,8 @@ async function main() {
 
   // 5. Users
   const adminPasswordHash = await bcrypt.hash("Admin@123", 10);
-  const managerPasswordHash = await bcrypt.hash("Manager@123", 10);
-  const employeePasswordHash = await bcrypt.hash("Employee@123", 10);
+  const trainerPasswordHash = await bcrypt.hash("Trainer@123", 10);
+  const traineePasswordHash = await bcrypt.hash("Trainee@123", 10);
 
   await prisma.user.upsert({
     where: { organizationId_email: { organizationId: org.id, email: "admin@capacityconnect.demo" } },
@@ -234,14 +234,14 @@ async function main() {
     where: { organizationId_email: { organizationId: org.id, email: "sarah.jenkins@capacityconnect.demo" } },
     update: {
       name: "Sarah Jenkins",
-      passwordHash: managerPasswordHash,
-      role: UserRole.MANAGER,
+      passwordHash: trainerPasswordHash,
+      role: UserRole.TRAINER,
     },
     create: {
       name: "Sarah Jenkins",
       email: "sarah.jenkins@capacityconnect.demo",
-      passwordHash: managerPasswordHash,
-      role: UserRole.MANAGER,
+      passwordHash: trainerPasswordHash,
+      role: UserRole.TRAINER,
       organizationId: org.id,
     },
   });
@@ -250,15 +250,15 @@ async function main() {
     where: { organizationId_email: { organizationId: org.id, email: "ravi.kumar@capacityconnect.demo" } },
     update: {
       name: "Ravi Kumar",
-      passwordHash: employeePasswordHash,
-      role: UserRole.EMPLOYEE,
+      passwordHash: traineePasswordHash,
+      role: UserRole.TRAINEE,
       employeeId: "emp-1",
     },
     create: {
       name: "Ravi Kumar",
       email: "ravi.kumar@capacityconnect.demo",
-      passwordHash: employeePasswordHash,
-      role: UserRole.EMPLOYEE,
+      passwordHash: traineePasswordHash,
+      role: UserRole.TRAINEE,
       organizationId: org.id,
       employeeId: "emp-1",
     },

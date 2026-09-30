@@ -15,7 +15,7 @@ interface RouteParams {
  */
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const auth = await authenticateApi(["ADMIN", "MANAGER", "EMPLOYEE"]);
+    const auth = await authenticateApi(["ADMIN", "TRAINER", "TRAINEE"]);
     if (!auth.authorized) {
       return auth.response!;
     }
@@ -45,11 +45,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 /**
  * PATCH /api/courses/:id
  * Update course metadata or curriculum modules.
- * RBAC: ADMIN and MANAGER.
+ * RBAC: ADMIN and TRAINER.
  */
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
-    const auth = await authenticateApi(["ADMIN", "MANAGER"]);
+    const auth = await authenticateApi(["ADMIN", "TRAINER"]);
     if (!auth.authorized) {
       return auth.response!;
     }

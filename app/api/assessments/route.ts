@@ -28,7 +28,7 @@ const submitAssessmentSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
-    const auth = await authenticateApi(["ADMIN", "MANAGER", "EMPLOYEE"]);
+    const auth = await authenticateApi(["ADMIN", "TRAINER", "TRAINEE"]);
     if (!auth.authorized) {
       return auth.response!;
     }
@@ -51,9 +51,9 @@ export async function POST(request: NextRequest) {
 
     let targetEmployeeId = auth.user?.employeeId;
 
-    // Admin/Manager can submit on behalf of an employee; Employee can only submit for themselves
+    // Admin/Trainer can submit on behalf of an employee; Trainee can only submit for themselves
     if (parsed.data.employeeId) {
-      if (auth.user?.role === "EMPLOYEE" && parsed.data.employeeId !== auth.user?.employeeId) {
+      if (auth.user?.role === "TRAINEE" && parsed.data.employeeId !== auth.user?.employeeId) {
         return NextResponse.json(
           { error: { code: "FORBIDDEN", message: "You can only submit assessments for yourself." } },
           { status: 403 }
@@ -62,8 +62,8 @@ export async function POST(request: NextRequest) {
       targetEmployeeId = parsed.data.employeeId;
     }
 
-    // If EMPLOYEE still has null employeeId, resolve from PostgreSQL User record
-    if (!targetEmployeeId && auth.user?.role === "EMPLOYEE") {
+    // If TRAINEE still has null employeeId, resolve from PostgreSQL User record
+    if (!targetEmployeeId && auth.user?.role === "TRAINEE") {
       const dbUser = await prisma.user.findUnique({
         where: { id: auth.user.id },
         select: { employeeId: true },
@@ -115,12 +115,12 @@ export async function POST(request: NextRequest) {
 /**
  * GET /api/assessments
  * List assessments with strict role-based visibility:
- * - EMPLOYEE: Can view ONLY their own assessment results.
- * - MANAGER & ADMIN: Can view assessments for authorized employees in their organization.
+ * - TRAINEE: Can view ONLY their own assessment results.
+ * - TRAINER & ADMIN: Can view assessments for authorized employees in their organization.
  */
 export async function GET(request: NextRequest) {
   try {
-    const auth = await authenticateApi(["ADMIN", "MANAGER", "EMPLOYEE"]);
+    const auth = await authenticateApi(["ADMIN", "TRAINER", "TRAINEE"]);
     if (!auth.authorized) {
       return auth.response!;
     }
@@ -129,9 +129,9 @@ export async function GET(request: NextRequest) {
     const requestedEmpId = searchParams.get("employeeId");
 
     // -------------------------------------------------------------------------
-    // EMPLOYEE ACCESS: Strictly own assessments only
+    // TRAINEE ACCESS: Strictly own assessments only
     // -------------------------------------------------------------------------
-    if (auth.user?.role === "EMPLOYEE") {
+    if (auth.user?.role === "TRAINEE") {
       let ownEmployeeId = auth.user?.employeeId;
 
       if (!ownEmployeeId) {

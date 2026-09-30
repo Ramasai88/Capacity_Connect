@@ -49,7 +49,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 
-type UserRole = "ADMIN" | "MANAGER" | "EMPLOYEE";
+type UserRole = "ADMIN" | "TRAINER" | "TRAINEE";
 
 interface ManagedUser {
   id: string;
@@ -97,19 +97,20 @@ interface ManagerSummary {
 
 const ROLE_LABELS: Record<UserRole, string> = {
   ADMIN: "Admin",
-  MANAGER: "Manager",
-  EMPLOYEE: "Employee",
+  TRAINER: "Trainer",
+  TRAINEE: "Trainee",
 };
 
 const ROLE_BADGE_STYLES: Record<UserRole, string> = {
   ADMIN: "bg-rose-50 text-rose-700 border-rose-200",
-  MANAGER: "bg-indigo-50 text-indigo-700 border-indigo-200",
-  EMPLOYEE: "bg-slate-50 text-slate-600 border-slate-200",
+  TRAINER: "bg-indigo-50 text-indigo-700 border-indigo-200",
+  TRAINEE: "bg-slate-50 text-slate-600 border-slate-200",
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
   AUTHENTICATION: "Authentication",
   USER_MANAGEMENT: "User Management",
+  TRAINER_OPERATION: "Trainer Operation",
   MANAGER_OPERATION: "Manager Operation",
   LEARNING: "Learning & Curriculum",
 };
@@ -143,12 +144,16 @@ function UserManagementSection() {
   const [copiedLink, setCopiedLink] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  const [pendingUsers, setPendingUsers] = useState<any[]>([]);
+  const [loadingPending, setLoadingPending] = useState(false);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+
   // Form state
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newConfirmPassword, setNewConfirmPassword] = useState("");
-  const [newRole, setNewRole] = useState<UserRole>("EMPLOYEE");
+  const [newRole, setNewRole] = useState<UserRole>("TRAINEE");
   const [newDesignationId, setNewDesignationId] = useState("");
   const [designations, setDesignations] = useState<Array<{ id: string; title: string; department: string | null }>>([]);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -156,9 +161,10 @@ function UserManagementSection() {
   const loadUsers = useCallback(async () => {
     try {
       setLoadingUsers(true);
-      const [usersRes, desigRes] = await Promise.all([
+      const [usersRes, desigRes, pendingRes] = await Promise.all([
         fetch("/api/users"),
         fetch("/api/designations"),
+        fetch("/api/users/pending"),
       ]);
       if (usersRes.ok) {
         const data = await usersRes.json();
@@ -172,12 +178,58 @@ function UserManagementSection() {
           setNewDesignationId(list[0].id);
         }
       }
+      if (pendingRes.ok) {
+        const pendingData = await pendingRes.json();
+        setPendingUsers(pendingData.pendingUsers || []);
+      }
     } catch {
       // ignore
     } finally {
       setLoadingUsers(false);
     }
   }, [newDesignationId]);
+
+  const handleApprove = async (userId: string) => {
+    try {
+      setActionLoadingId(userId);
+      const res = await fetch(`/api/users/${userId}/approve`, {
+        method: "PATCH",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setCreateError(data?.error?.message || "Failed to approve user.");
+        return;
+      }
+      setCreateSuccess("User registration approved successfully. Activation workflow triggered.");
+      await loadUsers();
+    } catch {
+      setCreateError("An error occurred while approving user.");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleReject = async (userId: string) => {
+    try {
+      setActionLoadingId(userId);
+      const res = await fetch(`/api/users/${userId}/reject`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: "Rejected by administrator." }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setCreateError(data?.error?.message || "Failed to reject user.");
+        return;
+      }
+      setCreateSuccess("User registration request rejected.");
+      await loadUsers();
+    } catch {
+      setCreateError("An error occurred while rejecting user.");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
 
   useEffect(() => {
     if (!isDemoMode()) {
@@ -199,12 +251,12 @@ function UserManagementSection() {
     if (!newName.trim() || newName.trim().length < 2) errors.name = "Full Name must be at least 2 characters";
     if (!newEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) errors.email = "Enter a valid email address";
     
-    if (newRole !== "EMPLOYEE") {
+    if (newRole !== "TRAINEE") {
       if (!newPassword || newPassword.length < 8) errors.password = "Password must be at least 8 characters";
       if (newPassword !== newConfirmPassword) errors.confirmPassword = "Passwords do not match";
     }
 
-    if (newRole === "EMPLOYEE" && !newDesignationId) {
+    if (newRole === "TRAINEE" && !newDesignationId) {
       errors.designationId = "Please select a Job Role / Designation";
     }
 
@@ -222,10 +274,10 @@ function UserManagementSection() {
         body: JSON.stringify({
           name: newName.trim(),
           email: newEmail.trim(),
-          password: newRole !== "EMPLOYEE" ? newPassword : undefined,
-          confirmPassword: newRole !== "EMPLOYEE" ? newConfirmPassword : undefined,
+          password: newRole !== "TRAINEE" ? newPassword : undefined,
+          confirmPassword: newRole !== "TRAINEE" ? newConfirmPassword : undefined,
           role: newRole,
-          designationId: newRole === "EMPLOYEE" ? newDesignationId : undefined,
+          designationId: newRole === "TRAINEE" ? newDesignationId : undefined,
         }),
       });
 
@@ -239,12 +291,12 @@ function UserManagementSection() {
 
       if (data.developmentActivationLink) {
         setDevActivationLink(data.developmentActivationLink);
-        setCreateSuccess(`Employee account created successfully for ${data.user?.name}.`);
+        setCreateSuccess(`Trainee account created successfully for ${data.user?.name}.`);
       } else {
         setDevActivationLink(null);
         setCreateSuccess(
-          newRole === "EMPLOYEE"
-            ? `Employee account provisioned for ${data.user?.name}. An activation email has been dispatched with their setup link.`
+          newRole === "TRAINEE"
+            ? `Trainee account provisioned for ${data.user?.name}. An activation email has been dispatched with their setup link.`
             : `${ROLE_LABELS[newRole]} account created for ${data.user?.name}.`
         );
       }
@@ -253,7 +305,7 @@ function UserManagementSection() {
       setNewEmail("");
       setNewPassword("");
       setNewConfirmPassword("");
-      setNewRole("EMPLOYEE");
+      setNewRole("TRAINEE");
       await loadUsers();
     } catch {
       setCreateError("An unexpected error occurred. Please try again.");
@@ -407,7 +459,7 @@ function UserManagementSection() {
             <div className="space-y-1.5">
               <Label className="text-xs font-bold text-foreground">Assigned Role</Label>
               <div className="flex gap-3">
-                {(["EMPLOYEE", "MANAGER", "ADMIN"] as UserRole[]).map((r) => (
+                {(["TRAINEE", "TRAINER", "ADMIN"] as UserRole[]).map((r) => (
                   <label
                     key={r}
                     className={`flex cursor-pointer items-center gap-2 rounded-lg border px-4 py-2.5 text-xs font-semibold transition-all ${
@@ -430,13 +482,13 @@ function UserManagementSection() {
               </div>
               <p className="text-xs text-muted-foreground">
                 {newRole === "ADMIN" && "⚠️ Admin accounts possess administrative rights, user provisioning, and full audit logs access."}
-                {newRole === "MANAGER" && "Manager accounts can review team competencies, view workforce analytics, and evaluate reassessments."}
-                {newRole === "EMPLOYEE" && "Employee accounts access personalized course pathways, modules, and diagnostic skill assessments."}
+                {newRole === "TRAINER" && "Trainer accounts can review team competencies, view workforce analytics, and evaluate reassessments."}
+                {newRole === "TRAINEE" && "Trainee accounts access personalized course pathways, modules, and diagnostic skill assessments."}
               </p>
             </div>
 
-            {/* Job Role / Designation for Employee */}
-            {newRole === "EMPLOYEE" && (
+            {/* Job Role / Designation for Trainee */}
+            {newRole === "TRAINEE" && (
               <div className="space-y-1.5 pt-1">
                 <Label htmlFor="new-user-designation" className="text-xs font-bold text-foreground">
                   Job Role / Designation <span className="text-destructive">*</span>
@@ -467,14 +519,14 @@ function UserManagementSection() {
             )}
 
             {/* Password setup vs Email Activation Info */}
-            {newRole === "EMPLOYEE" ? (
+            {newRole === "TRAINEE" ? (
               <div className="rounded-xl border border-indigo-200/80 bg-indigo-50/50 p-3.5 text-xs text-indigo-950 space-y-1">
                 <div className="flex items-center gap-1.5 font-semibold text-indigo-900">
                   <Mail className="h-4 w-4 text-indigo-600 shrink-0" />
                   <span>Password Setup via Email Activation</span>
                 </div>
                 <p className="text-muted-foreground leading-relaxed">
-                  The employee will receive an activation email with their Employee ID and a secure, time-limited link to create their own password upon first login.
+                  The trainee will receive an activation email with their Employee ID and a secure, time-limited link to create their own password upon first login.
                 </p>
               </div>
             ) : (
@@ -525,6 +577,85 @@ function UserManagementSection() {
             </div>
           </form>
         </div>
+
+        {/* Pending Approvals Section */}
+        {pendingUsers.length > 0 && (
+          <div className="pt-4 border-t border-border/60">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">
+                  {pendingUsers.length}
+                </div>
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                  <UserPlus className="h-4 w-4 text-amber-600" />
+                  Pending User Approvals ({pendingUsers.length})
+                </h3>
+              </div>
+              <span className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full font-medium">
+                Action Required
+              </span>
+            </div>
+
+            <div className="rounded-xl border border-amber-200/80 bg-amber-50/20 overflow-hidden shadow-2xs">
+              <table className="w-full text-xs">
+                <thead className="bg-amber-100/50 border-b border-amber-200/80 text-amber-900">
+                  <tr>
+                    <th className="py-2.5 px-4 text-left font-semibold">User</th>
+                    <th className="py-2.5 px-4 text-left font-semibold">Email</th>
+                    <th className="py-2.5 px-4 text-left font-semibold">Requested Role</th>
+                    <th className="py-2.5 px-4 text-left font-semibold">Requested Date</th>
+                    <th className="py-2.5 px-4 text-right font-semibold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-amber-200/50 bg-white">
+                  {pendingUsers.map((u) => (
+                    <tr key={u.id} className="hover:bg-amber-50/40 transition-colors">
+                      <td className="py-2.5 px-4 font-semibold text-foreground">{u.name}</td>
+                      <td className="py-2.5 px-4 font-mono text-muted-foreground">{u.email}</td>
+                      <td className="py-2.5 px-4">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md border text-[11px] font-semibold bg-indigo-50 text-indigo-700 border-indigo-200">
+                          {ROLE_LABELS[u.role as UserRole] || u.role}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-4 text-muted-foreground">
+                        {formatDateTime(u.createdAt)}
+                      </td>
+                      <td className="py-2.5 px-4 text-right space-x-2">
+                        <Button
+                          size="sm"
+                          className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold gap-1 shadow-2xs"
+                          disabled={actionLoadingId === u.id}
+                          onClick={() => handleApprove(u.id)}
+                        >
+                          {actionLoadingId === u.id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <UserCheck className="h-3 w-3" />
+                          )}
+                          Approve
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs text-rose-700 border-rose-200 hover:bg-rose-50 font-semibold gap-1 shadow-2xs"
+                          disabled={actionLoadingId === u.id}
+                          onClick={() => handleReject(u.id)}
+                        >
+                          {actionLoadingId === u.id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <UserX className="h-3 w-3" />
+                          )}
+                          Reject
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {/* Existing Users Table */}
         <div className="pt-4 border-t border-border/60">
@@ -709,7 +840,7 @@ function AuditLogSection() {
               <option value="ALL">All Categories</option>
               <option value="AUTHENTICATION">Authentication</option>
               <option value="USER_MANAGEMENT">User Management</option>
-              <option value="MANAGER_OPERATION">Manager Operation</option>
+              <option value="TRAINER_OPERATION">Trainer Operation</option>
               <option value="LEARNING">Learning & Curriculum</option>
             </select>
           </div>
@@ -723,8 +854,8 @@ function AuditLogSection() {
             >
               <option value="ALL">All Roles</option>
               <option value="ADMIN">Admin</option>
-              <option value="MANAGER">Manager</option>
-              <option value="EMPLOYEE">Employee</option>
+              <option value="TRAINER">Trainer</option>
+              <option value="TRAINEE">Trainee</option>
             </select>
           </div>
 
@@ -934,7 +1065,7 @@ function ManagerMonitoringSection() {
                       <div>
                         <div className="flex items-center gap-2">
                           <CardTitle className="text-sm font-bold text-foreground">{mgr.managerName}</CardTitle>
-                          <Badge className="bg-indigo-50 text-indigo-700 border-indigo-200 text-[10px]">MANAGER</Badge>
+                          <Badge className="bg-indigo-50 text-indigo-700 border-indigo-200 text-[10px]">TRAINER</Badge>
                         </div>
                         <span className="text-xs font-mono text-muted-foreground">{mgr.managerEmail}</span>
                       </div>

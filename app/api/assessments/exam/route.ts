@@ -10,7 +10,7 @@ import { prisma } from "@/lib/db/prisma";
  */
 export async function GET(request: NextRequest) {
   try {
-    const auth = await authenticateApi(["ADMIN", "MANAGER", "EMPLOYEE"]);
+    const auth = await authenticateApi(["ADMIN", "TRAINER", "TRAINEE"]);
     if (!auth.authorized) {
       return auth.response!;
     }
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     if (!examId) {
       let employeeId = auth.user?.employeeId;
 
-      if (!employeeId && auth.user?.role === "EMPLOYEE") {
+      if (!employeeId && auth.user?.role === "TRAINEE") {
         const dbUser = await prisma.user.findUnique({
           where: { id: auth.user.id },
           select: { employeeId: true },

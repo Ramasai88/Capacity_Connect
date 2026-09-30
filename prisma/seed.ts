@@ -246,42 +246,42 @@ async function main() {
     },
   });
 
-  // Manager User
+  // Trainer User
   await prisma.user.upsert({
     where: { organizationId_email: { organizationId: org.id, email: "sarah.jenkins@capacityconnect.demo" } },
     update: {
       name: "Sarah Jenkins",
       passwordHash: managerPasswordHash,
-      role: UserRole.MANAGER,
+      role: UserRole.TRAINER,
     },
     create: {
       name: "Sarah Jenkins",
       email: "sarah.jenkins@capacityconnect.demo",
       passwordHash: managerPasswordHash,
-      role: UserRole.MANAGER,
+      role: UserRole.TRAINER,
       organizationId: org.id,
     },
   });
 
-  // Employee User (Ravi Kumar)
+  // Trainee User (Ravi Kumar)
   await prisma.user.upsert({
     where: { organizationId_email: { organizationId: org.id, email: "ravi.kumar@capacityconnect.demo" } },
     update: {
       name: "Ravi Kumar",
       passwordHash: employeePasswordHash,
-      role: UserRole.EMPLOYEE,
+      role: UserRole.TRAINEE,
       employeeId: "emp-1",
     },
     create: {
       name: "Ravi Kumar",
       email: "ravi.kumar@capacityconnect.demo",
       passwordHash: employeePasswordHash,
-      role: UserRole.EMPLOYEE,
+      role: UserRole.TRAINEE,
       organizationId: org.id,
       employeeId: "emp-1",
     },
   });
-  console.log("  ✓ Seeded Admin, Manager, and Employee users with bcrypt hashing.");
+  console.log("  ✓ Seeded Admin, Trainer, and Trainee users with bcrypt hashing.");
 
   // 6. Seed Courses & Modules
   console.log("📚 Seeding Courses & Modules...");

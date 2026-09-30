@@ -23,7 +23,7 @@ const submitExamSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
-    const auth = await authenticateApi(["ADMIN", "MANAGER", "EMPLOYEE"]);
+    const auth = await authenticateApi(["ADMIN", "TRAINER", "TRAINEE"]);
     if (!auth.authorized) {
       return auth.response!;
     }
@@ -32,13 +32,13 @@ export async function POST(request: NextRequest) {
 
     // 1. Resolve employeeId if null in the current session token
     if (!employeeId) {
-      if (auth.user?.role === "EMPLOYEE") {
+      if (auth.user?.role === "TRAINEE") {
         const dbUser = await prisma.user.findUnique({
           where: { id: auth.user.id },
           select: { employeeId: true },
         });
         employeeId = dbUser?.employeeId ?? null;
-      } else if (auth.user?.role === "ADMIN" || auth.user?.role === "MANAGER") {
+      } else if (auth.user?.role === "ADMIN" || auth.user?.role === "TRAINER") {
         // Find or provision staff employee profile for Admin/Manager testing
         let emp = await prisma.employee.findFirst({
           where: {

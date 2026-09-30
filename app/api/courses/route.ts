@@ -6,11 +6,11 @@ import { createCourseSchema, courseQuerySchema } from "@/lib/validations/course"
 /**
  * GET /api/courses
  * List published/all courses with search, target level, and category filters.
- * RBAC: All authenticated users (ADMIN, MANAGER, EMPLOYEE).
+ * RBAC: All authenticated users (ADMIN, TRAINER, TRAINEE).
  */
 export async function GET(request: NextRequest) {
   try {
-    const auth = await authenticateApi(["ADMIN", "MANAGER", "EMPLOYEE"]);
+    const auth = await authenticateApi(["ADMIN", "TRAINER", "TRAINEE"]);
     if (!auth.authorized) {
       return auth.response!;
     }
@@ -56,11 +56,11 @@ export async function GET(request: NextRequest) {
 /**
  * POST /api/courses
  * Create a new learning course with structured curriculum modules.
- * RBAC: ADMIN and MANAGER.
+ * RBAC: ADMIN and TRAINER.
  */
 export async function POST(request: NextRequest) {
   try {
-    const auth = await authenticateApi(["ADMIN", "MANAGER"]);
+    const auth = await authenticateApi(["ADMIN", "TRAINER"]);
     if (!auth.authorized) {
       return auth.response!;
     }

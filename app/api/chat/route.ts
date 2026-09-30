@@ -22,7 +22,7 @@ const chatRequestSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
-    const auth = await authenticateApi(["ADMIN", "MANAGER", "EMPLOYEE"]);
+    const auth = await authenticateApi(["ADMIN", "TRAINER", "TRAINEE"]);
     if (!auth.authorized || !auth.user || !auth.organizationId) {
       return auth.response || NextResponse.json({ error: { code: "UNAUTHENTICATED", message: "Authentication required" } }, { status: 401 });
     }

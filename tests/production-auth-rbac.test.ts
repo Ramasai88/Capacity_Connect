@@ -34,28 +34,28 @@ describe("Production Authentication & PostgreSQL User Verification", () => {
     expect(user?.organizationId).toBe(TEST_ORG_ID);
   });
 
-  it("authenticates MANAGER user (sarah.jenkins@capacityconnect.demo) against PostgreSQL and derives role from DB", async () => {
+  it("authenticates TRAINER user (sarah.jenkins@capacityconnect.demo) against PostgreSQL and derives role from DB", async () => {
     const user = await verifyUserCredentials({
       email: "sarah.jenkins@capacityconnect.demo",
-      password: "Manager@123",
+      password: "Trainer@123",
     });
 
     expect(user).not.toBeNull();
     expect(user?.name).toBe("Sarah Jenkins");
-    expect(user?.role).toBe("MANAGER");
+    expect(user?.role).toBe("TRAINER");
     expect(user?.organizationId).toBe(TEST_ORG_ID);
     expect((user as any)?.passwordHash).toBeUndefined();
   });
 
-  it("authenticates EMPLOYEE user (ravi.kumar@capacityconnect.demo) and attaches database employee link", async () => {
+  it("authenticates TRAINEE user (ravi.kumar@capacityconnect.demo) and attaches database employee link", async () => {
     const user = await verifyUserCredentials({
       email: "ravi.kumar@capacityconnect.demo",
-      password: "Employee@123",
+      password: "Trainee@123",
     });
 
     expect(user).not.toBeNull();
     expect(user?.name).toBe("Ravi Kumar");
-    expect(user?.role).toBe("EMPLOYEE");
+    expect(user?.role).toBe("TRAINEE");
     expect(user?.employeeId).toBe("emp-1");
     expect(user?.organizationId).toBe(TEST_ORG_ID);
     expect((user as any)?.passwordHash).toBeUndefined();
@@ -142,10 +142,10 @@ describe("NextAuth JWT & Session Callbacks Verification", () => {
     expect(session.user?.organizationId).toBe(TEST_ORG_ID);
   });
 
-  it("populates JWT and Session objects for MANAGER", async () => {
+  it("populates JWT and Session objects for TRAINER", async () => {
     const user = await verifyUserCredentials({
       email: "sarah.jenkins@capacityconnect.demo",
-      password: "Manager@123",
+      password: "Trainer@123",
     });
     expect(user).not.toBeNull();
 
@@ -164,7 +164,7 @@ describe("NextAuth JWT & Session Callbacks Verification", () => {
     });
 
     expect(session.user?.name).toBe("Sarah Jenkins");
-    expect(session.user?.role).toBe("MANAGER");
+    expect(session.user?.role).toBe("TRAINER");
   });
 });
 
@@ -182,35 +182,35 @@ describe("Server-Side RBAC Authorization Matrix", () => {
     expect(isRouteAllowed("ADMIN", "/courses")).toBe(true);
   });
 
-  it("enforces MANAGER permissions correctly", () => {
-    expect(hasPermission("MANAGER", "canAddEmployee")).toBe(false);
-    expect(hasPermission("MANAGER", "canCreateCompetency")).toBe(false);
-    expect(hasPermission("MANAGER", "canCreateDesignation")).toBe(false);
-    expect(hasPermission("MANAGER", "canAccessSettings")).toBe(false);
-    expect(hasPermission("MANAGER", "canReviewReassessments")).toBe(true);
-    expect(hasPermission("MANAGER", "canCreateCourse")).toBe(true);
-    expect(hasPermission("MANAGER", "canViewAllEmployees")).toBe(true);
-    expect(isRouteAllowed("MANAGER", "/settings")).toBe(false);
-    expect(isRouteAllowed("MANAGER", "/reassessments")).toBe(true);
-    expect(isRouteAllowed("MANAGER", "/my-development")).toBe(false);
-    expect(isRouteAllowed("MANAGER", "/my-learning")).toBe(false);
-    expect(isRouteAllowed("MANAGER", "/courses")).toBe(true);
+  it("enforces TRAINER permissions correctly", () => {
+    expect(hasPermission("TRAINER", "canAddEmployee")).toBe(false);
+    expect(hasPermission("TRAINER", "canCreateCompetency")).toBe(false);
+    expect(hasPermission("TRAINER", "canCreateDesignation")).toBe(false);
+    expect(hasPermission("TRAINER", "canAccessSettings")).toBe(false);
+    expect(hasPermission("TRAINER", "canReviewReassessments")).toBe(true);
+    expect(hasPermission("TRAINER", "canCreateCourse")).toBe(true);
+    expect(hasPermission("TRAINER", "canViewAllEmployees")).toBe(true);
+    expect(isRouteAllowed("TRAINER", "/settings")).toBe(false);
+    expect(isRouteAllowed("TRAINER", "/reassessments")).toBe(true);
+    expect(isRouteAllowed("TRAINER", "/my-development")).toBe(false);
+    expect(isRouteAllowed("TRAINER", "/my-learning")).toBe(false);
+    expect(isRouteAllowed("TRAINER", "/courses")).toBe(true);
   });
 
-  it("enforces EMPLOYEE permissions strictly", () => {
-    expect(hasPermission("EMPLOYEE", "canAddEmployee")).toBe(false);
-    expect(hasPermission("EMPLOYEE", "canEditEmployee")).toBe(false);
-    expect(hasPermission("EMPLOYEE", "canCreateCompetency")).toBe(false);
-    expect(hasPermission("EMPLOYEE", "canCreateDesignation")).toBe(false);
-    expect(hasPermission("EMPLOYEE", "canCreateCourse")).toBe(false);
-    expect(hasPermission("EMPLOYEE", "canReviewReassessments")).toBe(false);
-    expect(hasPermission("EMPLOYEE", "canAccessSettings")).toBe(false);
-    expect(isRouteAllowed("EMPLOYEE", "/settings")).toBe(false);
-    expect(isRouteAllowed("EMPLOYEE", "/reassessments")).toBe(false);
-    expect(isRouteAllowed("EMPLOYEE", "/employees")).toBe(false);
-    expect(isRouteAllowed("EMPLOYEE", "/my-development")).toBe(true);
-    expect(isRouteAllowed("EMPLOYEE", "/my-learning")).toBe(true);
-    expect(isRouteAllowed("EMPLOYEE", "/courses")).toBe(true);
+  it("enforces TRAINEE permissions strictly", () => {
+    expect(hasPermission("TRAINEE", "canAddEmployee")).toBe(false);
+    expect(hasPermission("TRAINEE", "canEditEmployee")).toBe(false);
+    expect(hasPermission("TRAINEE", "canCreateCompetency")).toBe(false);
+    expect(hasPermission("TRAINEE", "canCreateDesignation")).toBe(false);
+    expect(hasPermission("TRAINEE", "canCreateCourse")).toBe(false);
+    expect(hasPermission("TRAINEE", "canReviewReassessments")).toBe(false);
+    expect(hasPermission("TRAINEE", "canAccessSettings")).toBe(false);
+    expect(isRouteAllowed("TRAINEE", "/settings")).toBe(false);
+    expect(isRouteAllowed("TRAINEE", "/reassessments")).toBe(false);
+    expect(isRouteAllowed("TRAINEE", "/employees")).toBe(false);
+    expect(isRouteAllowed("TRAINEE", "/my-development")).toBe(true);
+    expect(isRouteAllowed("TRAINEE", "/my-learning")).toBe(true);
+    expect(isRouteAllowed("TRAINEE", "/courses")).toBe(true);
   });
 
   it("rejects unauthenticated API requests with 401 when no session is present", async () => {

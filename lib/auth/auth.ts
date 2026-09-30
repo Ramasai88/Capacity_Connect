@@ -11,7 +11,7 @@ export interface AuthenticatedUserPayload {
   id: string;
   name: string;
   email: string;
-  role: "ADMIN" | "MANAGER" | "EMPLOYEE";
+  role: "ADMIN" | "TRAINER" | "TRAINEE";
   organizationId: string;
   employeeId: string | null;
 }
@@ -41,18 +41,22 @@ export async function verifyUserCredentials(
         id: DEMO_USERS.admin.id,
         name: DEMO_USERS.admin.name,
         email: DEMO_USERS.admin.email,
-        role: DEMO_USERS.admin.role,
+        role: "ADMIN",
         organizationId: DEMO_USERS.admin.organizationId,
         employeeId: DEMO_USERS.admin.employeeId,
       };
     }
 
-    if (normalizedEmail.includes("manager") || normalizedEmail === DEMO_USERS.manager.email) {
+    if (
+      normalizedEmail.includes("trainer") ||
+      normalizedEmail.includes("manager") ||
+      normalizedEmail === DEMO_USERS.manager.email
+    ) {
       return {
         id: DEMO_USERS.manager.id,
         name: DEMO_USERS.manager.name,
         email: DEMO_USERS.manager.email,
-        role: DEMO_USERS.manager.role,
+        role: "TRAINER",
         organizationId: DEMO_USERS.manager.organizationId,
         employeeId: DEMO_USERS.manager.employeeId,
       };
@@ -60,6 +64,7 @@ export async function verifyUserCredentials(
 
     if (
       normalizedEmail.includes("ravi") ||
+      normalizedEmail.includes("trainee") ||
       normalizedEmail.includes("employee") ||
       normalizedEmail === DEMO_USERS.employee.email
     ) {
@@ -67,7 +72,7 @@ export async function verifyUserCredentials(
         id: DEMO_USERS.employee.id,
         name: DEMO_USERS.employee.name,
         email: DEMO_USERS.employee.email,
-        role: DEMO_USERS.employee.role,
+        role: "TRAINEE",
         organizationId: DEMO_USERS.employee.organizationId,
         employeeId: DEMO_USERS.employee.employeeId,
       };
@@ -129,6 +134,37 @@ export async function verifyUserCredentials(
       return null;
     }
 
+    // Check if user account registration has been approved by an administrator
+    if (user.approvalStatus === "PENDING") {
+      await AuditService.log({
+        organizationId: user.organizationId,
+        actorId: user.id,
+        actorName: user.name,
+        actorRole: user.role,
+        action: "AUTH_LOGIN_FAILURE",
+        category: "AUTHENTICATION",
+        status: "FAILURE",
+        description: `Login rejected for user ${user.name} (${user.email}): Account registration is pending administrator approval.`,
+        metadata: { attemptedEmail: normalizedEmail, reason: "ACCOUNT_PENDING_APPROVAL" },
+      });
+      return null;
+    }
+
+    if (user.approvalStatus === "REJECTED") {
+      await AuditService.log({
+        organizationId: user.organizationId,
+        actorId: user.id,
+        actorName: user.name,
+        actorRole: user.role,
+        action: "AUTH_LOGIN_FAILURE",
+        category: "AUTHENTICATION",
+        status: "FAILURE",
+        description: `Login rejected for user ${user.name} (${user.email}): Account registration was rejected by administrator.`,
+        metadata: { attemptedEmail: normalizedEmail, reason: "ACCOUNT_REJECTED" },
+      });
+      return null;
+    }
+
     // Check if user account has completed initial activation
     if (user.isActivated === false) {
       await AuditService.log({
@@ -146,7 +182,7 @@ export async function verifyUserCredentials(
     }
 
     // Check if user is associated with a deactivated/removed employee
-    if (user.role === "EMPLOYEE" || user.employeeId) {
+    if (user.role === "TRAINEE" || user.employeeId) {
       const emp = user.employeeId
         ? await prisma.employee.findUnique({ where: { id: user.employeeId } })
         : await prisma.employee.findFirst({
@@ -194,8 +230,8 @@ export async function verifyUserCredentials(
 
     let employeeId = user.employeeId ?? null;
 
-    // Self-healing: if an EMPLOYEE user somehow lacks an employeeId, link or provision it
-    if (user.role === "EMPLOYEE" && !employeeId) {
+    // Self-healing: if a TRAINEE user lacks an employeeId, link or provision it
+    if (user.role === "TRAINEE" && !employeeId) {
       let emp = await prisma.employee.findFirst({
         where: {
           email: { equals: normalizedEmail, mode: "insensitive" },

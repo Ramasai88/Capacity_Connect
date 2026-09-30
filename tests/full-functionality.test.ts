@@ -38,30 +38,30 @@ describe("Part 1: Role-Based Access Control Matrix", () => {
     expect(isRouteAllowed("ADMIN", "/courses")).toBe(true);
   });
 
-  it("verifies MANAGER can review reassessments and view reports, but cannot edit org settings", () => {
-    expect(hasPermission("MANAGER", "canReviewReassessments")).toBe(true);
-    expect(hasPermission("MANAGER", "canViewReports")).toBe(true);
-    expect(hasPermission("MANAGER", "canCreateCourse")).toBe(true);
-    expect(hasPermission("MANAGER", "canAddEmployee")).toBe(false);
-    expect(hasPermission("MANAGER", "canCreateCompetency")).toBe(false);
-    expect(hasPermission("MANAGER", "canAccessSettings")).toBe(false);
-    expect(isRouteAllowed("MANAGER", "/reassessments")).toBe(true);
-    expect(isRouteAllowed("MANAGER", "/settings")).toBe(false);
-    expect(isRouteAllowed("MANAGER", "/my-development")).toBe(false);
-    expect(isRouteAllowed("MANAGER", "/my-learning")).toBe(false);
-    expect(isRouteAllowed("MANAGER", "/courses")).toBe(true);
+  it("verifies TRAINER can review reassessments and view reports, but cannot edit org settings", () => {
+    expect(hasPermission("TRAINER", "canReviewReassessments")).toBe(true);
+    expect(hasPermission("TRAINER", "canViewReports")).toBe(true);
+    expect(hasPermission("TRAINER", "canCreateCourse")).toBe(true);
+    expect(hasPermission("TRAINER", "canAddEmployee")).toBe(false);
+    expect(hasPermission("TRAINER", "canCreateCompetency")).toBe(false);
+    expect(hasPermission("TRAINER", "canAccessSettings")).toBe(false);
+    expect(isRouteAllowed("TRAINER", "/reassessments")).toBe(true);
+    expect(isRouteAllowed("TRAINER", "/settings")).toBe(false);
+    expect(isRouteAllowed("TRAINER", "/my-development")).toBe(false);
+    expect(isRouteAllowed("TRAINER", "/my-learning")).toBe(false);
+    expect(isRouteAllowed("TRAINER", "/courses")).toBe(true);
   });
 
-  it("verifies EMPLOYEE is restricted to self learning and cannot perform administrative actions", () => {
-    expect(hasPermission("EMPLOYEE", "canAddEmployee")).toBe(false);
-    expect(hasPermission("EMPLOYEE", "canCreateCompetency")).toBe(false);
-    expect(hasPermission("EMPLOYEE", "canCreateDesignation")).toBe(false);
-    expect(hasPermission("EMPLOYEE", "canReviewReassessments")).toBe(false);
-    expect(hasPermission("EMPLOYEE", "canAccessSettings")).toBe(false);
-    expect(isRouteAllowed("EMPLOYEE", "/settings")).toBe(false);
-    expect(isRouteAllowed("EMPLOYEE", "/courses")).toBe(true);
-    expect(isRouteAllowed("EMPLOYEE", "/my-development")).toBe(true);
-    expect(isRouteAllowed("EMPLOYEE", "/my-learning")).toBe(true);
+  it("verifies TRAINEE is restricted to self learning and cannot perform administrative actions", () => {
+    expect(hasPermission("TRAINEE", "canAddEmployee")).toBe(false);
+    expect(hasPermission("TRAINEE", "canCreateCompetency")).toBe(false);
+    expect(hasPermission("TRAINEE", "canCreateDesignation")).toBe(false);
+    expect(hasPermission("TRAINEE", "canReviewReassessments")).toBe(false);
+    expect(hasPermission("TRAINEE", "canAccessSettings")).toBe(false);
+    expect(isRouteAllowed("TRAINEE", "/settings")).toBe(false);
+    expect(isRouteAllowed("TRAINEE", "/courses")).toBe(true);
+    expect(isRouteAllowed("TRAINEE", "/my-development")).toBe(true);
+    expect(isRouteAllowed("TRAINEE", "/my-learning")).toBe(true);
   });
 });
 

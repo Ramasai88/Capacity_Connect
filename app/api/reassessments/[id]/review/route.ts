@@ -11,12 +11,12 @@ interface RouteParams {
 
 /**
  * POST /api/reassessments/:id/review
- * Manager or Admin reviews and approves/rejects reassessment.
+ * Trainer or Admin reviews and approves/rejects reassessment.
  * Approving atomically updates the employee's competency level.
  */
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
-    const auth = await authenticateApi(["ADMIN", "MANAGER"]);
+    const auth = await authenticateApi(["ADMIN", "TRAINER"]);
     if (!auth.authorized) {
       return auth.response!;
     }

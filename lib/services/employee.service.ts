@@ -86,6 +86,12 @@ export interface EmployeeDetailResponse {
     status: string;
     enrolledAt: string;
   }>;
+  qualifications?: any;
+  workExperience?: any;
+  interests?: string[];
+  skills?: string[];
+  certificates?: any;
+  bio?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -312,6 +318,12 @@ export class EmployeeService {
         status: enr.status,
         enrolledAt: enr.enrolledAt ? (enr.enrolledAt.toISOString().split("T")[0] ?? "2024-01-01") : "2024-01-01",
       })),
+      qualifications: employee.qualifications,
+      workExperience: employee.workExperience,
+      interests: employee.interests || [],
+      skills: employee.skills || [],
+      certificates: employee.certificates,
+      bio: employee.bio ?? null,
       createdAt: employee.createdAt.toISOString(),
       updatedAt: employee.updatedAt.toISOString(),
     };
@@ -414,6 +426,14 @@ export class EmployeeService {
             designationId: data.designationId || null,
             joiningDate: data.joiningDate ? new Date(data.joiningDate) : new Date(),
             status: (data.status as EmployeeStatus) || EmployeeStatus.ACTIVE,
+            qualifications: data.qualifications !== undefined ? data.qualifications : undefined,
+            workExperience: data.workExperience !== undefined ? data.workExperience : undefined,
+            interests: data.interests || [],
+            skills: data.skills || [],
+            certificates: data.certificates !== undefined ? data.certificates : undefined,
+            specializations: data.specializations || [],
+            teachingDomains: data.teachingDomains || [],
+            bio: data.bio || null,
           },
         });
 
@@ -469,7 +489,7 @@ export class EmployeeService {
               name: data.name.trim(),
               email,
               passwordHash: lockedPlaceholder,
-              role: "EMPLOYEE",
+              role: "TRAINEE",
               employeeId: emp.id,
               isActivated: false,
             },
@@ -562,10 +582,11 @@ export class EmployeeService {
 
     let normalizedEmail: string | undefined = undefined;
     if (data.email) {
-      normalizedEmail = data.email.trim().toLowerCase();
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      const emailTrimmed = data.email.trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed)) {
         throw new EmployeeServiceError("Enter a valid email address.", 400, "INVALID_EMAIL");
       }
+      normalizedEmail = emailTrimmed;
 
       if (normalizedEmail !== existing.email.toLowerCase()) {
         // Check duplicate email in Employee records
@@ -635,6 +656,14 @@ export class EmployeeService {
             designationId: data.designationId !== undefined ? data.designationId : undefined,
             joiningDate: data.joiningDate ? new Date(data.joiningDate) : undefined,
             status: (data.status as EmployeeStatus) || undefined,
+            qualifications: data.qualifications !== undefined ? data.qualifications : undefined,
+            workExperience: data.workExperience !== undefined ? data.workExperience : undefined,
+            interests: data.interests !== undefined ? data.interests : undefined,
+            skills: data.skills !== undefined ? data.skills : undefined,
+            certificates: data.certificates !== undefined ? data.certificates : undefined,
+            specializations: data.specializations !== undefined ? data.specializations : undefined,
+            teachingDomains: data.teachingDomains !== undefined ? data.teachingDomains : undefined,
+            bio: data.bio !== undefined ? data.bio : undefined,
           },
         });
 

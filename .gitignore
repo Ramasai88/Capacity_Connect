@@ -27,3 +27,6 @@ next-env.d.ts
 
 # prisma
 prisma/dev.db
+
+# local storage uploads
+/uploads/

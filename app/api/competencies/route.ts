@@ -6,11 +6,11 @@ import { createCompetencySchema, competencyQuerySchema } from "@/lib/validations
 /**
  * GET /api/competencies
  * List organization competencies with levels and usage counts.
- * RBAC: Authenticated organization users (ADMIN, MANAGER, EMPLOYEE).
+ * RBAC: Authenticated organization users (ADMIN, TRAINER, TRAINEE).
  */
 export async function GET(request: NextRequest) {
   try {
-    const auth = await authenticateApi(["ADMIN", "MANAGER", "EMPLOYEE"]);
+    const auth = await authenticateApi(["ADMIN", "TRAINER", "TRAINEE"]);
     if (!auth.authorized) {
       return auth.response!;
     }

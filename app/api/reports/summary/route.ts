@@ -6,26 +6,26 @@ import { AuditService } from "@/lib/services/audit.service";
 /**
  * GET /api/reports/summary
  * Organizational capacity readiness, course completion rate, and priority competency gaps.
- * RBAC: ADMIN & MANAGER.
+ * RBAC: ADMIN & TRAINER.
  */
 export async function GET(request: NextRequest) {
   try {
-    const auth = await authenticateApi(["ADMIN", "MANAGER"]);
+    const auth = await authenticateApi(["ADMIN", "TRAINER"]);
     if (!auth.authorized) {
       return auth.response!;
     }
 
     const report = await ReportService.getCapacityReport(auth.organizationId!);
 
-    if (auth.user.role === "MANAGER") {
+    if (auth.user.role === "TRAINER") {
       await AuditService.log({
         organizationId: auth.organizationId!,
         actorId: auth.userId,
         actorName: auth.user.name || auth.user.email,
-        actorRole: "MANAGER",
-        action: "MANAGER_REPORT_ACCESSED",
-        category: "MANAGER_OPERATION",
-        description: `Manager ${auth.user.name || auth.user.email} generated organizational capacity report summary.`,
+        actorRole: "TRAINER",
+        action: "TRAINER_REPORT_ACCESSED",
+        category: "TRAINER_OPERATION",
+        description: `Trainer ${auth.user.name || auth.user.email} generated organizational capacity report summary.`,
       });
     }
 

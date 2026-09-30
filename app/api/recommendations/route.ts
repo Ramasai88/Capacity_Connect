@@ -8,7 +8,7 @@ import { RecommendationService } from "@/lib/services/recommendation.service";
  */
 export async function GET(request: NextRequest) {
   try {
-    const auth = await authenticateApi(["ADMIN", "MANAGER", "EMPLOYEE"]);
+    const auth = await authenticateApi(["ADMIN", "TRAINER", "TRAINEE"]);
     if (!auth.authorized) {
       return auth.response!;
     }
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     const requestedEmpId = searchParams.get("employeeId");
     if (requestedEmpId) {
-      if (auth.user?.role === "EMPLOYEE" && requestedEmpId !== auth.user?.employeeId) {
+      if (auth.user?.role === "TRAINEE" && requestedEmpId !== auth.user?.employeeId) {
         return NextResponse.json(
           { error: { code: "FORBIDDEN", message: "You can only view your own recommendations." } },
           { status: 403 }
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const auth = await authenticateApi(["ADMIN", "MANAGER", "EMPLOYEE"]);
+    const auth = await authenticateApi(["ADMIN", "TRAINER", "TRAINEE"]);
     if (!auth.authorized) {
       return auth.response!;
     }
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     try {
       const body = await request.json();
       if (body?.employeeId) {
-        if (auth.user?.role === "EMPLOYEE" && body.employeeId !== auth.user?.employeeId) {
+        if (auth.user?.role === "TRAINEE" && body.employeeId !== auth.user?.employeeId) {
           return NextResponse.json(
             { error: { code: "FORBIDDEN", message: "You can only refresh your own recommendations." } },
             { status: 403 }

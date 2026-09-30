@@ -34,6 +34,7 @@ import { isDemoMode } from "@/lib/demo/config";
 import { apiClient } from "@/lib/api/client";
 import { CompletedModuleReviewDialog } from "@/components/learning/completed-module-review-dialog";
 import { ModuleLearningRunner } from "@/components/learning/module-learning-runner";
+import { CourseFeedbackPanel } from "@/components/learning/course-feedback-panel";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -335,6 +336,15 @@ export default function CourseLearningPage() {
           })}
         </div>
       </div>
+
+      {/* COURSE FEEDBACK */}
+      {!isDemoMode() && (
+        <CourseFeedbackPanel
+          courseId={courseId}
+          courseTitle={course?.title ?? ""}
+          isEnrolled={!!realEnrollment}
+        />
+      )}
 
       {/* ACTIVE MODULE COURSERA-STYLE LEARNING RUNNER */}
       <ModuleLearningRunner

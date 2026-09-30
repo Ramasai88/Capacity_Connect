@@ -1,4 +1,4 @@
-export type UserRole = "ADMIN" | "MANAGER" | "EMPLOYEE";
+export type UserRole = "ADMIN" | "TRAINER" | "TRAINEE";
 
 export interface RolePermissions {
   canAddEmployee: boolean;
@@ -32,7 +32,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     canExportData: true,
     canAccessSettings: true,
   },
-  MANAGER: {
+  TRAINER: {
     canAddEmployee: false,
     canEditEmployee: false,
     canCreateCompetency: false,
@@ -47,7 +47,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     canExportData: true,
     canAccessSettings: false,
   },
-  EMPLOYEE: {
+  TRAINEE: {
     canAddEmployee: false,
     canEditEmployee: false,
     canCreateCompetency: false,
@@ -72,14 +72,14 @@ export function hasPermission(role: UserRole | undefined | null, permission: key
 export function isRouteAllowed(role: UserRole | undefined | null, pathname: string): boolean {
   if (!role) return false;
 
-  // My Skill Development: Employee only (self-service profile)
+  // My Skill Development: Trainee only (self-service profile)
   if (pathname.startsWith("/my-development")) {
-    return role === "EMPLOYEE";
+    return role === "TRAINEE";
   }
 
-  // My Learning: Employee only (personal learning workspace)
+  // My Learning: Trainee only (personal learning workspace)
   if (pathname.startsWith("/my-learning")) {
-    return role === "EMPLOYEE";
+    return role === "TRAINEE";
   }
 
   // Settings: Admin only
@@ -87,30 +87,30 @@ export function isRouteAllowed(role: UserRole | undefined | null, pathname: stri
     return role === "ADMIN";
   }
 
-  // Reassessments: Manager & Admin
+  // Reassessments: Trainer & Admin
   if (pathname.startsWith("/reassessments")) {
-    return role === "ADMIN" || role === "MANAGER";
+    return role === "ADMIN" || role === "TRAINER";
   }
 
-  // Reports: Admin & Manager
+  // Reports: Admin & Trainer
   if (pathname.startsWith("/reports")) {
-    return role === "ADMIN" || role === "MANAGER";
+    return role === "ADMIN" || role === "TRAINER";
   }
 
-  // Employees, Competencies, Designations: Admin & Manager can view
+  // Employees, Competencies, Designations: Admin & Trainer can view
   if (
     pathname.startsWith("/employees") ||
     pathname.startsWith("/competencies") ||
     pathname.startsWith("/designations")
   ) {
-    return role === "ADMIN" || role === "MANAGER";
+    return role === "ADMIN" || role === "TRAINER";
   }
 
-  // Skill gaps: Admin & Manager can view org table, Employee can view their own
+  // Skill gaps: Admin & Trainer can view org table, Trainee can view their own
   if (pathname.startsWith("/skill-gaps")) {
     return true;
   }
 
-  // Dashboard, Courses, My Learning: All roles
+  // Dashboard, Courses, AI Assistant, Recommendations: All roles
   return true;
 }

@@ -1,19 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateApi } from "@/lib/auth/session";
+import { resolveEmployeeIdForUser } from "@/lib/auth/resolve-employee";
 import { prisma } from "@/lib/db/prisma";
 import { SkillGapService } from "@/lib/services/skill-gap.service";
 import { RecommendationService } from "@/lib/services/recommendation.service";
+import { EmployeeService, EmployeeServiceError } from "@/lib/services/employee.service";
+import { traineeProfileUpdateSchema } from "@/lib/validations/employee";
 import { TOPIC_CONCEPTS } from "@/lib/assessment/exam-bank";
 
 /**
  * GET /api/my-development
- * Secure employee self-service development profile.
- * - EMPLOYEE: Resolves strictly to authenticated session employeeId.
- * - Non-EMPLOYEE: Access denied with 403 Forbidden.
+ * Secure trainee self-service development profile.
+ * - TRAINEE: Resolves strictly to authenticated session employeeId.
+ * - Non-TRAINEE: Access denied with 403 Forbidden.
  */
 export async function GET(request: NextRequest) {
   try {
-    const auth = await authenticateApi(["EMPLOYEE"]);
+    const auth = await authenticateApi(["TRAINEE"]);
     if (!auth.authorized) {
       return auth.response!;
     }
@@ -268,6 +271,11 @@ export async function GET(request: NextRequest) {
           designationTitle: employee.designation?.title || "Unassigned",
           status: employee.status,
           joiningDate: employee.joiningDate instanceof Date ? employee.joiningDate.toISOString() : (employee.joiningDate ? String(employee.joiningDate) : null),
+          qualifications: employee.qualifications,
+          workExperience: employee.workExperience,
+          interests: employee.interests || [],
+          skills: employee.skills || [],
+          certificates: employee.certificates,
         },
         skillGapSummary,
         latestAssessment,
@@ -288,3 +296,79 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+/**
+ * PATCH /api/my-development
+ * Secure trainee self-service professional profile update.
+ * Trainees can update their own: qualifications, workExperience, interests, skills, certificates, bio.
+ */
+export async function PATCH(request: NextRequest) {
+  try {
+    const auth = await authenticateApi(["TRAINEE"]);
+    if (!auth.authorized) {
+      return auth.response!;
+    }
+
+    const employeeId = await resolveEmployeeIdForUser(auth.user, auth.organizationId!);
+    if (!employeeId) {
+      return NextResponse.json(
+        { error: { code: "UNLINKED_EMPLOYEE", message: "User is not linked to an employee workforce profile." } },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json();
+    const parsed = traineeProfileUpdateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "VALIDATION_ERROR",
+            message: parsed.error.issues[0]?.message || "Invalid profile update payload.",
+            issues: parsed.error.issues,
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    const validatedData = {
+      qualifications: parsed.data.qualifications,
+      workExperience: parsed.data.workExperience,
+      interests: parsed.data.interests,
+      skills: parsed.data.skills,
+      certificates: parsed.data.certificates,
+      bio: parsed.data.bio,
+    };
+
+    const updaterName = auth.user?.name || "Trainee";
+    const updated = await EmployeeService.updateEmployee(
+      auth.organizationId!,
+      employeeId,
+      validatedData,
+      updaterName,
+      auth.userId,
+      "TRAINEE"
+    );
+
+    return NextResponse.json({
+      success: true,
+      message: "Professional profile updated successfully.",
+      data: updated,
+    });
+  } catch (error: any) {
+    if (error instanceof EmployeeServiceError) {
+      return NextResponse.json(
+        { error: { code: error.code, message: error.message } },
+        { status: error.statusCode }
+      );
+    }
+
+    console.error("PATCH /api/my-development error:", error);
+    return NextResponse.json(
+      { error: { code: "INTERNAL_ERROR", message: "Failed to update professional profile." } },
+      { status: 500 }
+    );
+  }
+}
+

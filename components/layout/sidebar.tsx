@@ -17,6 +17,10 @@ import {
   Sparkles,
   Bot,
   Compass,
+  Library,
+  ClipboardList,
+  Megaphone,
+  UserCog,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDemoStore } from "@/lib/demo/demo-store";
@@ -26,7 +30,7 @@ export interface NavItem {
   label: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
-  roles?: Array<"ADMIN" | "MANAGER" | "EMPLOYEE">;
+  roles?: Array<"ADMIN" | "TRAINER" | "TRAINEE">;
   badgeKey?: "reassessments";
 }
 
@@ -35,28 +39,33 @@ export interface NavItem {
  */
 export const navItems: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "My Skill Development", href: "/my-development", icon: Compass, roles: ["EMPLOYEE"] },
-  { label: "Employees", href: "/employees", icon: Users, roles: ["ADMIN", "MANAGER"] },
-  { label: "Competencies", href: "/competencies", icon: BadgeCheck, roles: ["ADMIN", "MANAGER"] },
-  { label: "Designations", href: "/designations", icon: Briefcase, roles: ["ADMIN", "MANAGER"] },
+  { label: "My Skill Development", href: "/my-development", icon: Compass, roles: ["TRAINEE"] },
+  { label: "Employees", href: "/employees", icon: Users, roles: ["ADMIN", "TRAINER"] },
+  { label: "Competencies", href: "/competencies", icon: BadgeCheck, roles: ["ADMIN", "TRAINER"] },
+  { label: "Designations", href: "/designations", icon: Briefcase, roles: ["ADMIN", "TRAINER"] },
   { label: "Skill Gap Analysis", href: "/skill-gaps", icon: BarChart3 },
   { label: "AI Recommendations", href: "/recommendations", icon: Sparkles },
   { label: "AI Assistant", href: "/assistant", icon: Bot },
   { label: "Courses", href: "/courses", icon: GraduationCap },
-  { label: "My Learning", href: "/my-learning", icon: BookOpen, roles: ["EMPLOYEE"] },
+  { label: "My Learning", href: "/my-learning", icon: BookOpen, roles: ["TRAINEE"] },
   {
     label: "Reassessments",
     href: "/reassessments",
     icon: ShieldCheck,
-    roles: ["ADMIN", "MANAGER"],
+    roles: ["ADMIN", "TRAINER"],
     badgeKey: "reassessments",
   },
-  { label: "Reports", href: "/reports", icon: FileText, roles: ["ADMIN", "MANAGER"] },
+  { label: "Reports", href: "/reports", icon: FileText, roles: ["ADMIN", "TRAINER"] },
   { label: "Settings", href: "/settings", icon: Settings, roles: ["ADMIN"] },
+  // ── Phase 2 ─────────────────────────────────────────────────────────────
+  { label: "Trainer Library", href: "/trainer-library", icon: Library, roles: ["ADMIN", "TRAINER", "TRAINEE"] },
+  { label: "Questionnaires", href: "/questionnaires", icon: ClipboardList, roles: ["ADMIN", "TRAINER", "TRAINEE"] },
+  { label: "Publishing", href: "/admin/publishing", icon: Megaphone, roles: ["ADMIN"] },
+  { label: "Trainer Profile", href: "/trainer-profile", icon: UserCog, roles: ["TRAINER"] },
 ];
 
 export interface NavLinksProps {
-  role: "ADMIN" | "MANAGER" | "EMPLOYEE";
+  role: "ADMIN" | "TRAINER" | "TRAINEE";
   onNavigate?: () => void;
 }
 
@@ -114,7 +123,7 @@ export function NavLinks({ role, onNavigate }: NavLinksProps) {
 }
 
 export interface SidebarProps {
-  role: "ADMIN" | "MANAGER" | "EMPLOYEE";
+  role: "ADMIN" | "TRAINER" | "TRAINEE";
 }
 
 export function Sidebar({ role }: SidebarProps) {
